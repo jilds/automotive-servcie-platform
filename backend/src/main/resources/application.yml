@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: asp-backend
+  datasource:
+    url: ${ASP_DB_URL:jdbc:postgresql://localhost:5432/asp}
+    username: ${ASP_DB_APP_USER:asp_app}
+    password: ${ASP_DB_APP_PASSWORD:asp_app}
+  flyway:
+    user: ${ASP_DB_OWNER_USER:asp_owner}
+    password: ${ASP_DB_OWNER_PASSWORD:asp_owner}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+asp:
+  security:
+    jwt-secret: ${ASP_JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes!!}
+    issuer: asp
+    token-ttl: 12h
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

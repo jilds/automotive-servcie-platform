@@ -1,0 +1,11 @@
+# Java
+backend/target/
+# Node / Angular
+web/node_modules/
+web/dist/
+web/.angular/
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
