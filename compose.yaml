@@ -1,0 +1,25 @@
+# Local infrastructure, started by spring-boot-docker-compose on ./mvnw -pl backend spring-boot:run.
+# Tests never use this database; they start their own with Testcontainers.
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: asp
+      POSTGRES_USER: asp-user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-asp-password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./compose/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - asp-db:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U asp-user -d asp" ]
+      interval: 5s
+      retries: 10
+    labels:
+      # Start the container, but keep the datasource from application.yml. A Boot service connection
+      # would log in as the postgres superuser, which bypasses row-level security.
+      org.springframework.boot.ignore: "true"
+
+volumes:
+  asp-db:

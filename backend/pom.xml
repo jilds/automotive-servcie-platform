@@ -11,8 +11,8 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.asp</groupId>
-    <artifactId>asp-backend</artifactId>
+    <groupId>com.asp.platform</groupId>
+    <artifactId>backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>ASP backend</name>
     <description>Automotive Service Platform - multi-tenant workshop ERP backend</description>
@@ -21,6 +21,9 @@
         <java.version>26</java.version>
         <spring-modulith.version>2.1.1</spring-modulith.version>
         <springdoc.version>3.1.1</springdoc.version>
+        <archunit.version>1.4.1</archunit.version>
+        <!-- Angular production build, produced by the frontend module (built first by the root reactor) -->
+        <frontend.dist>${project.basedir}/../frontend/dist</frontend.dist>
     </properties>
 
     <dependencyManagement>
@@ -78,6 +81,12 @@
             <artifactId>spring-modulith-starter-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-docker-compose</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
@@ -119,13 +128,59 @@
             <artifactId>spring-modulith-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${frontend.dist}</directory>
+                <targetPath>static</targetPath>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- run from the repository root, like the IDE, so compose.yaml is found -->
+                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <goals><goal>build-info</goal></goals>
+                        <configuration>
+                            <additionalProperties>
+                                <version>${project.version}</version>
+                                <mavenBuildTimestamp>${maven.build.timestamp}</mavenBuildTimestamp>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals><goal>revision</goal></goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                </configuration>
             </plugin>
         </plugins>
     </build>

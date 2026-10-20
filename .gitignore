@@ -1,11 +1,12 @@
-# Java
-backend/target/
+# Build output
+target/
 # Node / Angular
-web/node_modules/
-web/dist/
-web/.angular/
+node_modules/
+dist/
+.angular/
+# Local env files
+.env*
 # IDE
 .idea/
-.vscode/
 *.iml
 .DS_Store

@@ -1,6 +1,9 @@
 spring:
   application:
-    name: asp-backend
+    name: asp
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: ${ASP_DB_URL:jdbc:postgresql://localhost:5432/asp}
     username: ${ASP_DB_APP_USER:asp_app}
@@ -12,18 +15,28 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  mvc:
+    problemdetails:
+      enabled: true
+  # spring-boot-docker-compose picks up compose.yaml from the working directory, which is the
+  # repository root both in the IDE and for spring-boot:run (see backend/pom.xml)
 
-asp:
+app:
   security:
     jwt-secret: ${ASP_JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes!!}
-    issuer: asp
-    token-ttl: 12h
+  identity:
+    token:
+      issuer: asp
+      ttl: 12h
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  info:
+    git:
+      mode: simple
 
 springdoc:
   swagger-ui:
