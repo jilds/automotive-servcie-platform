@@ -83,6 +83,7 @@ button.link { background: none; color: var(--accent); padding: 0; min-height: 0;
 /* Phones: the board stacks into one column so mechanics can scroll their jobs. */
 @media (max-width: 640px) {
   .board { grid-auto-flow: row; grid-auto-columns: auto; }
+  .column { min-height: 0; }
   .table { display: block; overflow-x: auto; }
   .topbar .user { display: none; }
 }
