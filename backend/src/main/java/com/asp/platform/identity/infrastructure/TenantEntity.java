@@ -1,5 +1,6 @@
 package com.asp.platform.identity.infrastructure;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ import jakarta.persistence.Table;
 import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.identity.domain.Tenant;
+import com.asp.platform.identity.domain.WorkshopSettings;
 
 @Entity
 @Table(name = "tenant")
@@ -30,6 +32,12 @@ class TenantEntity {
     @Column(nullable = false)
     private String timezone;
 
+    @Column(name = "default_vat_rate", nullable = false, precision = 5, scale = 2)
+    private BigDecimal defaultVatRate;
+
+    @Column(name = "labour_rate_cents", nullable = false)
+    private long labourRateCents;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -39,14 +47,22 @@ class TenantEntity {
 
     TenantEntity(Tenant tenant) {
         this.id = tenant.id();
-        this.name = tenant.name();
-        this.nif = tenant.nif();
-        this.country = tenant.country();
-        this.timezone = tenant.timezone();
         this.createdAt = tenant.createdAt();
+        apply(tenant);
+    }
+
+    void apply(Tenant tenant) {
+        WorkshopSettings s = tenant.settings();
+        this.name = s.name();
+        this.nif = s.nif();
+        this.country = s.country();
+        this.timezone = s.timezone();
+        this.defaultVatRate = s.defaultVatRate();
+        this.labourRateCents = s.labourRateCents();
     }
 
     Tenant toDomain() {
-        return new Tenant(id, name, nif, country, timezone, createdAt);
+        return new Tenant(id,
+                new WorkshopSettings(name, nif, country, timezone, defaultVatRate, labourRateCents), createdAt);
     }
 }

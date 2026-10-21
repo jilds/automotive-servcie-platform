@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.asp.platform.identity.domain.EmailAlreadyRegisteredException;
 import com.asp.platform.identity.domain.InvalidCredentialsException;
+import com.asp.platform.identity.domain.Team;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.TenantRepository;
 import com.asp.platform.identity.domain.User;
@@ -23,14 +24,16 @@ public class IdentityService {
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final TokenIssuer tokenIssuer;
+    private final AccessDirectoryService access;
     private final Clock clock;
 
     IdentityService(TenantRepository tenants, UserRepository users, PasswordEncoder passwordEncoder,
-            TokenIssuer tokenIssuer, Clock clock) {
+            TokenIssuer tokenIssuer, AccessDirectoryService access, Clock clock) {
         this.tenants = tenants;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.tokenIssuer = tokenIssuer;
+        this.access = access;
         this.clock = clock;
     }
 
@@ -64,6 +67,17 @@ public class IdentityService {
     @Transactional(readOnly = true)
     public List<User> usersOf(UUID tenantId) {
         return users.findByTenant(tenantId);
+    }
+
+    /// Changes a team member's role and whether they may sign in. A deactivated user can no longer log in,
+    /// and tokens already issued to them stop working on their next request; a new role applies to it too.
+    /// The team's rows are locked first, so the "at least one active owner" rule holds under concurrency.
+    @Transactional
+    public User changeAccess(UUID tenantId, UUID actorId, UUID userId, Role role, boolean active) {
+        Team team = new Team(users.lockTeam(tenantId));
+        User changed = users.save(team.changeAccess(actorId, userId, role, active));
+        access.evict(changed.id());
+        return changed;
     }
 
     private void requireUnusedEmail(String email) {

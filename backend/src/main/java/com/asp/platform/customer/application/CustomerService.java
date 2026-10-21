@@ -1,8 +1,12 @@
 package com.asp.platform.customer.application;
 
+import java.time.YearMonth;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -15,20 +19,30 @@ import com.asp.platform.customer.domain.Customer;
 import com.asp.platform.customer.domain.CustomerNotFoundException;
 import com.asp.platform.customer.domain.CustomerRepository;
 import com.asp.platform.customer.domain.DuplicatePlateException;
+import com.asp.platform.customer.domain.FormattedPlate;
+import com.asp.platform.customer.domain.PlateEra;
+import com.asp.platform.customer.domain.PlateFormats;
 import com.asp.platform.customer.domain.Vehicle;
 import com.asp.platform.customer.domain.VehicleDetails;
 import com.asp.platform.customer.domain.VehicleNotFoundException;
+import com.asp.platform.customer.domain.VehicleRegistration;
 import com.asp.platform.customer.domain.VehicleRepository;
+import com.asp.platform.identity.WorkshopDirectory;
 
 @Service
 public class CustomerService implements CustomerManagement {
 
     private final CustomerRepository customers;
     private final VehicleRepository vehicles;
+    private final WorkshopDirectory workshops;
+    private final PlateFormats plates;
 
-    CustomerService(CustomerRepository customers, VehicleRepository vehicles) {
+    CustomerService(CustomerRepository customers, VehicleRepository vehicles, WorkshopDirectory workshops,
+            PlateFormats plates) {
         this.customers = customers;
         this.vehicles = vehicles;
+        this.workshops = workshops;
+        this.plates = plates;
     }
 
     @Transactional
@@ -53,13 +67,42 @@ public class CustomerService implements CustomerManagement {
         return customer(id);
     }
 
+    /// Adds a vehicle to a customer. Without a registration country the vehicle is taken to be registered
+    /// in the workshop's country. The plate must fit that country's format.
     @Transactional
-    public Vehicle addVehicle(UUID customerId, VehicleDetails details, @Nullable Integer mileage) {
+    public Vehicle addVehicle(UUID tenantId, UUID customerId, VehicleDetails details,
+            @Nullable String registrationCountry, @Nullable YearMonth registrationDate, @Nullable Integer mileage) {
         customer(customerId);
+        String country = registrationCountry == null ? workshops.country(tenantId) : registrationCountry;
+        Vehicle vehicle = Vehicle.register(UUID.randomUUID(), customerId, details,
+                new VehicleRegistration(country, registrationDate), mileage, plates);
         if (vehicles.existsByPlate(details.plate())) {
             throw new DuplicatePlateException(details.plate());
         }
-        return vehicles.save(new Vehicle(UUID.randomUUID(), customerId, details, mileage));
+        return vehicles.save(vehicle);
+    }
+
+    /// Corrects a vehicle's details. A new plate must not belong to another vehicle of the workshop.
+    /// Without a registration country the vehicle keeps the one it has.
+    @Transactional
+    public Vehicle updateVehicle(UUID id, VehicleDetails details, @Nullable String registrationCountry,
+            @Nullable YearMonth registrationDate, @Nullable Integer mileage) {
+        Vehicle vehicle = vehicle(id);
+        String country = registrationCountry == null ? vehicle.registration().country() : registrationCountry;
+        if (!vehicle.hasPlate(details.plate()) && vehicles.existsByPlate(details.plate())) {
+            throw new DuplicatePlateException(details.plate());
+        }
+        vehicle.edit(details, new VehicleRegistration(country, registrationDate), mileage, plates);
+        return vehicles.save(vehicle);
+    }
+
+    /// Moves a vehicle to another customer of the workshop; its work orders stay with it.
+    @Transactional
+    public Vehicle transferVehicle(UUID id, UUID newCustomerId) {
+        Vehicle vehicle = vehicle(id);
+        customer(newCustomerId);
+        vehicle.transferTo(newCustomerId);
+        return vehicles.save(vehicle);
     }
 
     @Transactional(readOnly = true)
@@ -81,7 +124,17 @@ public class CustomerService implements CustomerManagement {
     @Override
     @Transactional(readOnly = true)
     public Optional<VehicleSummary> findVehicle(UUID vehicleId) {
-        return vehicles.findById(vehicleId).map(CustomerService::summary);
+        return vehicles.findById(vehicleId).map(this::summary);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, VehicleSummary> findVehicles(Collection<UUID> vehicleIds) {
+        if (vehicleIds.isEmpty()) {
+            return Map.of();
+        }
+        return vehicles.findAllById(vehicleIds).stream()
+                .collect(Collectors.toUnmodifiableMap(Vehicle::id, this::summary));
     }
 
     @Override
@@ -97,9 +150,13 @@ public class CustomerService implements CustomerManagement {
         return customers.findById(id).orElseThrow(CustomerNotFoundException::new);
     }
 
-    private static VehicleSummary summary(Vehicle v) {
+    private VehicleSummary summary(Vehicle v) {
         VehicleDetails d = v.details();
+        FormattedPlate plate = v.formattedPlate(plates);
+        PlateEra era = plate.era();
+        VehicleRegistration registration = v.registration();
         return new VehicleSummary(v.id(), v.customerId(), d.plate(), d.vin(), d.make(), d.model(), d.year(),
-                v.mileage());
+                v.mileage(), plate.display(), era == null ? null : era.name(), registration.country(),
+                registration.date());
     }
 }

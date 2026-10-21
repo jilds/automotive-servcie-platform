@@ -4,7 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 
 interface SpringDataUserRepository extends JpaRepository<UserEntity, UUID> {
 
@@ -13,4 +19,11 @@ interface SpringDataUserRepository extends JpaRepository<UserEntity, UUID> {
     boolean existsByEmail(String email);
 
     List<UserEntity> findByTenantIdOrderByName(UUID tenantId);
+
+    /// `select ... for update` on the whole team; ordered by id so concurrent lockers take locks in the same order.
+    /// Waits at most 3 s for the locks; then the caller gets a `PessimisticLockingFailureException` (409 `try-again`).
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
+    @Query("select u from UserEntity u where u.tenantId = :tenantId order by u.id")
+    List<UserEntity> lockByTenantId(UUID tenantId);
 }

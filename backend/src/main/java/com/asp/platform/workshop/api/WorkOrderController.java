@@ -37,7 +37,8 @@ class WorkOrderController {
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     WorkOrderResponse checkIn(CurrentUser user, @Valid @RequestBody CheckInRequest request) {
         return WorkOrderResponse.of(
-                workOrders.checkIn(request.vehicleId(), request.toDetails(), request.assignedMechanicId()), user);
+                workOrders.checkIn(user.tenantId(), request.vehicleId(), request.toDetails(),
+                        request.assignedMechanicId()), user);
     }
 
     @GetMapping("/work-orders/board")
@@ -69,10 +70,18 @@ class WorkOrderController {
         return WorkOrderResponse.of(workOrders.move(id, request.status(), user), user);
     }
 
+    /// Corrects mileage, fuel, complaint and damage notes until the car is ready.
+    @PutMapping("/work-orders/{id}/check-in")
+    @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
+    WorkOrderResponse editCheckIn(CurrentUser user, @PathVariable UUID id,
+            @Valid @RequestBody CheckInUpdateRequest request) {
+        return WorkOrderResponse.of(workOrders.editCheckIn(id, request.toDetails()), user);
+    }
+
     @PutMapping("/work-orders/{id}/mechanic")
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     WorkOrderResponse assign(CurrentUser user, @PathVariable UUID id, @RequestBody AssignMechanicRequest request) {
-        return WorkOrderResponse.of(workOrders.assign(id, request.mechanicId()), user);
+        return WorkOrderResponse.of(workOrders.assign(user.tenantId(), id, request.mechanicId()), user);
     }
 
     /// Service history of one vehicle, newest first.

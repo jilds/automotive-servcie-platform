@@ -1,0 +1,101 @@
+// Kanban board: one status-coloured column per open status, plate-style work-order cards.
+// Wide screens scroll the board sideways inside its own box; phones stack the columns and keep
+// empty columns to a single compact row (see commit db22e11).
+
+.board {
+  display: grid;
+  grid-auto-columns: minmax(184px, 1fr);
+  grid-auto-flow: column;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 240px;
+  padding: 0.75rem;
+  background: var(--bs-secondary-bg);
+  border: var(--bs-border-width) solid var(--bs-border-color);
+  border-top: 3px solid var(--asp-tone, var(--asp-border-strong));
+  border-radius: $border-radius-lg;
+  scroll-snap-align: start;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+  padding: 0.25rem 0.25rem 0;
+  font-size: 0.875rem;
+  font-stretch: 100%;
+  letter-spacing: 0;
+
+  &::before {
+    content: '';
+    flex: none;
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    background: var(--asp-tone);
+  }
+}
+
+.column-empty {
+  margin: 0;
+  padding: 1rem 0.5rem;
+  border: 1px dashed var(--asp-border-strong);
+  border-radius: $border-radius;
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.wo-card {
+  --bs-card-spacer-y: 0.75rem;
+  --bs-card-spacer-x: 0.75rem;
+  box-shadow: $box-shadow-sm;
+  text-decoration: none;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+
+  &:hover {
+    border-color: var(--asp-border-strong);
+    box-shadow: $box-shadow;
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .board {
+    grid-auto-columns: auto;
+    grid-auto-flow: row;
+    overflow-x: visible;
+  }
+
+  .column {
+    min-height: 0;
+  }
+
+  .column:has(.column-empty) {
+    flex-flow: row wrap;
+    align-items: center;
+
+    .column-header {
+      flex: 1;
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+  .column-empty {
+    padding: 0;
+    border: 0;
+    font-size: 0.75rem;
+  }
+}

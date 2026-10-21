@@ -53,6 +53,14 @@ public abstract class ApiTestSupport {
                 .formatted(customerId, plate)), token).andExpect(status().isCreated()));
     }
 
+    /// Invites a team member with password `password123` and returns their user id.
+    protected String invite(String ownerToken, String role, String email) throws Exception {
+        return idOf(call(post("/api/v1/users").content("""
+                {"name":"%s","email":"%s","role":"%s","temporaryPassword":"password123"}"""
+                .formatted(role.toLowerCase(java.util.Locale.ROOT), email, role)), ownerToken)
+                .andExpect(status().isCreated()));
+    }
+
     protected ResultActions call(MockHttpServletRequestBuilder request, String token) throws Exception {
         return mvc.perform(request.header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON));
     }

@@ -10,9 +10,15 @@ public interface UserRepository {
 
     User save(User user);
 
+    Optional<User> findById(UUID id);
+
     Optional<User> findByEmail(String normalizedEmail);
 
     boolean existsByEmail(String normalizedEmail);
 
     List<User> findByTenant(UUID tenantId);
+
+    /// Same as [#findByTenant] but locks the rows until the transaction ends, so two owners changing roles
+    /// at the same time cannot both remove the last active owner.
+    List<User> lockTeam(UUID tenantId);
 }

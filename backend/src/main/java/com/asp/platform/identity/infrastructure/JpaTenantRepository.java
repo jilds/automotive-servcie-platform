@@ -1,5 +1,8 @@
 package com.asp.platform.identity.infrastructure;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.stereotype.Repository;
 
 import com.asp.platform.identity.domain.Tenant;
@@ -16,6 +19,17 @@ class JpaTenantRepository implements TenantRepository {
 
     @Override
     public Tenant save(Tenant tenant) {
-        return jpa.save(new TenantEntity(tenant)).toDomain();
+        TenantEntity entity = jpa.findById(tenant.id())
+                .map(existing -> {
+                    existing.apply(tenant);
+                    return existing;
+                })
+                .orElseGet(() -> jpa.save(new TenantEntity(tenant)));
+        return entity.toDomain();
+    }
+
+    @Override
+    public Optional<Tenant> findById(UUID id) {
+        return jpa.findById(id).map(TenantEntity::toDomain);
     }
 }

@@ -1,0 +1,121 @@
+// Framed data table that stacks into one card per row on phones (< 576px).
+//   <div class="card table-stack mb-4"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+// Cells show their [data-label] as a caption, .cell-title becomes the card title, .cell-actions the
+// card footer and .cell-full (empty state) spans the card. Empty cells are hidden on phones.
+
+.table-stack {
+  overflow: hidden;
+  box-shadow: $box-shadow-sm;
+
+  .table > tbody > tr:last-child > * {
+    border-bottom-width: 0;
+  }
+
+  .cell-actions {
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .cell-title {
+    font-weight: 600;
+  }
+
+  .row-muted {
+    --bs-table-color: var(--bs-secondary-color);
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .table-stack {
+    overflow: visible;
+    background: none;
+    border: 0;
+    box-shadow: none;
+
+    .table {
+      --bs-table-bg: transparent;
+      --bs-table-hover-bg: transparent;
+    }
+
+    .table,
+    tbody,
+    tfoot,
+    tr,
+    td {
+      display: block;
+      width: 100%;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      margin-bottom: 0.75rem;
+      padding: 0.5rem 0;
+      border: var(--bs-border-width) solid var(--bs-border-color);
+      border-radius: $border-radius-lg;
+      background: var(--asp-surface);
+      box-shadow: $box-shadow-sm;
+    }
+
+    .table > :not(caption) > * > td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      border: 0;
+      text-align: end;
+    }
+
+    td[data-label]::before {
+      content: attr(data-label);
+      color: var(--bs-secondary-color);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: start;
+    }
+
+    td:empty {
+      display: none !important;
+    }
+
+    .table > :not(caption) > * > .cell-title {
+      justify-content: flex-start;
+      text-align: start;
+      font-size: 1rem;
+    }
+
+    .table > :not(caption) > * > .cell-actions {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: var(--bs-border-width) solid var(--bs-border-color);
+      white-space: normal;
+    }
+
+    .table > :not(caption) > * > .cell-full {
+      justify-content: center;
+      text-align: center;
+    }
+
+    tfoot {
+      padding: 0.5rem 0;
+      border: var(--bs-border-width) solid var(--bs-border-color);
+      border-radius: $border-radius-lg;
+      background: var(--bs-tertiary-bg);
+    }
+
+    tfoot tr {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .table > tfoot > tr > td {
+      width: auto;
+      background: none;
+    }
+  }
+}

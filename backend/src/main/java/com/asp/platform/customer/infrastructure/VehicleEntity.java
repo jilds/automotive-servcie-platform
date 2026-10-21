@@ -1,6 +1,8 @@
 package com.asp.platform.customer.infrastructure;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -14,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.customer.domain.Vehicle;
 import com.asp.platform.customer.domain.VehicleDetails;
+import com.asp.platform.customer.domain.VehicleRegistration;
 
 /// `tenant_id` is filled by the database from the connection's workshop (see [CustomerEntity]).
 @Entity
@@ -23,7 +26,7 @@ class VehicleEntity {
     @Id
     private UUID id;
 
-    @Column(name = "customer_id", nullable = false, updatable = false)
+    @Column(name = "customer_id", nullable = false)
     private UUID customerId;
 
     @Column(nullable = false)
@@ -41,6 +44,13 @@ class VehicleEntity {
 
     private @Nullable Integer mileage;
 
+    @Column(name = "registration_country", nullable = false, length = 2)
+    private String registrationCountry;
+
+    /// First day of the registration month; the day carries no meaning.
+    @Column(name = "registration_date")
+    private @Nullable LocalDate registrationDate;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private @Nullable Instant createdAt;
@@ -55,12 +65,12 @@ class VehicleEntity {
 
     VehicleEntity(Vehicle vehicle) {
         this.id = vehicle.id();
-        this.customerId = vehicle.customerId();
         apply(vehicle);
     }
 
     void apply(Vehicle vehicle) {
         VehicleDetails d = vehicle.details();
+        this.customerId = vehicle.customerId();
         this.plate = d.plate();
         this.vin = d.vin();
         this.make = d.make();
@@ -68,9 +78,15 @@ class VehicleEntity {
         this.year = d.year();
         this.fuelType = d.fuelType();
         this.mileage = vehicle.mileage();
+        VehicleRegistration registration = vehicle.registration();
+        this.registrationCountry = registration.country();
+        YearMonth month = registration.date();
+        this.registrationDate = month == null ? null : month.atDay(1);
     }
 
     Vehicle toDomain() {
-        return new Vehicle(id, customerId, new VehicleDetails(plate, vin, make, model, year, fuelType), mileage);
+        LocalDate date = registrationDate;
+        return new Vehicle(id, customerId, new VehicleDetails(plate, vin, make, model, year, fuelType),
+                new VehicleRegistration(registrationCountry, date == null ? null : YearMonth.from(date)), mileage);
     }
 }

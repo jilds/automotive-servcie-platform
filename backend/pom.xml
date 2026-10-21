@@ -87,6 +87,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- Version managed by Spring Boot; short-lived cache of each signed-in user's access -->
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>

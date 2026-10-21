@@ -1,0 +1,179 @@
+// Small global refinements on top of Bootstrap: headings, focus, icons, buttons and touch targets.
+
+body {
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+// A nested colour mode (the graphite chrome is always data-bs-theme="dark") redefines Bootstrap's
+// variables but not the inherited text colour, so set it again.
+[data-bs-theme]:not(html) {
+  color: var(--bs-body-color);
+}
+
+h1,
+h2,
+h3,
+.h1,
+.h2,
+.h3 {
+  font-stretch: 87.5%;
+  letter-spacing: -0.01em;
+}
+
+a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+::selection {
+  background: $primary;
+  color: $component-active-color;
+}
+
+// Visible keyboard focus everywhere: a 2px amber-ink outline (amber on graphite chrome).
+:focus-visible,
+.btn:focus-visible,
+.btn-close:focus-visible,
+.nav-link:focus-visible,
+.list-group-item-action:focus-visible,
+.form-check-input:focus-visible {
+  outline: 2px solid var(--asp-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+// Inline SVG icon (<app-icon>). 1.25em unless [size] is set.
+.icon {
+  display: inline-flex;
+  flex: none;
+  width: var(--icon-size, 1.25em);
+  height: var(--icon-size, 1.25em);
+  vertical-align: -0.25em;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Buttons centre an icon and a label; .btn-icon is a square icon-only button.
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+// Secondary actions: surface button with a strong border, following the colour mode.
+.btn-outline-secondary {
+  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-bg: var(--asp-surface);
+  --bs-btn-border-color: var(--asp-border-strong);
+  --bs-btn-hover-color: var(--bs-emphasis-color);
+  --bs-btn-hover-bg: var(--bs-tertiary-bg);
+  --bs-btn-hover-border-color: var(--asp-border-strong);
+  --bs-btn-active-color: var(--bs-emphasis-color);
+  --bs-btn-active-bg: var(--bs-secondary-bg);
+  --bs-btn-active-border-color: var(--asp-border-strong);
+  --bs-btn-disabled-color: var(--bs-body-color);
+  --bs-btn-disabled-bg: var(--asp-surface);
+  --bs-btn-disabled-border-color: var(--asp-border-strong);
+}
+
+// Quiet icon buttons (menu, sign out) and quiet text actions.
+.btn-ghost {
+  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: var(--bs-emphasis-color);
+  --bs-btn-hover-bg: var(--bs-tertiary-bg);
+  --bs-btn-hover-border-color: transparent;
+  --bs-btn-active-color: var(--bs-emphasis-color);
+  --bs-btn-active-bg: var(--bs-secondary-bg);
+  --bs-btn-active-border-color: transparent;
+  --bs-btn-disabled-color: var(--bs-secondary-color);
+  --bs-btn-disabled-border-color: transparent;
+}
+
+// Touch screens: controls at least 44px, small buttons at least 40px.
+@media (pointer: coarse) {
+  .btn,
+  .form-control,
+  .form-select {
+    min-height: 2.75rem;
+  }
+
+  .btn-sm,
+  .form-select-sm {
+    min-height: 2.5rem;
+  }
+
+  .btn-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+.form-check {
+  min-height: 2.5rem;
+  padding-top: 0.5rem;
+}
+
+// Skeleton card placeholder (inside .placeholder-glow).
+.placeholder-block {
+  display: block;
+  min-height: 5.5rem;
+  border-radius: $border-radius-lg;
+}
+
+// KPI value on the dashboard.
+.stat-value {
+  font-size: 2.25rem;
+  font-stretch: 87.5%;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.table {
+  font-variant-numeric: tabular-nums;
+
+  > thead th {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+}
+
+// Card padding tightens on phones.
+@include media-breakpoint-down(sm) {
+  .card {
+    --bs-card-spacer-y: 1rem;
+    --bs-card-spacer-x: 1rem;
+  }
+}
+
+// Bootstrap's transitions honour $enable-reduced-motion; this also stops the app's own animations.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

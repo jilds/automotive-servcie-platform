@@ -70,7 +70,9 @@ describe('I18nService', () => {
 
   it('has no empty translations', () => {
     for (const dict of [en, ptPT, ptBR] as Record<string, string>[]) {
-      expect(Object.keys(dict).sort()).toEqual(Object.keys(en).sort());
+      // Portuguese adds the CLDR plural form `.many`, which English does not use.
+      const keys = Object.keys(dict).filter((k) => !(k.endsWith('.many') && `${k.slice(0, -'.many'.length)}.other` in en));
+      expect(keys.sort()).toEqual(Object.keys(en).sort());
       expect(Object.values(dict).filter((v) => !v.trim())).toEqual([]);
     }
   });

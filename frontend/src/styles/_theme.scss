@@ -1,0 +1,230 @@
+// Bootstrap Sass variables for the ASP brand: graphite chrome, workshop-amber accent, Archivo.
+// Loaded before Bootstrap's own variables, so these win over its !default values.
+// Light values first; the *-dark variables feed Bootstrap's [data-bs-theme="dark"] colour mode.
+// Every text colour here meets WCAG AA (4.5:1) on the page, surface and subtle backgrounds of its mode.
+
+// ---------- Brand and semantic colours ----------
+$primary: #f2b200; // amber: filled buttons, checked controls, active marks (never text on light surfaces)
+$secondary: #535b66;
+$success: #1a7f37;
+$info: #1d5fbf;
+$warning: #f2b84b;
+$danger: #b42318;
+
+// No "light"/"dark" theme colours: the colour modes cover that, and it keeps the CSS small.
+$theme-colors: (
+  'primary': $primary,
+  'secondary': $secondary,
+  'success': $success,
+  'info': $info,
+  'warning': $warning,
+  'danger': $danger,
+);
+
+$color-contrast-dark: #1b1400; // text on amber
+$min-contrast-ratio: 4.5;
+$component-active-bg: $primary;
+$component-active-color: #1b1400;
+
+// Text on tinted backgrounds (alerts, badges, toasts) and the tints themselves.
+$primary-text-emphasis: #7a5100;
+$primary-bg-subtle: #fff4cc;
+$primary-border-subtle: #f0d27a;
+$secondary-text-emphasis: #3b4149;
+$secondary-bg-subtle: #eceef1;
+$secondary-border-subtle: #d9dde3;
+$success-text-emphasis: #16702f;
+$success-bg-subtle: #e3f3e7;
+$success-border-subtle: #b3dcbf;
+$info-text-emphasis: #1d5fbf;
+$info-bg-subtle: #e6eefb;
+$info-border-subtle: #b6cbef;
+$warning-text-emphasis: #8a5300;
+$warning-bg-subtle: #fff1d0;
+$warning-border-subtle: #f0d18a;
+$danger-text-emphasis: #b42318;
+$danger-bg-subtle: #fdecea;
+$danger-border-subtle: #f3b9b3;
+
+$primary-text-emphasis-dark: #ffc933;
+$primary-bg-subtle-dark: #3a2f0c;
+$primary-border-subtle-dark: #6b5414;
+$secondary-text-emphasis-dark: #c3c9d1;
+$secondary-bg-subtle-dark: #2a2e34;
+$secondary-border-subtle-dark: #3d434b;
+$success-text-emphasis-dark: #5fcb7d;
+$success-bg-subtle-dark: #17301f;
+$success-border-subtle-dark: #2a5a37;
+$info-text-emphasis-dark: #7fb0f5;
+$info-bg-subtle-dark: #15294a;
+$info-border-subtle-dark: #2a4a7d;
+$warning-text-emphasis-dark: #f2b84b;
+$warning-bg-subtle-dark: #352a10;
+$warning-border-subtle-dark: #6a5220;
+$danger-text-emphasis-dark: #ff8078;
+$danger-bg-subtle-dark: #3b1b19;
+$danger-border-subtle-dark: #7a302b;
+
+// ---------- Body, borders, links ----------
+$body-bg: #f3f4f6;
+$body-color: #16191d;
+$body-emphasis-color: #0b0d10;
+$body-secondary-color: #535b66; // muted text
+$body-secondary-bg: #e9ecef; // sunken wells (board columns, progress track)
+$body-tertiary-color: #6b7380;
+$body-tertiary-bg: #f7f8fa; // table head, modal footer, hover
+
+$body-bg-dark: #17191c;
+$body-color-dark: #eceef1;
+$body-emphasis-color-dark: #ffffff;
+$body-secondary-color-dark: #a3abb6;
+$body-secondary-bg-dark: #1b1d21;
+$body-tertiary-color-dark: #7d8590;
+$body-tertiary-bg-dark: #25292e;
+
+$border-color: #d9dde3;
+$border-color-translucent: rgba(30, 36, 44, 0.14);
+$border-color-dark: #33383f;
+$border-color-translucent-dark: rgba(255, 255, 255, 0.12);
+
+$link-color: #7a5100;
+$link-hover-color: #5c3d00;
+$link-color-dark: #ffc933;
+$link-hover-color-dark: #ffd966;
+
+$form-valid-color: $success;
+$form-valid-border-color: $success;
+$form-invalid-color: $danger;
+$form-invalid-border-color: $danger;
+$form-valid-color-dark: #5fcb7d;
+$form-valid-border-color-dark: #5fcb7d;
+$form-invalid-color-dark: #ff8078;
+$form-invalid-border-color-dark: #ff8078;
+
+// ---------- Type ----------
+$font-family-sans-serif: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+$headings-font-weight: 650;
+$headings-line-height: 1.2;
+$h1-font-size: 1.75rem;
+$h2-font-size: 1.125rem;
+$h3-font-size: 1rem;
+$h4-font-size: 1rem;
+$h5-font-size: 1rem;
+$h6-font-size: 0.875rem;
+$small-font-size: 0.875em;
+
+// ---------- Shape and elevation ----------
+$border-radius: 0.375rem; // 6px: buttons, inputs
+$border-radius-sm: 0.25rem; // 4px: plates, small marks
+$border-radius-lg: 0.625rem; // 10px: cards, tables
+$border-radius-xl: 1rem; // 16px: dialogs
+$box-shadow-sm: 0 1px 2px rgba(30, 36, 44, 0.08);
+$box-shadow: 0 1px 2px rgba(30, 36, 44, 0.06), 0 4px 14px rgba(30, 36, 44, 0.08);
+$box-shadow-lg: 0 2px 6px rgba(30, 36, 44, 0.08), 0 16px 40px rgba(30, 36, 44, 0.18);
+
+// Sidebar becomes a drawer below 1024px (offcanvas-lg).
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+  xxl: 1400px,
+);
+$gutters: (
+  0: 0,
+  2: 0.5rem,
+  3: 1rem,
+  4: 1.5rem,
+);
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1200px,
+  xxl: 1360px,
+);
+
+// ---------- Controls: 40px tall ----------
+$input-btn-padding-y: 0.4375rem;
+$input-bg: var(--asp-surface);
+$input-border-color: var(--asp-border-strong);
+$input-focus-border-color: var(--asp-focus);
+$input-focus-box-shadow: 0 0 0 0.2rem var(--asp-focus-ring);
+$input-placeholder-color: var(--bs-secondary-color);
+$form-check-input-border: var(--bs-border-width) solid var(--asp-border-strong);
+$form-check-input-focus-border: var(--asp-focus);
+$form-label-font-weight: 500;
+$form-label-margin-bottom: 0.25rem;
+$form-text-margin-top: 0.25rem;
+
+$btn-font-size: 0.875rem;
+$btn-font-weight: 600;
+$btn-padding-y: 0.53125rem;
+$btn-padding-x: 1rem;
+$btn-padding-y-sm: 0.375rem;
+$btn-padding-x-sm: 0.75rem;
+$btn-font-size-sm: 0.8125rem;
+$btn-padding-y-lg: 0.625rem;
+$btn-font-size-lg: 1rem;
+$btn-close-padding-x: 0.75em; // 40px hit area
+$btn-close-padding-y: 0.75em;
+
+// ---------- Components ----------
+$card-bg: var(--asp-surface);
+$card-border-color: var(--bs-border-color);
+$card-border-radius: $border-radius-lg;
+$card-spacer-y: 1.5rem;
+$card-spacer-x: 1.5rem;
+$card-cap-bg: transparent;
+
+$table-color: var(--bs-body-color);
+$table-bg: transparent;
+$table-border-color: var(--bs-border-color);
+$table-cell-padding-y: 0.75rem;
+$table-cell-padding-x: 1rem;
+$table-th-font-weight: 600;
+$table-hover-bg-factor: 0.035;
+
+$badge-font-size: 0.75em;
+$badge-font-weight: 600;
+$badge-padding-y: 0.3em;
+$badge-padding-x: 0.65em;
+$badge-border-radius: 50rem;
+
+$alert-padding-y: 0.75rem;
+$alert-padding-x: 1rem;
+
+$nav-link-font-weight: 500;
+$nav-link-color: var(--bs-secondary-color);
+$nav-link-hover-color: var(--bs-emphasis-color);
+$nav-underline-link-active-color: var(--bs-emphasis-color);
+
+$list-group-bg: var(--asp-surface);
+$list-group-item-padding-y: 0.625rem;
+
+$progress-height: 0.5rem;
+$progress-bg: var(--bs-secondary-bg);
+$progress-border-radius: 50rem;
+
+$toast-max-width: 420px;
+$toast-font-size: 0.875rem;
+$toast-background-color: var(--asp-surface);
+$toast-border-color: var(--bs-border-color);
+$toast-box-shadow: $box-shadow-lg;
+
+$modal-md: 560px;
+$modal-content-bg: var(--asp-surface);
+$modal-content-border-color: var(--bs-border-color);
+$modal-content-border-radius: $border-radius-xl;
+$modal-header-padding: 1rem 1.5rem;
+$modal-inner-padding: 1.5rem;
+$modal-footer-bg: var(--bs-tertiary-bg);
+$modal-backdrop-opacity: 0.5;
+
+$offcanvas-horizontal-width: min(300px, 86vw);
+$offcanvas-bg-color: var(--asp-chrome-bg);
+$offcanvas-padding-x: 0.75rem;
+$offcanvas-padding-y: 1rem;
+$offcanvas-border-width: 0;
+$offcanvas-box-shadow: $box-shadow-lg;

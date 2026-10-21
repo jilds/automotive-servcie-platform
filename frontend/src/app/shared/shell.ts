@@ -1,33 +1,90 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../core/auth/auth.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { Icon } from './icon';
 import { LanguageSelect } from './language-select';
+import { ThemeToggle } from './theme-toggle';
 
+/**
+ * Signed-in layout: graphite sidebar on desktop; below 1024px a top bar and the same sidebar as a Bootstrap
+ * offcanvas-lg drawer, opened by the menuOpen signal (no Bootstrap JS). The chrome is always dark (data-bs-theme).
+ */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageSelect],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageSelect, ThemeToggle, Icon],
+  host: { '(document:keydown.escape)': 'menuOpen.set(false)' },
   template: `
-    <header class="topbar">
-      <a routerLink="/board" class="brand">ASP</a>
-      <nav>
-        <a routerLink="/board" routerLinkActive="active">{{ (auth.hasRole('MECHANIC') ? 'nav.myJobs' : 'nav.board') | t }}</a>
-        @if (!auth.hasRole('MECHANIC')) {
-          <a routerLink="/check-in" routerLinkActive="active">{{ 'nav.checkIn' | t }}</a>
-          <a routerLink="/customers" routerLinkActive="active">{{ 'nav.customers' | t }}</a>
-        }
-      </nav>
-      <span class="spacer"></span>
-      <app-language-select />
-      <span class="muted user">{{ auth.user()?.name }}</span>
-      <button class="link" (click)="auth.logout()">{{ 'nav.signOut' | t }}</button>
-    </header>
-    <main class="content">
-      <router-outlet />
-    </main>
+    <div class="app-layout">
+      <header class="app-topbar sticky-top align-items-center gap-2 px-2" data-bs-theme="dark">
+        <button type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="'nav.openMenu' | t" [attr.aria-expanded]="menuOpen()" aria-controls="sidebar" (click)="menuOpen.set(true)">
+          <app-icon name="menu" />
+        </button>
+        <a routerLink="/board" class="app-brand">
+          <span class="app-brand-mark"><app-icon name="wrench" [size]="18" /></span>
+          <span class="app-brand-name">ASP</span>
+        </a>
+      </header>
+
+      @if (menuOpen()) {
+        <div class="offcanvas-backdrop fade show" (click)="menuOpen.set(false)"></div>
+      }
+
+      <div class="app-sidebar" data-bs-theme="dark">
+        <aside id="sidebar" class="offcanvas-lg offcanvas-start h-100" [class.show]="menuOpen()">
+          <div class="offcanvas-body d-flex flex-column gap-3 h-100 p-3">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <a routerLink="/board" class="app-brand px-2 py-1" (click)="menuOpen.set(false)">
+                <span class="app-brand-mark"><app-icon name="wrench" [size]="20" /></span>
+                <span class="app-brand-name">ASP <small>{{ 'app.tagline' | t }}</small></span>
+              </a>
+              <button type="button" class="btn-close" [attr.aria-label]="'nav.closeMenu' | t" (click)="menuOpen.set(false)"></button>
+            </div>
+
+            <nav class="nav nav-pills flex-column gap-1 app-nav" [attr.aria-label]="'nav.main' | t" (click)="menuOpen.set(false)">
+              <a class="nav-link" routerLink="/board" routerLinkActive="active" ariaCurrentWhenActive="page">
+                <app-icon name="board" />{{ (auth.hasRole('MECHANIC') ? 'nav.myJobs' : 'nav.board') | t }}
+              </a>
+              @if (!auth.hasRole('MECHANIC')) {
+                <a class="nav-link" routerLink="/check-in" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="check-in" />{{ 'nav.checkIn' | t }}</a>
+                <a class="nav-link" routerLink="/customers" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="users" />{{ 'nav.customers' | t }}</a>
+              }
+              @if (auth.hasRole('OWNER')) {
+                <a class="nav-link" routerLink="/backoffice" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="briefcase" />{{ 'nav.backoffice' | t }}</a>
+              }
+            </nav>
+
+            <div class="vstack gap-3 flex-grow-0 mt-auto pt-3 border-top">
+              <div class="d-flex flex-wrap align-items-center gap-2 px-2">
+                <app-language-select class="flex-grow-1" />
+                <app-theme-toggle />
+              </div>
+              @if (auth.user(); as u) {
+                <div class="d-flex align-items-center gap-3 p-2">
+                  <span class="app-avatar"><app-icon name="user" [size]="18" /></span>
+                  <span class="d-flex flex-column flex-grow-1 overflow-hidden lh-sm">
+                    <span class="fw-semibold small text-truncate">{{ u.name }}</span>
+                    <span class="text-body-secondary small">{{ $any('role.' + u.role) | t }}</span>
+                  </span>
+                  <button type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="'nav.signOut' | t" [title]="'nav.signOut' | t" (click)="auth.logout()">
+                    <app-icon name="log-out" />
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <main class="app-content w-100 mx-auto">
+        <router-outlet />
+      </main>
+    </div>
   `,
 })
 export class Shell {
   protected readonly auth = inject(AuthService);
+  /** Drawer state on phones; view-only. */
+  protected readonly menuOpen = signal(false);
 }

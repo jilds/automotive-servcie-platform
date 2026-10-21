@@ -32,6 +32,11 @@ export const routes: Routes = [
       },
       { path: 'vehicles/:id', loadComponent: () => import('./workshop/vehicle-history').then((m) => m.VehicleHistory) },
       { path: 'work-orders/:id', loadComponent: () => import('./workshop/work-order-detail').then((m) => m.WorkOrderDetail) },
+      {
+        path: 'backoffice',
+        canActivate: [roleGuard('OWNER')],
+        loadChildren: () => import('./backoffice/backoffice.routes').then((m) => m.BACKOFFICE_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

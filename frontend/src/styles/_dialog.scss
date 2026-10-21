@@ -1,0 +1,31 @@
+// Bootstrap modal markup on a native <dialog class="modal">: showModal() gives the top layer, focus
+// handling, Escape to close and ::backdrop, so Bootstrap's modal JavaScript is not needed.
+//   <dialog class="modal"><div class="modal-dialog"><div class="modal-content">…</div></div></dialog>
+
+dialog.modal {
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bs-body-color);
+
+  &[open] {
+    display: block;
+  }
+
+  &[open] .modal-dialog {
+    animation: modal-in 0.2s ease-out;
+  }
+
+  &::backdrop {
+    background: rgba(16, 18, 22, $modal-backdrop-opacity);
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

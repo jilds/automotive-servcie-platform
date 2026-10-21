@@ -30,6 +30,11 @@ class JpaUserRepository implements UserRepository {
     }
 
     @Override
+    public Optional<User> findById(UUID id) {
+        return jpa.findById(id).map(UserEntity::toDomain);
+    }
+
+    @Override
     public Optional<User> findByEmail(String normalizedEmail) {
         return jpa.findByEmail(normalizedEmail).map(UserEntity::toDomain);
     }
@@ -42,5 +47,10 @@ class JpaUserRepository implements UserRepository {
     @Override
     public List<User> findByTenant(UUID tenantId) {
         return jpa.findByTenantIdOrderByName(tenantId).stream().map(UserEntity::toDomain).toList();
+    }
+
+    @Override
+    public List<User> lockTeam(UUID tenantId) {
+        return jpa.lockByTenantId(tenantId).stream().map(UserEntity::toDomain).toList();
     }
 }

@@ -1,6 +1,7 @@
 package com.asp.platform.workshop.api;
 
 import java.time.Instant;
+import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,16 +11,25 @@ import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.workshop.application.Board;
 import com.asp.platform.workshop.application.BoardCard;
+import com.asp.platform.workshop.application.VehiclePlate;
 import com.asp.platform.workshop.domain.WorkOrderStatus;
 
 record BoardResponse(Map<WorkOrderStatus, List<Card>> columns) {
 
-    record Card(UUID id, int number, @Nullable String plate, String vehicle, @Nullable UUID assignedMechanicId,
-            Instant statusChangedAt) {
+    /// The plate fields are null when the vehicle is not found.
+    record Card(UUID id, int number, @Nullable String plate, @Nullable String plateDisplay,
+            @Nullable String plateEra, @Nullable String registrationCountry, @Nullable YearMonth registrationDate,
+            String vehicle, @Nullable UUID assignedMechanicId, Instant statusChangedAt) {
 
         static Card of(BoardCard card) {
-            return new Card(card.id(), card.number(), card.plate(), card.vehicle(), card.assignedMechanicId(),
-                    card.statusChangedAt());
+            VehiclePlate plate = card.plate();
+            return new Card(card.id(), card.number(),
+                    plate == null ? null : plate.plate(),
+                    plate == null ? null : plate.display(),
+                    plate == null ? null : plate.era(),
+                    plate == null ? null : plate.registrationCountry(),
+                    plate == null ? null : plate.registrationDate(),
+                    card.vehicle(), card.assignedMechanicId(), card.statusChangedAt());
         }
     }
 

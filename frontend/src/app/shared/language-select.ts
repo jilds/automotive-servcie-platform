@@ -8,7 +8,7 @@ import { TranslatePipe } from '../core/i18n/translate.pipe';
   selector: 'app-language-select',
   imports: [TranslatePipe],
   template: `
-    <select class="lang" [attr.aria-label]="'language.label' | t" [value]="i18n.lang()" (change)="i18n.use($any($event.target).value)">
+    <select class="form-select form-select-sm" [attr.aria-label]="'language.label' | t" [value]="i18n.lang()" (change)="i18n.use($any($event.target).value)">
       @for (l of languages; track l.code) {
         <option [value]="l.code" [selected]="l.code === i18n.lang()">{{ l.label }}</option>
       }

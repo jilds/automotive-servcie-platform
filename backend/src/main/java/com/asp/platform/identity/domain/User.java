@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import com.asp.platform.shared.Role;
 
-/// Someone who signs in to a workshop.
+/// Someone who signs in to a workshop. Inactive users cannot log in.
 public record User(UUID id, UUID tenantId, String name, String email, String passwordHash, Role role, boolean active,
         Instant createdAt) {
 
@@ -17,5 +17,13 @@ public record User(UUID id, UUID tenantId, String name, String email, String pas
 
     public static String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    public User withAccess(Role newRole, boolean nowActive) {
+        return new User(id, tenantId, name, email, passwordHash, newRole, nowActive, createdAt);
+    }
+
+    public boolean isActiveOwner() {
+        return active && role == Role.OWNER;
     }
 }

@@ -1,0 +1,74 @@
+// Bootstrap utilities the app uses. Bootstrap generates every utility in every breakpoint by default
+// (~150 kB); keeping only these holds the initial bundle under its budget.
+// To use another utility, add its key from bootstrap/scss/_utilities.scss here (true = responsive classes too).
+
+$asp-utilities: (
+  'align': false,
+  'float': false,
+  'overflow': false,
+  'overflow-x': false,
+  'display': false,
+  'shadow': false,
+  'position': false,
+  'bottom': false,
+  'end': false,
+  'border': false,
+  'border-top': false,
+  'border-bottom': false,
+  'subtle-border-color': false,
+  'width': false,
+  'height': false,
+  'flex-direction': false,
+  'flex-grow': false,
+  'flex-shrink': false,
+  'flex-wrap': false,
+  'justify-content': false,
+  'align-items': false,
+  'margin-x': false,
+  'margin-top': false,
+  'margin-end': false,
+  'margin-bottom': false,
+  'margin-start': false,
+  'padding': false,
+  'padding-x': false,
+  'padding-y': false,
+  'padding-top': false,
+  'padding-bottom': false,
+  'gap': false,
+  'row-gap': false,
+  'column-gap': false,
+  'font-size': false,
+  'font-weight': false,
+  'line-height': false,
+  'text-align': false,
+  'text-decoration': false,
+  'white-space': false,
+  'word-wrap': false,
+  'color': false,
+  'text-color': false,
+  'background-color': false,
+  'subtle-background-color': false,
+  'rounded': false,
+);
+
+$asp-kept-utilities: ();
+@each $key, $responsive in $asp-utilities {
+  $utility: map-get($utilities, $key);
+  @if $utility == null {
+    @error "Unknown Bootstrap utility '#{$key}'";
+  }
+  $asp-kept-utilities: map-merge($asp-kept-utilities, ($key: map-merge($utility, (responsive: $responsive))));
+}
+$utilities: $asp-kept-utilities;
+
+// Plain text and background colours come from the colour mode (body tones); tinted pairs use the
+// *-emphasis / *-subtle utilities instead, which follow light and dark automatically.
+$asp-utility-values: (
+  'color': ('body', 'body-secondary', 'body-tertiary', 'body-emphasis', 'reset'),
+  'background-color': ('body', 'body-secondary', 'body-tertiary', 'transparent'),
+);
+@each $key, $names in $asp-utility-values {
+  $utility: map-get($utilities, $key);
+  $values: map-get-multiple(map-get($utility, 'values'), $names);
+  $utilities: map-merge($utilities, ($key: map-merge($utility, ('values': $values))));
+}

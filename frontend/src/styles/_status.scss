@@ -1,0 +1,62 @@
+// One colour per WorkOrderStatus. [data-status] sets --asp-tone (text, bars, column accent) and
+// --asp-tone-bg (badge tint) on any element: status badges, board columns, dashboard bars.
+
+[data-status='DIAGNOSTICS'] {
+  --asp-tone: var(--bs-info-text-emphasis);
+  --asp-tone-bg: var(--bs-info-bg-subtle);
+}
+
+[data-status='AWAITING_APPROVAL'] {
+  --asp-tone: var(--bs-warning-text-emphasis);
+  --asp-tone-bg: var(--bs-warning-bg-subtle);
+}
+
+[data-status='AWAITING_PARTS'] {
+  --asp-tone: var(--asp-violet);
+  --asp-tone-bg: var(--asp-violet-bg);
+}
+
+[data-status='IN_PROGRESS'] {
+  --asp-tone: var(--asp-teal);
+  --asp-tone-bg: var(--asp-teal-bg);
+}
+
+[data-status='READY'] {
+  --asp-tone: var(--bs-success-text-emphasis);
+  --asp-tone-bg: var(--bs-success-bg-subtle);
+}
+
+[data-status='DELIVERED'] {
+  --asp-tone: var(--bs-secondary-color);
+  --asp-tone-bg: var(--bs-secondary-bg-subtle);
+}
+
+[data-status='CANCELLED'] {
+  --asp-tone: var(--bs-danger-text-emphasis);
+  --asp-tone-bg: var(--bs-danger-bg-subtle);
+}
+
+// <span class="badge status-badge" [attr.data-status]="w.status">…</span>: tinted pill with a dot.
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  background: var(--asp-tone-bg, var(--bs-secondary-bg-subtle));
+  color: var(--asp-tone, var(--bs-secondary-color));
+
+  &::before {
+    content: '';
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &[data-status='CANCELLED'] {
+    text-decoration: line-through;
+  }
+}
+
+[data-status] .progress-bar {
+  --bs-progress-bar-bg: var(--asp-tone);
+}

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.asp.platform.customer.application.CustomerService;
+import com.asp.platform.customer.domain.PlateFormats;
 
 /// Customer personal data is for the owner and the front desk only.
 @RestController
@@ -27,9 +28,11 @@ import com.asp.platform.customer.application.CustomerService;
 class CustomerController {
 
     private final CustomerService customers;
+    private final PlateFormats plates;
 
-    CustomerController(CustomerService customers) {
+    CustomerController(CustomerService customers, PlateFormats plates) {
         this.customers = customers;
+        this.plates = plates;
     }
 
     @PostMapping
@@ -55,6 +58,6 @@ class CustomerController {
 
     @GetMapping("/{id}/vehicles")
     List<VehicleResponse> vehiclesOf(@PathVariable UUID id) {
-        return customers.vehiclesOf(id).stream().map(VehicleResponse::of).toList();
+        return customers.vehiclesOf(id).stream().map(vehicle -> VehicleResponse.of(vehicle, plates)).toList();
     }
 }

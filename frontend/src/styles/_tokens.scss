@@ -1,0 +1,34 @@
+// App tokens that Bootstrap has no variable for. Bootstrap's own --bs-* variables cover the rest.
+
+:root {
+  --asp-surface: #ffffff; // cards, inputs, tables, dialogs (the page itself is --bs-body-bg)
+  --asp-border-strong: #8a939f; // input and checkbox borders (3:1 on surfaces)
+  --asp-focus: #7a5100; // focus outline
+  --asp-focus-ring: rgba(122, 81, 0, 0.25);
+  --asp-violet: #6b3fb5;
+  --asp-violet-bg: #f0eafb;
+  --asp-teal: #0f6e6e;
+  --asp-teal-bg: #e0f2f1;
+
+  // Graphite app chrome (sidebar, phone top bar, auth band) in both themes.
+  --asp-chrome-bg: #1c1f23;
+  --asp-chrome-active: rgba(255, 255, 255, 0.1);
+
+  --asp-sidebar-width: 248px;
+  --asp-content-max: 1360px;
+}
+
+:root[data-bs-theme='dark'] {
+  --asp-chrome-bg: #141619;
+}
+
+@include color-mode(dark) {
+  --asp-surface: #1f2226;
+  --asp-border-strong: #6b7480;
+  --asp-focus: #ffc933;
+  --asp-focus-ring: rgba(255, 201, 51, 0.3);
+  --asp-violet: #bba0f2;
+  --asp-violet-bg: #2a2140;
+  --asp-teal: #5fd0c7;
+  --asp-teal-bg: #10302e;
+}

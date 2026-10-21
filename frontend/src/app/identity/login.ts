@@ -5,25 +5,53 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { I18nService } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { Alert } from '../shared/alert';
+import { Icon } from '../shared/icon';
 import { LanguageSelect } from '../shared/language-select';
+import { ThemeToggle } from '../shared/theme-toggle';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, LanguageSelect],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, LanguageSelect, ThemeToggle, Alert, Icon],
   template: `
-    <main class="auth">
-      <div class="row"><span class="spacer"></span><app-language-select /></div>
-      <h1>{{ 'app.title' | t }}</h1>
-      <p class="muted">{{ 'login.subtitle' | t }}</p>
-      <form [formGroup]="form" (ngSubmit)="submit()" class="card stack">
-        <label>{{ 'common.email' | t }} <input type="email" formControlName="email" autocomplete="username" /></label>
-        <label>{{ 'common.password' | t }} <input type="password" formControlName="password" autocomplete="current-password" /></label>
-        @if (error()) {
-          <p class="error">{{ error() }}</p>
-        }
-        <button type="submit" [disabled]="form.invalid || busy()">{{ 'login.submit' | t }}</button>
-      </form>
-      <p class="muted">{{ 'login.newWorkshop' | t }} <a routerLink="/signup">{{ 'login.createAccount' | t }}</a></p>
+    <main class="auth-page px-3 pb-5">
+      <div class="auth-inner mx-auto">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-bs-theme="dark">
+          <span class="app-brand">
+            <span class="app-brand-mark"><app-icon name="wrench" [size]="20" /></span>
+            <span class="app-brand-name">ASP <small>{{ 'app.tagline' | t }}</small></span>
+          </span>
+          <div class="d-flex align-items-center gap-2"><app-language-select /><app-theme-toggle /></div>
+        </div>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="card shadow-lg">
+          <div class="card-body vstack gap-3 p-4">
+            <div>
+              <h1 class="mb-2">{{ 'login.submit' | t }}</h1>
+              <p class="text-body-secondary mb-0">{{ 'login.subtitle' | t }}</p>
+            </div>
+            <div>
+              <label class="form-label" for="login-email">{{ 'common.email' | t }}</label>
+              <input id="login-email" class="form-control" type="email" formControlName="email" autocomplete="username"
+                [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched" />
+            </div>
+            <div>
+              <label class="form-label" for="login-password">{{ 'common.password' | t }}</label>
+              <input id="login-password" class="form-control" type="password" formControlName="password" autocomplete="current-password"
+                [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched" />
+            </div>
+            @if (error()) {
+              <app-alert class="mb-0">{{ error() }}</app-alert>
+            }
+            <button type="submit" class="btn btn-primary btn-lg w-100" [disabled]="form.invalid || busy()" [attr.aria-busy]="busy()">
+              @if (busy()) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              }
+              {{ 'login.submit' | t }}
+            </button>
+          </div>
+        </form>
+        <p class="text-center text-body-secondary small mt-4">{{ 'login.newWorkshop' | t }} <a routerLink="/signup">{{ 'login.createAccount' | t }}</a></p>
+      </div>
     </main>
   `,
 })

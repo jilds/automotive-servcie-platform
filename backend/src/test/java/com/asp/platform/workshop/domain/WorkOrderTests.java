@@ -50,6 +50,25 @@ class WorkOrderTests {
     }
 
     @Test
+    void should_correct_check_in_data_while_editable() {
+        CheckInDetails corrected = new CheckInDetails(121_000, 6, "Brake noise and vibration", "Scratch on door");
+
+        order.editCheckIn(corrected);
+
+        assertThat(order.checkIn()).isEqualTo(corrected);
+    }
+
+    @Test
+    void should_lock_check_in_data_once_the_car_is_ready() {
+        order.moveTo(WorkOrderStatus.IN_PROGRESS, NOW);
+        order.moveTo(WorkOrderStatus.READY, NOW);
+
+        assertThatThrownBy(() -> order.editCheckIn(new CheckInDetails(1, 1, null, null)))
+                .isInstanceOf(WorkOrderLockedException.class);
+        assertThat(order.checkIn()).isEqualTo(CHECK_IN);
+    }
+
+    @Test
     void should_fail_when_removing_an_unknown_line() {
         assertThatThrownBy(() -> order.removeLine(UUID.randomUUID())).isInstanceOf(LineNotFoundException.class);
     }

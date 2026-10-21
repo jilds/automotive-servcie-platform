@@ -1,0 +1,156 @@
+// App shell: graphite sidebar on desktop; below 1024px a top bar and the same sidebar as an
+// offcanvas-lg drawer (opened by a signal, no Bootstrap JS). Auth pages share the brand.
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--bs-emphasis-color);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--bs-emphasis-color);
+  }
+}
+
+.app-brand-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: $border-radius;
+  background: $primary;
+  color: $component-active-color;
+}
+
+.app-brand-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 1.125rem;
+  font-stretch: 87.5%;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+
+  small {
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    font-stretch: 100%;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+}
+
+.app-topbar {
+  display: flex;
+  min-height: 56px;
+  background: var(--asp-chrome-bg);
+}
+
+// The phone top bar, drawer backdrop and drawer close button only exist below 1024px.
+@include media-breakpoint-up(lg) {
+  .app-topbar,
+  .app-layout > .offcanvas-backdrop,
+  .app-sidebar .btn-close {
+    display: none;
+  }
+}
+
+.app-sidebar {
+  :focus-visible {
+    outline-color: $primary;
+  }
+}
+
+.app-nav {
+  --bs-nav-link-color: var(--bs-secondary-color);
+  --bs-nav-link-hover-color: var(--bs-emphasis-color);
+  --bs-nav-link-padding-x: 0.75rem;
+  --bs-nav-pills-link-active-bg: var(--asp-chrome-active);
+  --bs-nav-pills-link-active-color: var(--bs-emphasis-color);
+
+  .nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    &.active::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 0;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: $primary;
+    }
+
+    &.active .icon {
+      color: $primary;
+    }
+  }
+}
+
+.app-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--asp-chrome-active);
+}
+
+// Screens render inside it, so they never add page padding themselves.
+.app-content {
+  max-width: var(--asp-content-max);
+  padding: 1.5rem 1rem 3rem;
+
+  @include media-breakpoint-up(md) {
+    padding-inline: 2rem;
+  }
+
+  @include media-breakpoint-up(lg) {
+    padding-top: 2.5rem;
+  }
+}
+
+@include media-breakpoint-up(lg) {
+  .app-layout {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .app-sidebar {
+    position: sticky;
+    top: 0;
+    flex: none;
+    width: var(--asp-sidebar-width);
+    height: 100dvh;
+    overflow-y: auto;
+    background: var(--asp-chrome-bg);
+  }
+
+  .app-content {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// Sign-in and sign-up: a graphite band behind the brand row and the card.
+.auth-page {
+  min-height: 100dvh;
+  padding-top: clamp(24px, 8vh, 80px);
+  background: linear-gradient(180deg, var(--asp-chrome-bg) 0 220px, transparent 220px);
+}
+
+.auth-inner {
+  max-width: 420px;
+}

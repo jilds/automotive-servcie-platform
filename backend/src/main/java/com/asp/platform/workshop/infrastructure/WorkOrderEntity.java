@@ -45,16 +45,15 @@ class WorkOrderEntity {
     @Column(nullable = false)
     private WorkOrderStatus status;
 
-    @Column(name = "mileage_in", updatable = false)
+    @Column(name = "mileage_in")
     private @Nullable Integer mileageIn;
 
-    @Column(name = "fuel_level", updatable = false)
+    @Column(name = "fuel_level")
     private @Nullable Integer fuelLevel;
 
-    @Column(updatable = false)
     private @Nullable String complaint;
 
-    @Column(name = "damage_notes", updatable = false)
+    @Column(name = "damage_notes")
     private @Nullable String damageNotes;
 
     @Column(name = "assigned_mechanic_id")
@@ -87,16 +86,16 @@ class WorkOrderEntity {
         this.id = order.id();
         this.number = order.number();
         this.vehicleId = order.vehicleId();
-        CheckInDetails checkIn = order.checkIn();
-        this.mileageIn = checkIn.mileageIn();
-        this.fuelLevel = checkIn.fuelLevel();
-        this.complaint = checkIn.complaint();
-        this.damageNotes = checkIn.damageNotes();
         apply(order);
     }
 
     /// Copies the changeable state of the domain object, adding and removing lines to match.
     void apply(WorkOrder order) {
+        CheckInDetails checkIn = order.checkIn();
+        this.mileageIn = checkIn.mileageIn();
+        this.fuelLevel = checkIn.fuelLevel();
+        this.complaint = checkIn.complaint();
+        this.damageNotes = checkIn.damageNotes();
         this.status = order.status();
         this.assignedMechanicId = order.assignedMechanicId();
         this.statusChangedAt = order.statusChangedAt();

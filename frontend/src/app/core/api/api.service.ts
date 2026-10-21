@@ -1,7 +1,19 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { Board, Customer, LineType, User, Vehicle, WorkOrder, WorkOrderStatus } from './models';
+import {
+  Board,
+  CheckInUpdateRequest,
+  Customer,
+  CustomerRequest,
+  LineType,
+  User,
+  Vehicle,
+  VehicleCreateRequest,
+  VehicleUpdateRequest,
+  WorkOrder,
+  WorkOrderStatus,
+} from './models';
 
 const API = '/api/v1';
 
@@ -20,11 +32,20 @@ export class ApiService {
   createCustomer(body: Partial<Customer>) {
     return this.http.post<Customer>(`${API}/customers`, body);
   }
+  updateCustomer(id: string, body: CustomerRequest) {
+    return this.http.put<Customer>(`${API}/customers/${id}`, body);
+  }
   vehiclesOf(customerId: string) {
     return this.http.get<Vehicle[]>(`${API}/customers/${customerId}/vehicles`);
   }
-  createVehicle(body: Partial<Vehicle>) {
+  createVehicle(body: VehicleCreateRequest) {
     return this.http.post<Vehicle>(`${API}/vehicles`, body);
+  }
+  updateVehicle(id: string, body: VehicleUpdateRequest) {
+    return this.http.put<Vehicle>(`${API}/vehicles/${id}`, body);
+  }
+  transferVehicle(id: string, customerId: string) {
+    return this.http.put<Vehicle>(`${API}/vehicles/${id}/owner`, { customerId });
   }
   vehicleByPlate(plate: string) {
     return this.http.get<Vehicle>(`${API}/vehicles`, { params: new HttpParams().set('plate', plate) });
@@ -52,6 +73,9 @@ export class ApiService {
     assignedMechanicId?: string | null;
   }) {
     return this.http.post<WorkOrder>(`${API}/work-orders`, body);
+  }
+  updateCheckIn(id: string, body: CheckInUpdateRequest) {
+    return this.http.put<WorkOrder>(`${API}/work-orders/${id}/check-in`, body);
   }
   addLine(
     id: string,

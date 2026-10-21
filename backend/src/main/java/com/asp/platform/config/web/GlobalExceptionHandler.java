@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -32,6 +33,13 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ProblemDetail conflict(ConflictException e) {
         return problem(HttpStatus.CONFLICT, e.code(), e.getMessage());
+    }
+
+    /// Another request held the rows this one needed to lock for longer than the lock timeout. Nothing was
+    /// changed; the client may simply retry.
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    ProblemDetail tryAgain(PessimisticLockingFailureException e) {
+        return problem(HttpStatus.CONFLICT, "try-again", "The data is being changed by someone else; try again");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

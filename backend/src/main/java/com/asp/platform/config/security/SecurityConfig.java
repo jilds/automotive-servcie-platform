@@ -1,7 +1,6 @@
 package com.asp.platform.config.security;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -13,7 +12,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -21,10 +19,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import com.asp.platform.identity.TokenClaims;
+import com.asp.platform.identity.AccessDirectory;
 
 /// Stateless JWT authentication. Authorization rules (which role may call what) live with each feature.
 @Configuration(proxyBeanMethods = false)
@@ -32,7 +29,7 @@ import com.asp.platform.identity.TokenClaims;
 class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, AccessDirectory accessDirectory) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -41,17 +38,11 @@ class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         // Everything outside /api is the Angular app, its static files, health/info and API docs.
                         .anyRequest().permitAll())
-                .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(roleConverter())));
+                // Role and active state come from the database on every request (cached briefly), so a
+                // deactivated or demoted user's older token loses its rights on the next call.
+                .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(
+                        new CurrentAccessAuthenticationConverter(accessDirectory))));
         return http.build();
-    }
-
-    private static JwtAuthenticationConverter roleConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            String role = jwt.getClaimAsString(TokenClaims.ROLE);
-            return role == null ? List.of() : List.of(new SimpleGrantedAuthority("ROLE_" + role));
-        });
-        return converter;
     }
 
     @Bean

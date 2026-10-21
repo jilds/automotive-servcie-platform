@@ -1,5 +1,6 @@
 package com.asp.platform.customer.api;
 
+import java.time.YearMonth;
 import java.util.UUID;
 
 import jakarta.validation.constraints.Max;
@@ -12,7 +13,9 @@ import jakarta.validation.constraints.Size;
 import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.customer.domain.VehicleDetails;
+import com.asp.platform.shared.IsoCountry;
 
+/// A missing registration country means the workshop's country.
 record VehicleRequest(
         @NotNull UUID customerId,
         @NotBlank String plate,
@@ -21,7 +24,9 @@ record VehicleRequest(
         @Nullable String model,
         @Nullable @Min(1950) @Max(2100) Integer year,
         @Nullable String fuelType,
-        @Nullable @PositiveOrZero Integer mileage) {
+        @Nullable @PositiveOrZero Integer mileage,
+        @Nullable @IsoCountry String registrationCountry,
+        @Nullable @RegistrationMonth YearMonth registrationDate) {
 
     VehicleDetails toDetails() {
         return new VehicleDetails(plate, vin, make, model, year, fuelType);

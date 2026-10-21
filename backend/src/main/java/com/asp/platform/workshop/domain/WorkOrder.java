@@ -13,7 +13,7 @@ public final class WorkOrder {
     private final UUID id;
     private final int number;
     private final UUID vehicleId;
-    private final CheckInDetails checkIn;
+    private CheckInDetails checkIn;
     private WorkOrderStatus status;
     private @Nullable UUID assignedMechanicId;
     private Instant statusChangedAt;
@@ -58,6 +58,12 @@ public final class WorkOrder {
         if (!lines.removeIf(line -> line.id().equals(lineId))) {
             throw new LineNotFoundException();
         }
+    }
+
+    /// Corrects what was recorded when the car arrived, as long as the work order is still open for changes.
+    public void editCheckIn(CheckInDetails corrected) {
+        requireEditable();
+        this.checkIn = corrected;
     }
 
     public void assign(@Nullable UUID mechanicId) {

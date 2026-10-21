@@ -1,5 +1,19 @@
 export type Role = 'OWNER' | 'FRONT_DESK' | 'MECHANIC';
 
+/** Portuguese plate layout the backend recognised; null for other countries or a plate that fits no layout. */
+export type PlateEra = 'PT_2020' | 'PT_2005' | 'PT_1992' | 'PT_1937';
+
+/** Plate fields the API adds to work orders and board cards (Release 2, §7); null when the vehicle is gone. */
+export interface PlateInfo {
+  /** The plate as printed, e.g. `12-AB-34`. */
+  plateDisplay: string | null;
+  plateEra: PlateEra | null;
+  /** ISO 3166-1 alpha-2, upper case. */
+  registrationCountry: string | null;
+  /** Month of first registration, `YYYY-MM`. */
+  registrationDate: string | null;
+}
+
 export type WorkOrderStatus =
   | 'DIAGNOSTICS'
   | 'AWAITING_APPROVAL'
@@ -46,12 +60,54 @@ export interface Vehicle {
   id: string;
   customerId: string;
   plate: string;
+  plateDisplay: string;
+  plateEra: PlateEra | null;
+  registrationCountry: string;
+  registrationDate: string | null;
   vin: string | null;
   make: string | null;
   model: string | null;
   year: number | null;
   fuelType: string | null;
   mileage: number | null;
+}
+
+/** Body of `POST /customers` and `PUT /customers/{id}`; PUT replaces every field. */
+export interface CustomerRequest {
+  name: string;
+  nif: string | null;
+  phone: string | null;
+  email: string | null;
+  address: Address | null;
+  marketingConsent: boolean;
+}
+
+/** Body of `PUT /vehicles/{id}`. A null mileage keeps the recorded reading; a null registration date clears it. */
+export interface VehicleUpdateRequest {
+  plate: string;
+  vin: string | null;
+  make: string | null;
+  model: string | null;
+  year: number | null;
+  fuelType: string | null;
+  mileage: number | null;
+  registrationCountry: string;
+  /** `YYYY-MM`, 1937-01 up to the current month. */
+  registrationDate: string | null;
+}
+
+/** Body of `POST /vehicles`. A null registration country means the workshop's country. */
+export interface VehicleCreateRequest extends Omit<VehicleUpdateRequest, 'registrationCountry'> {
+  customerId: string;
+  registrationCountry: string | null;
+}
+
+/** Body of `PUT /work-orders/{id}/check-in`; every field is replaced (null clears it). */
+export interface CheckInUpdateRequest {
+  mileageIn: number | null;
+  fuelLevel: number | null;
+  complaint: string | null;
+  damageNotes: string | null;
 }
 
 export type LineType = 'LABOR' | 'PART';
@@ -68,7 +124,7 @@ export interface WorkOrderLine {
   netCents: number | null;
 }
 
-export interface WorkOrder {
+export interface WorkOrder extends PlateInfo {
   id: string;
   number: number;
   vehicleId: string;
@@ -87,7 +143,7 @@ export interface WorkOrder {
   totalCents: number | null;
 }
 
-export interface BoardCard {
+export interface BoardCard extends PlateInfo {
   id: string;
   number: number;
   plate: string | null;
