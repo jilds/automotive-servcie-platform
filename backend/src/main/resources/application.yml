@@ -1,6 +1,6 @@
 spring:
   application:
-    name: asp
+    name: Automotive Software Platform
   threads:
     virtual:
       enabled: true
