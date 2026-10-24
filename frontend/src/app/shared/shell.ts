@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { AddOns } from '../core/api/models';
 import { AuthService } from '../core/auth/auth.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Icon } from './icon';
@@ -8,6 +9,8 @@ import { LanguageSelect } from './language-select';
 import { IdentityApi } from '../identity/identity-api.service';
 import { TenantThemeService } from './theme.service';
 import { ThemeToggle } from './theme-toggle';
+
+const NO_ADD_ONS: AddOns = { booking: false, shop: false };
 
 /**
  * Signed-in layout: graphite sidebar on desktop; below 1024px a top bar and the same sidebar as a Bootstrap
@@ -104,12 +107,20 @@ export class Shell implements OnInit {
   protected readonly brand = this.theme.branding;
   /** Drawer state on phones; view-only. */
   protected readonly menuOpen = signal(false);
+  /** The add-ons switched on for the workshop; the Bookings and Shop menu items will show only when on. */
+  protected readonly addOns = signal<AddOns>(NO_ADD_ONS);
 
   /** Applies the workshop theme for the signed-in user; the ASP default stays when it cannot be loaded. */
   ngOnInit(): void {
     this.identity.currentBranding().subscribe({
-      next: (b) => this.theme.apply(b),
-      error: () => this.theme.clear(),
+      next: (b) => {
+        this.theme.apply(b);
+        this.addOns.set(b.addOns ?? NO_ADD_ONS);
+      },
+      error: () => {
+        this.theme.clear();
+        this.addOns.set(NO_ADD_ONS);
+      },
     });
   }
 }

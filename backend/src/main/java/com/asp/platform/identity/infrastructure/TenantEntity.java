@@ -15,6 +15,7 @@ import jakarta.persistence.Version;
 
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.identity.domain.AddOns;
 import com.asp.platform.identity.domain.BrandColor;
 import com.asp.platform.identity.domain.Branding;
 import com.asp.platform.identity.domain.Plan;
@@ -72,6 +73,12 @@ class TenantEntity implements DomainEntity<Tenant> {
     @Column(name = "accent_color", length = 7)
     private @Nullable String accentColor;
 
+    @Column(name = "booking_enabled", nullable = false)
+    private boolean bookingEnabled;
+
+    @Column(name = "shop_enabled", nullable = false)
+    private boolean shopEnabled;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -109,6 +116,9 @@ class TenantEntity implements DomainEntity<Tenant> {
         this.displayName = b.displayName();
         this.primaryColor = hex(b.primaryColor());
         this.accentColor = hex(b.accentColor());
+        AddOns addOns = tenant.addOns();
+        this.bookingEnabled = addOns.booking();
+        this.shopEnabled = addOns.shop();
     }
 
     @Override
@@ -118,6 +128,7 @@ class TenantEntity implements DomainEntity<Tenant> {
                 new Subscription(plan, status, subscriptionUntil),
                 new Slug(slug),
                 new Branding(displayName, color(primaryColor), color(accentColor)),
+                new AddOns(bookingEnabled, shopEnabled),
                 createdAt, version());
     }
 

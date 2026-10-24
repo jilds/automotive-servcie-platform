@@ -1,14 +1,12 @@
 package com.asp.platform.identity.domain;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
+
+import com.asp.platform.shared.StatusTokens;
 
 /// A one-time link that lets a new user (or an owner the platform admin re-invites) set their password.
 /// Only the SHA-256 of the token is stored; the token itself exists only in the link handed out once.
@@ -26,12 +24,7 @@ public record ActivationToken(UUID id, UUID userId, String tokenHash, Instant ex
 
     /// Hex SHA-256 of the token's UTF-8 bytes, as stored.
     public static String hash(String rawToken) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(rawToken.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is part of every JDK", e);
-        }
+        return StatusTokens.hash(rawToken);
     }
 
     /// Checks that the link may still be used.

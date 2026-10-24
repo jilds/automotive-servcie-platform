@@ -1,7 +1,26 @@
 # Test-only settings, layered over src/main/resources/application.yml (classpath:/config/ wins).
 # ApiTestSupport signs in as this platform admin to register workshops; the values are test fixtures, not secrets.
+# Fail-safe: tests get their database from Testcontainers (TestcontainersConfiguration or @DynamicPropertySource).
+# A context that builds a DataSource before those properties exist fails here instead of reaching a developer
+# database on localhost:5432. Flyway falls back to this URL too.
+spring:
+  datasource:
+    url: jdbc:postgresql://testcontainers-not-started.invalid:5432/asp
 app:
   platform:
     bootstrap-admin-email: platform-admin@asp.test
     bootstrap-admin-password: platform-admin-test-password
     bootstrap-admin-name: Test platform admin
+  # Small limits so PublicWorkshopApiTests reaches them quickly; every test uses its own workshops (own slugs) and
+  # its own client address.
+  public:
+    rate-limit:
+      lookups:
+        limit: 40
+        window: 1m
+      writes:
+        limit: 3
+        window: 1h
+      reads:
+        limit: 20
+        window: 1m

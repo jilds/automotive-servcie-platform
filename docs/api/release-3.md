@@ -587,3 +587,49 @@ the parts. The package list marks parts with a "Peça" badge.
 `(package_id, product_id)`; partial index on `product_id`. Existing rows all hold a service. RLS and grants unchanged.
 Rollback: delete items with a `product_id`, drop the check, the unique constraint, the index and the column, set
 `service_item_id` not null, delete version `'13'` from `flyway_schema_history`.
+
+---
+
+## Public workshop pages and add-ons
+
+Plan: `Catalogue → Stock → Booking → Shop` (foundation for steps 3 and 4). ADR 0004. Tests that pin this contract:
+`PublicWorkshopApiTests`, `AddOnsApiTests`, `RowLevelSecurityCatalogueTests`, `SpaForwardingTests`.
+
+### Add-ons
+
+Online booking and the online shop are add-ons the platform admin switches on per workshop, independent of the plan.
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| PUT | `/admin/workshops/{id}/add-ons` | PLATFORM_ADMIN | `{ "booking": true, "shop": false, "version": 3 }` → `AdminWorkshopResponse`; 409 `stale-data` |
+| GET | `/branding` | every workshop role | now also `"addOns": { "booking": true, "shop": false }` (the shell shows the menus) |
+
+`AdminWorkshopResponse` gains `"addOns": { "booking": …, "shop": … }`. Changing add-ons raises the tenant `version`
+(shared with settings, theme and subscription).
+
+### Public scope
+
+Every public workshop endpoint lives under `/api/v1/public/{slug}/…`, needs no token and never answers 401.
+The server finds the workshop by its slug and serves the request inside that workshop (row-level security still
+applies). An unknown slug, a workshop that is suspended or cancelled, and an add-on that is off all answer 404, so
+nothing about the workshop leaks:
+
+| Status | `code` | When |
+|---|---|---|
+| 404 | `workshop-not-found` | Unknown slug, or the workshop is not open |
+| 404 | `add-on-not-available` | The add-on of that endpoint is off |
+| 429 | `too-many-requests` | More than 10 POSTs an hour or 120 GETs a minute from one address for one workshop; header `Retry-After` (seconds) |
+| 400 | `privacy-consent-required` | A public form sent without `"privacyAccepted": true` |
+
+Public forms also send `"website": ""` (a hidden field). A request with a value there is answered as if it
+succeeded and stored nowhere.
+
+**Status links.** A public booking or order returns a private `statusToken` (43 characters, base64url). The server
+stores only its SHA-256. `GET …/{token}` shows the status; the token is the only key, so the response holds no other
+customer's data and no internal ids.
+
+### Migration V14
+
+`tenant.booking_enabled`, `tenant.shop_enabled` (boolean not null default false). Rollback: drop both columns and
+delete version `'14'` from `flyway_schema_history`.
+

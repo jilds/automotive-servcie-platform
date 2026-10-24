@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -31,7 +32,23 @@ import com.asp.platform.shared.Role;
 @EnableMethodSecurity
 class SecurityConfig {
 
+    /// The public workshop pages (ADR 0004): anonymous, and an `Authorization` header is not even read, so a stale or
+    /// invalid token never answers 401 there and a signed-in user's token never picks the workshop: the slug does
+    /// (`PublicWorkshopFilter`).
     @Bean
+    @Order(1)
+    SecurityFilterChain publicPagesFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/api/v1/public/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requestCache(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(HttpSecurity http, AccessDirectory accessDirectory) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)

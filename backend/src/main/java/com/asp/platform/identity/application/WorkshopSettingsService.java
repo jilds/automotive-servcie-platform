@@ -17,9 +17,11 @@ import com.asp.platform.identity.domain.WorkshopSettings;
 public class WorkshopSettingsService {
 
     private final TenantRepository tenants;
+    private final PublicWorkshopCache publicWorkshops;
 
-    WorkshopSettingsService(TenantRepository tenants) {
+    WorkshopSettingsService(TenantRepository tenants, PublicWorkshopCache publicWorkshops) {
         this.tenants = tenants;
+        this.publicWorkshops = publicWorkshops;
     }
 
     @Transactional(readOnly = true)
@@ -34,7 +36,10 @@ public class WorkshopSettingsService {
     public Tenant update(UUID tenantId, WorkshopSettings settings, long expectedVersion) {
         Tenant tenant = tenant(tenantId);
         tenant.requireVersion(expectedVersion);
-        return tenants.save(tenant.withSettings(settings.checkNif()));
+        Tenant saved = tenants.save(tenant.withSettings(settings.checkNif()));
+        // The public pages show the name, country and time zone.
+        publicWorkshops.evictWorkshop(tenantId, tenant.slug().value());
+        return saved;
     }
 
     private Tenant tenant(UUID tenantId) {

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { ActivationLink, AdminWorkshop, CreateWorkshopRequest, ProvisionedWorkshop, SubscriptionRequest } from './admin.models';
+import { ActivationLink, AddOnsRequest, AdminWorkshop,CreateWorkshopRequest, ProvisionedWorkshop, SubscriptionRequest } from './admin.models';
 
 const API = '/api/v1/admin/workshops';
 
@@ -21,6 +21,9 @@ export class AdminApi {
   }
   changeSubscription(id: string, body: SubscriptionRequest) {
     return this.http.put<AdminWorkshop>(`${API}/${id}/subscription`, body);
+  }
+  changeAddOns(id: string, body: AddOnsRequest) {
+    return this.http.put<AdminWorkshop>(`${API}/${id}/add-ons`, body);
   }
   reissueOwnerLink(id: string) {
     return this.http.post<ActivationLink>(`${API}/${id}/owner-activation-link`, null);

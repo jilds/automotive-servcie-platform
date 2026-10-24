@@ -38,6 +38,20 @@ app:
     bootstrap-admin-email: ${ASP_BOOTSTRAP_ADMIN_EMAIL:}
     bootstrap-admin-password: ${ASP_BOOTSTRAP_ADMIN_PASSWORD:}
     bootstrap-admin-name: ${ASP_BOOTSTRAP_ADMIN_NAME:}
+  # Public workshop pages /api/v1/public/{slug}/... (ADR 0004): lookups per client address across all slugs
+  # (checked before the slug is looked up), then reads and writes per client address and workshop.
+  # Behind a reverse proxy, set server.forward-headers-strategy so the client's address is used, not the proxy's.
+  public:
+    rate-limit:
+      lookups:
+        limit: 120
+        window: 1m
+      writes:
+        limit: 10
+        window: 1h
+      reads:
+        limit: 120
+        window: 1m
 
 management:
   endpoints:

@@ -3,6 +3,7 @@ package com.asp.platform.config.persistence;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -12,11 +13,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import com.asp.platform.identity.TokenClaims;
+import com.asp.platform.shared.TenantScope;
 
 /// Sets the PostgreSQL session setting `app.tenant_id` on every connection handed out, taken from the
-/// signed-in user's token. Row-level security policies then only ever see that workshop's rows, and new
-/// rows get it as their `tenant_id` default. With no user signed in the setting is cleared and tenant
-/// tables return nothing.
+/// signed-in user's token, or without one from the [TenantScope] of a public page or job (ADR 0004). Row-level
+/// security policies then only ever see that workshop's rows, and new rows get it as their `tenant_id` default.
+/// With neither the setting is cleared and tenant tables return nothing.
 class TenantAwareDataSource extends DelegatingDataSource {
 
     private static final String BIND_TENANT = "select set_config('app.tenant_id', ?, false)";
@@ -46,12 +48,14 @@ class TenantAwareDataSource extends DelegatingDataSource {
         return connection;
     }
 
-    private static String currentTenant() {
+    /// A signed-in user's token always wins, also a platform admin's without a workshop: the token and the
+    /// [TenantScope] are never mixed. Without a token, the workshop of the scope (public page, scheduled job).
+    static String currentTenant() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
             String tenant = jwt.getClaimAsString(TokenClaims.TENANT_ID);
             return tenant == null ? "" : tenant;
         }
-        return "";
+        return TenantScope.current().map(UUID::toString).orElse("");
     }
 }
