@@ -17,5 +17,5 @@ ASP is sold to many workshops on one database. One workshop must never see anoth
 
 ## Consequences
 
-- Isolation is enforced by the database and covered by `CustomerApiTests` (a second workshop sees nothing; a raw query without a tenant returns zero rows).
-- Every new workshop-owned table must be added to the policy loop and the default in a migration.
+- Isolation is enforced by the database and covered by `CustomerApiTests` (a second workshop sees nothing; a raw query without a tenant returns zero rows), by cross-workshop API tests per table (customer, vehicle, work order, work order line), and by `RowLevelSecurityCatalogueTests` (amended 2026-10-22): every table with a `tenant_id` column must have ENABLE + FORCE row-level security and the `tenant_isolation` policy, including tables added later. `app_user` and `tenant_logo` are its named exceptions (filtered in code, ADR 0003).
+- Every new workshop-owned table must get the policy (ENABLE + FORCE + `tenant_isolation`) and the `tenant_id` default in its own migration, which starts with `set local lock_timeout = '5s';`; the catalogue test fails the build otherwise.

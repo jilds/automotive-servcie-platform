@@ -263,7 +263,15 @@ From 576px up it is a framed, hoverable table, and figures use tabular numbers. 
 | `DELIVERED` | neutral |
 | `CANCELLED` | danger, struck through |
 
-**Kanban board:** columns use a status-coloured top border and dot, and cards are `card wo-card` links with a plate. On wide screens the board scrolls sideways inside its own box. Below 576px the columns stack, and an empty column shrinks to one compact row (`.column:has(.column-empty)`). The page itself never scrolls horizontally.
+**Kanban board:** columns use a status-coloured top border and dot, and cards are `card wo-card` with a plate and a `stretched-link` to the work order. On wide screens the board scrolls sideways inside its own box. Below 576px the columns stack, and an empty column shrinks to one compact row (`.column:has(.column-empty)`). The page itself never scrolls horizontally.
+
+**Board drag and drop** (`@angular/cdk/drag-drop`, rules in `workshop/board-moves.ts`):
+
+- `.board` is the `cdkDropListGroup` and `cdkScrollable` (auto-scrolls sideways near the edges); each `.column` is a `cdkDropList` with sorting off; each `.wo-card` is a `cdkDrag` with a 200 ms start delay on touch, so a swipe still scrolls.
+- While dragging, `.board.is-dragging` outlines allowed columns (`.drop-allowed`, column tone + `--asp-tone-bg`) and dims the others (`.drop-blocked`); the enter predicate refuses them too. The preview is the card itself (plate included), slightly lifted; the placeholder is the dashed card. In a compact phone column the placeholder takes the full width.
+- Allowed moves mirror `WorkOrderStatus.next()`; mechanics only move their own cards, only to In progress, Awaiting parts or Ready. The server stays the authority: the move is shown at once and rolls back on an error, with `board.moveFailed` + the `error.<code>` text; a 409 also reloads the board. A card is disabled (`.is-pending`, `aria-busy`) while its request runs.
+- Keyboard and screen readers: every movable card has a `.wo-move` select ("Move to…") listing the same allowed statuses (Delivered and Cancelled included), and the result is announced in an `aria-live` region.
+- Movement transitions only run under `prefers-reduced-motion: no-preference`.
 
 ---
 
@@ -341,7 +349,7 @@ Available names: `board check-in users user briefcase wrench car log-out menu x 
 
 Bootstrap generates every utility at every breakpoint and every component variant for every theme colour by default. `styles.scss` imports only the modules in use, and `_utilities.scss` is an allow-list. Around the modules that loop (buttons, alerts, list group, tables, grid, modal, offcanvas, validation), `styles.scss` swaps in narrower `$theme-colors` / `$grid-breakpoints` maps, so only the variants used are generated (for example only `.offcanvas-lg`, only `btn-primary` / `btn-danger`). Utilities are not responsive: the shell handles its few breakpoint changes in `_shell.scss`.
 
-The production build is about 504 kB initial (≈ 101 kB CSS, ≈ 15.7 kB transferred); the initial warning budget is 550 kB (error 1 MB). Before adding a utility key, a responsive flag or a theme-colour variant, check `npx ng build`.
+The production build is about 495 kB initial (≈ 106 kB CSS, ≈ 16.4 kB CSS transferred), after feature texts and the en / pt-BR core texts moved to lazy chunks; the initial warning budget is 500 kB (error 1 MB). Before adding a utility key, a responsive flag or a theme-colour variant, check `npx ng build`.
 
 Sass `@import` deprecation warnings from Bootstrap 5.3 are silenced in `angular.json` (`stylePreprocessorOptions.sass.silenceDeprecations`).
 

@@ -1,12 +1,30 @@
 # ASP – Automotive Service Platform
 
-Multi-tenant workshop ERP for Portuguese repair shops. This is the release 1 foundation: workshops sign up, register customers and vehicles, check cars in, and move work orders across the Kanban board. Mechanics get a phone-friendly view of their own jobs without prices.
+Multi-tenant workshop ERP for Portuguese repair shops, sold by subscription: the platform owner registers each workshop in the admin console (`/admin`) and hands the owner a one-time activation link; workshops cannot sign up themselves. Workshops register customers and vehicles, check cars in, and move work orders across the Kanban board. Mechanics get a phone-friendly view of their own jobs without prices. Each workshop has its own theme (name, colours, logo) in the app and on its branded sign-in page `/w/{slug}`.
+
+On the board, cards move by drag and drop (mouse or touch, Angular CDK) or with the "Move to…" select on each card. Both offer only the moves the server allows for the user's role (mechanics: their own jobs, to In progress, Awaiting parts or Ready); a refused move rolls back with the translated error.
+
+### Features so far
+
+- **Release 1:** login (JWT) with the roles Owner, Front desk and Mechanic; customers (NIF, marketing consent, optional structured address); vehicles by plate; check-in (mileage, fuel 0–8, complaint, damage notes); labour and part lines with discount and VAT, totals in cents; enforced status moves; Kanban board; service history per vehicle; installable PWA; three languages.
+- **Release 2:** Bootstrap 5.3.8 UI with light and dark mode; edit dialogs for customers, vehicles, a vehicle's owner (its history goes with it) and check-in data; the owner's **backoffice** (dashboard, team with role and active state and at least one active owner, workshop settings: name, NIF, country, time zone, default VAT, labour rate); vehicle registration country and month with the **Portuguese plate rules** (AA-00-AA, 00-AA-00, 00-00-AA, AA-00-00, checked for PT-registered vehicles only) and era-styled plates; role and active state re-read from the database on every request (cached 30 s).
+- **Release 3 so far:** subscription onboarding by a platform admin (no public signup), activation links, per-workshop theme and branded sign-in page, drag and drop on the board, and:
+  - **Optimistic locking:** customers, vehicles, workshop (settings, theme, subscription) and team members carry a `version`; an edit based on an old version is refused with 409 `stale-data` and the form reloads the record with a message, instead of overwriting someone else's change.
+  - **VIN:** check-in finds a car by plate or by its 17-character VIN and says which one matched (`GET /api/v1/vehicles?vin=`). A plate is still required to register a vehicle.
+  - **NIF check digit:** a Portuguese NIF (customer, workshop settings, admin console) must pass the mod-11 check digit; other countries' tax numbers only need 9 digits. NIFs stored before are checked when the record is next edited.
+  - **Mechanics and vehicle history:** a mechanic sees every job of a vehicle in its history, without prices, and can open other mechanics' jobs read-only; the board still shows only their own jobs.
+  - **Service catalogue (Backoffice → Services):** standard services with a fixed price or priced by the hour (standard time × the workshop's labour rate, worked out when the price is needed), VAT, standard time and time in the workshop, and packages of services and stock parts sold for one price (with the saving shown; parts count at their sale price). Services are grouped by category; a service or package can be duplicated into a new one. On a work order, "From the catalogue" adds a service as a line at its price of that moment, or a package as one line per service and per part adding up to exactly the package price; the parts are reserved in stock like a part line from stock (nothing is added when one is short). Service lines carry a "Catálogo" badge. Mechanics see service names and times, never prices.
+  - **Stock (sidebar → Stock, Owner and Front desk):** products (SKU unique per workshop, brand, unit, cost, sale price, VAT, minimum stock, bin) with what is on hand, reserved for open work orders and still available; a low-stock filter and a dashboard tile; adjustments with a reason; a movement ledger per product (rows only added); purchase orders (draft → ordered → received; receiving adds the parts to stock). On a work order, "Adicionar peça do stock" adds a part at its sale price and reserves it: removing the line or cancelling the order gives it back, delivering the car takes it out of stock. Stock never goes below zero and two people cannot take the last unit at once (the product row is locked). Mechanics may look parts up (name, SKU, bin, available) but never see cost or prices.
+  - **Changing the mechanic:** on a work order, the owner or front desk can hand the car to another mechanic (or to nobody); replacing or removing one needs a reason, and every change is listed with who made it, when and why.
+  - Compact language switcher (PT / EN / BR) in the phone top bar; full-height sidebar on long pages; "ASP - Automotive Service Platform" back as the sign-in title.
+
+Mechanics never get customer personal data (name, phone, e-mail, NIF) or prices.
 
 One repository, one Maven build: the Angular app is packaged inside the Spring Boot jar, so a single jar serves the API and the UI on port 8080. Project docs (scope, architecture, step notes) are in [`../docs`](../docs); architecture decisions are in [`docs/adr`](docs/adr).
 
 ## Run
 
-You need **JDK 26** and **Docker**. Maven and Node are not needed globally: the Maven wrapper is in the repo and the build installs a pinned Node into `frontend/target`.
+You need **JDK 26 or newer** (the build targets Java 26; on the Windows workstation `export JAVA_HOME=~/.jdks/corretto-27` in Git Bash) and **Docker**. Maven and Node are not needed globally: the Maven wrapper is in the repo and the build installs a pinned Node into `frontend/target`.
 
 ```bash
 # Build everything and run all tests (backend tests need Docker for Testcontainers)
@@ -26,7 +44,9 @@ cd frontend && npm install && npm start # UI on http://localhost:4200, proxies /
 
 Or run `TestAspApplication` (backend test sources) from the IDE: it starts the app against a throw-away PostgreSQL, no compose needed.
 
-Open the app, choose **Create an account**, and you are the owner of a new workshop.
+First start: there is no signup. Set `ASP_BOOTSTRAP_ADMIN_EMAIL` and `ASP_BOOTSTRAP_ADMIN_PASSWORD` (12+ characters) in the environment; on startup, while no platform admin exists, the app creates one and logs its e-mail (never the password). Sign in with it, you land in the admin console (`/admin`): register a workshop with its first owner, copy the activation link it shows and open it to set the owner's password. Remove the two variables afterwards; they are ignored once a platform admin exists.
+
+Team members are invited the same way: Backoffice → Team → Invite shows a one-time link (72 hours). No e-mail is sent yet.
 
 Single-side builds: `./mvnw -pl backend verify`, `./mvnw -pl frontend verify`.
 
@@ -36,11 +56,20 @@ Single-side builds: `./mvnw -pl backend verify`, `./mvnw -pl frontend verify`.
 pom.xml                 aggregator: frontend, then backend
 compose.yaml            local PostgreSQL 18.6 (127.0.0.1:5432), roles from compose/postgres/init.sql
 docs/adr/               architecture decisions
+docs/api/               API contract per release (release-2.md, release-3.md)
+docs/ui/                design system (Bootstrap 5.3.8 conventions)
+docs/reviews/           review gates and the gap audit
+docs/steps/             step notes (what was built, how it was tested, what remains)
 backend/                Spring Boot 4.1, Java 26
   src/main/java/com/asp/platform/
     config/             app-wide wiring: security, persistence (tenancy), web, time
-    shared/             shared domain types: Role, CurrentUser, base exceptions
-    identity/           signup, login, users          ┐ each feature is a Spring Modulith module:
+    shared/             shared domain types: Role, CurrentUser, base exceptions (NotFound, Conflict, StaleData,
+                        InvalidInput), CountryCodes + @IsoCountry, PortugueseNif + @ValidNif
+    identity/           login, users, platform admin, ┐ each feature is a Spring Modulith module:
+                        subscriptions, activation, branding
+    catalogue/          services and packages         │
+    stock/              products, stock ledger,       │
+                        reservations, purchase orders │
     customer/           customers and vehicles        │ public API in the module root,
     workshop/           work orders, board, history   ┘ api / application / domain / infrastructure inside
   src/main/resources/   application.yml, db/migration (Flyway)
@@ -50,19 +79,30 @@ frontend/               Angular 22 PWA
     core/api/           typed API client and models
     core/i18n/          languages (pt-PT default, en, pt-BR), translate pipe, API error codes → messages
     core/auth/          session, token interceptor, route guards
-    shared/             money pipe, language switcher, app shell
+    shared/             app shell, pipes (t, money, km), <app-plate>, language switcher, theme, NIF check
     identity/ customer/ workshop/   pages, same names as the backend features
+    catalogue/          services and packages (Backoffice → Services, work order picker)
+    stock/              products, adjustments, movements, purchase orders (/stock), work order part picker
+    backoffice/         owner screens (dashboard, team, settings) over the identity and workshop APIs (/backoffice)
+    admin/              platform admin console (lazy-loaded, /admin)
+  src/styles/           Bootstrap 5.3.8 theme and partials (see docs/ui/design-system.md)
 ```
 
 Rules the build enforces: `ModularityTests` (no module reaches into another module's internals, no cycles) and `LayerRulesTests` (api → application → domain ← infrastructure, no Spring or JPA in the domain, JPA entities only in infrastructure, `@Transactional` only in application, features never import `config`).
 
 ## How tenant isolation works
 
-Every domain table has a `tenant_id`. The app connects as `asp_app`, which cannot bypass row-level security, and sets `app.tenant_id` from the signed-in user's token on every connection (`config/persistence`). PostgreSQL then only returns that workshop's rows, even if a query forgets to filter, and fills `tenant_id` on insert. Migrations run as `asp_owner`. `tenant` and `app_user` are read before login, so they are filtered in code instead. See [ADR 0002](docs/adr/0002-tenant-isolation-with-row-level-security.md).
+Every domain table has a `tenant_id`. The app connects as `asp_app`, which cannot bypass row-level security, and sets `app.tenant_id` from the signed-in user's token on every connection (`config/persistence`). PostgreSQL then only returns that workshop's rows, even if a query forgets to filter, and fills `tenant_id` on insert. Migrations run as `asp_owner`. `tenant` and `app_user` are read before login, so they are filtered in code instead. `RowLevelSecurityCatalogueTests` reads the migrated schema and fails the build when any table with a `tenant_id` column (also ones added later) lacks ENABLE + FORCE row-level security and the `tenant_isolation` policy, unless it is a named, documented exception (`app_user`, `tenant_logo`). See [ADR 0002](docs/adr/0002-tenant-isolation-with-row-level-security.md).
+
+Platform admins are stored apart (`platform_admin`), belong to no workshop and get no `tenant_id` in their token, so their connections see no workshop rows; the security config also answers them 403 on every API outside `/api/v1/admin/**`. A suspended or cancelled workshop cannot sign in, and tokens issued before stop working at their next request. See [ADR 0003](docs/adr/0003-subscription-onboarding-and-tenant-branding.md).
+
+## Workshop theme
+
+Owners set a display name, a main and an accent colour (native colour pickers) and a logo (PNG, SVG or WEBP, up to 512 KB; SVGs with scripts, event handlers or external links are refused) in Backoffice → Settings → Appearance, with a live preview; the platform admin can do the same and change the sign-in address. The theme applies after login and on `/w/{slug}`, in light and dark mode. Button text is white or black, whichever reaches WCAG AA (4.5:1) on the main colour; links and tints are adjusted to keep 4.5:1. Unset values fall back to the ASP theme.
 
 ## Languages
 
-The UI is in Portuguese (Portugal) by default, with English and Portuguese (Brazil) in the switcher on the top bar and login page. The choice is remembered in the browser. Texts live in `frontend/src/app/core/i18n/messages.*.ts`; English defines the keys, and the build fails if another language misses one.
+The UI is in Portuguese (Portugal) by default, with English and Portuguese (Brazil). The switcher is in the sidebar footer on desktop, as three compact buttons (PT / EN / BR) in the phone top bar, and on the login page. The choice is remembered in the browser. Texts live in `frontend/src/app/core/i18n/messages.*.ts` (core) and in feature dictionaries (`backoffice/i18n`, `identity/i18n`, `admin/i18n`, `catalogue/i18n`, `stock/i18n`). Only the Portuguese (Portugal) core texts are in the start-up bundle: English and Brazilian Portuguese load when chosen (a stored choice before the app starts), and each feature's texts load with its routes (`textsFor(...)` in the route files, registry in `core/i18n/feature-texts.ts`); a language switch loads what is in use first, then switches. Keys needed outside a feature's routes (error codes, sign-in page, pickers) are in eager `<feature>-core.<lang>.ts` files. English defines the keys, and the build fails if another language misses one. Counts use plural keys (`.one` / `.other`, plus `.many` for Portuguese), mileage the `km` pipe and money the `money` pipe.
 
 ## Configuration
 
@@ -72,6 +112,11 @@ The UI is in Portuguese (Portugal) by default, with English and Portuguese (Braz
 | `ASP_DB_APP_USER` / `ASP_DB_APP_PASSWORD` | `asp_app` / `asp_app` |
 | `ASP_DB_OWNER_USER` / `ASP_DB_OWNER_PASSWORD` | `asp_owner` / `asp_owner` |
 | `ASP_JWT_SECRET` | a dev secret; set a random 32+ character value in any real environment |
+| `ASP_BOOTSTRAP_ADMIN_EMAIL` / `ASP_BOOTSTRAP_ADMIN_PASSWORD` | unset; creates the first platform admin at startup while none exists (password 12–72 characters) |
+| `ASP_BOOTSTRAP_ADMIN_NAME` | unset ("Platform admin") |
+| `ASP_CONTACT_EMAIL` / `ASP_CONTACT_PHONE` | unset; shown on the login page under "Want ASP for your workshop?" (block hidden when both are unset) |
+
+Tokens last 12 h (`app.identity.token.ttl`); role, active state and the workshop's subscription status are re-read from the database at most every 30 s, so a deactivation, demotion or suspension applies within that time.
 
 `/actuator/health` and `/actuator/info` (version, build time, git commit) are open; OpenAPI docs are at `/swagger-ui.html`.
 
@@ -79,17 +124,50 @@ The UI is in Portuguese (Portugal) by default, with English and Portuguese (Braz
 
 Errors are RFC 9457 problem details with a stable `type` and `code` (for example `duplicate-plate`), which the UI translates; validation errors list the failing fields under `errors` (nested fields as `address.postalCode`).
 
-A customer's address is optional. When it is sent, `street`, `postalCode` and `locality` are required, `detail` (floor, door) is optional, and `country` is a two-letter code that defaults to `PT`. Portuguese postal codes must look like `1100-053`.
+A customer's address is optional. When it is sent, `street`, `postalCode` and `locality` are required, `detail` (floor, door) is optional, and `country` is a two-letter code that defaults to `PT`. Portuguese postal codes must look like `1100-053` (400 `validation` with `errors['address.postalCode']`). A Portuguese NIF must pass the check digit (400 `validation` on `nif`, or `invalid-nif` when the country comes from the workshop).
+
+**Optimistic locking (breaking in Release 3):** customers, vehicles, the workshop and team members return a `version`. Every update below marked "version" must send the version it read; if someone saved in between the answer is 409 `stale-data` and nothing changes. A missing `version` is 400 `validation`.
+
+Full contract: [`docs/api/release-2.md`](docs/api/release-2.md) and [`docs/api/release-3.md`](docs/api/release-3.md).
 
 | Method | Path | Who |
 | --- | --- | --- |
-| POST | `/api/v1/auth/signup`, `/api/v1/auth/login` | anyone |
-| GET, POST | `/api/v1/users` | Owner |
-| GET, POST, PUT | `/api/v1/customers`, `/api/v1/customers/{id}`, `/api/v1/customers/{id}/vehicles` | Owner, Front desk |
+| POST | `/api/v1/auth/login`, `/api/v1/auth/activate` | anyone |
+| GET | `/api/v1/auth/activation?token=`, `/api/v1/platform/contact`, `/api/v1/branding/{slug}`, `/api/v1/branding/{slug}/logo` | anyone |
+| GET | `/api/v1/branding` | everyone in the workshop |
+| PUT | `/api/v1/workshop/branding` (version), `/api/v1/workshop/branding/logo` (multipart); DELETE logo | Owner |
+| GET | `/api/v1/workshop/settings` | Owner, Front desk |
+| PUT | `/api/v1/workshop/settings` (version) | Owner |
+| GET | `/api/v1/dashboard` | Owner |
+| GET, POST | `/api/v1/users` (POST returns an activation link) | Owner |
+| PUT | `/api/v1/users/{id}` (role, active; version) | Owner |
+| POST | `/api/v1/users/{id}/activation-link` | Owner |
+| GET, POST | `/api/v1/admin/workshops`; GET `/api/v1/admin/workshops/{id}` | Platform admin |
+| PUT | `/api/v1/admin/workshops/{id}/subscription` (version), `/api/v1/admin/workshops/{id}/branding` (version), `…/branding/logo` | Platform admin |
+| POST | `/api/v1/admin/workshops/{id}/owner-activation-link` | Platform admin |
+| GET, POST | `/api/v1/customers`, `/api/v1/customers/{id}`, `/api/v1/customers/{id}/vehicles` | Owner, Front desk |
+| PUT | `/api/v1/customers/{id}` (version) | Owner, Front desk |
 | POST | `/api/v1/vehicles` | Owner, Front desk |
-| GET | `/api/v1/vehicles?plate=`, `/api/v1/vehicles/{id}`, `/api/v1/vehicles/{id}/work-orders` | everyone |
+| PUT | `/api/v1/vehicles/{id}` (version), `/api/v1/vehicles/{id}/owner` (version) | Owner, Front desk |
+| GET | `/api/v1/vehicles?plate=`, `/api/v1/vehicles?vin=` (exact, 17 characters), `/api/v1/vehicles/{id}` | everyone |
+| GET | `/api/v1/vehicles/{id}/work-orders` | everyone (mechanics: all jobs of the vehicle, no prices) |
 | POST | `/api/v1/work-orders` (check in) | Owner, Front desk |
-| GET | `/api/v1/work-orders/board`, `/api/v1/work-orders/{id}` | everyone (mechanics: own jobs) |
+| PUT | `/api/v1/work-orders/{id}/check-in` | Owner, Front desk |
+| GET | `/api/v1/work-orders/board` | everyone (mechanics: own jobs) |
+| GET | `/api/v1/work-orders/{id}` | everyone (mechanics: other mechanics' jobs come back `readOnly`, no prices) |
 | POST, DELETE | `/api/v1/work-orders/{id}/lines` | Owner, Front desk |
-| PATCH | `/api/v1/work-orders/{id}/status` | everyone (mechanics: In progress, Awaiting parts, Ready) |
-| PUT | `/api/v1/work-orders/{id}/mechanic` | Owner, Front desk |
+| PATCH | `/api/v1/work-orders/{id}/status` | everyone (mechanics: own jobs only, to In progress, Awaiting parts, Ready) |
+| PUT | `/api/v1/work-orders/{id}/mechanic` (reason required to replace or remove a mechanic) | Owner, Front desk |
+| GET | `/api/v1/work-orders/{id}/mechanic` (current mechanic and change history), `/api/v1/mechanics` | Owner, Front desk |
+| GET | `/api/v1/catalogue/services`, `/api/v1/catalogue/services/{id}` | everyone (mechanics: no prices) |
+| POST, PUT | `/api/v1/catalogue/services` (PUT: version; `pricing` FIXED or HOURLY) | Owner |
+| GET | `/api/v1/catalogue/packages`, `/api/v1/catalogue/packages/{id}` | Owner, Front desk |
+| POST, PUT | `/api/v1/catalogue/packages` (PUT: version; items `{serviceId}` or `{productId}` with `quantity`) | Owner |
+| POST | `/api/v1/work-orders/{id}/lines/from-catalogue` (`serviceId` or `packageId`) | Owner, Front desk |
+| GET | `/api/v1/stock/products?q=&activeOnly=&lowOnly=`, `/api/v1/stock/products/{id}` | everyone (mechanics: name, SKU, bin, available; no cost or prices) |
+| POST, PUT | `/api/v1/stock/products` (PUT: version) | Owner |
+| POST | `/api/v1/stock/products/{id}/adjustments` (signed quantity, reason required) | Owner, Front desk |
+| GET | `/api/v1/stock/products/{id}/movements`, `/api/v1/stock/low-stock` | Owner, Front desk |
+| GET, POST, PUT | `/api/v1/stock/purchase-orders` (`?status=`), `/api/v1/stock/purchase-orders/{id}` (PUT: drafts, version) | Owner, Front desk |
+| POST | `/api/v1/stock/purchase-orders/{id}/order`, `/api/v1/stock/purchase-orders/{id}/receive` | Owner, Front desk |
+| POST | `/api/v1/work-orders/{id}/lines/from-stock` (`productId`, `quantity`; reserves, 409 `insufficient-stock`) | Owner, Front desk |

@@ -15,6 +15,7 @@ ASP ships a Spring Boot API and an Angular app that release together. The team's
 - Backend packages are by feature: `identity`, `customer`, `workshop`, each a Spring Modulith module with `api`, `application`, `domain` and `infrastructure` inside. App-wide wiring sits in `config/<concern>`; `shared` holds shared domain types only.
 - Every feature keeps a framework-free domain and separate JPA entities in `infrastructure`, including the simpler CRUD features, so one set of ArchUnit rules covers the whole codebase and no feature needs the JPA-on-domain escape hatch.
 - The frontend uses `core/api`, `core/auth`, `shared` and one folder per backend feature with the same name.
+- Amended 2026-10-22: the frontend also has `backoffice` (the owner's screens, which call the `identity` and `workshop` APIs, with its own `backoffice/i18n` dictionaries spread into `messages.*.ts`) and `admin` (the platform admin console over `identity`, ADR 0003). Styles are Bootstrap 5.3.8 Sass partials in `src/styles/` (`docs/ui/design-system.md`). `@Transactional` is checked on classes as well as methods.
 
 ## Consequences
 
