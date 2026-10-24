@@ -26,11 +26,12 @@ import org.jspecify.annotations.Nullable;
 import com.asp.platform.catalogue.domain.PackageDetails;
 import com.asp.platform.catalogue.domain.PackageItem;
 import com.asp.platform.catalogue.domain.ServicePackage;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 /// `tenant_id` is filled by the database from the connection's workshop and checked by row-level security.
 @Entity
 @Table(name = "service_package")
-class ServicePackageEntity {
+class ServicePackageEntity implements DomainEntity<ServicePackage> {
 
     @Id
     private UUID id;
@@ -80,7 +81,8 @@ class ServicePackageEntity {
     /// Items are updated in place (quantity, position), removed or added, never deleted and re-inserted, so the
     /// `unique (package_id, service_item_id)` and `unique (package_id, product_id)` constraints hold whatever order
     /// Hibernate flushes in.
-    void apply(ServicePackage servicePackage) {
+    @Override
+    public void apply(ServicePackage servicePackage) {
         PackageDetails d = servicePackage.details();
         this.name = d.name();
         this.description = d.description();
@@ -103,7 +105,8 @@ class ServicePackageEntity {
         }
     }
 
-    ServicePackage toDomain() {
+    @Override
+    public ServicePackage toDomain() {
         Long v = version;
         List<PackageItem> domainItems = items.stream()
                 .sorted(Comparator.comparingInt(ServicePackageItemEntity::position))

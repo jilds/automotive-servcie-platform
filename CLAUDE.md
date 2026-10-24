@@ -64,6 +64,7 @@ Ideas raised for later (do not build without a request): a chatbot that gives a 
 - **Backend packages:** `com.asp.platform`.
   - `config/{security,persistence,web,time}` for app-wide wiring.
   - `shared` for `Role`, `CurrentUser`, `NotFoundException`, `ConflictException`, `StaleDataException`, `InvalidInputException`, `CountryCodes` with the `@IsoCountry` constraint, and `PortugueseNif` with the `@ValidNif` constraint **(updated 2026-10-22)**. Keep it small.
+  - `shared.persistence` **(updated 2026-10-24)**: JPA helpers for the `infrastructure` layer only (`LayerRulesTests`): `DomainEntity`, `Upserts`, `Constraints`. A new aggregate's entity implements `DomainEntity<X>` and its `Jpa*Repository` saves with `Upserts.upsert` (flushes, so the returned `version` is the stored one); a unique-constraint race becomes a coded 409 with `Constraints.violated`.
   - Features `identity`, `customer`, `workshop`, `catalogue` **(updated 2026-10-22)**, `stock` **(updated 2026-10-23)**. Each is a Spring Modulith module with `api`, `application`, `domain`, `infrastructure` inside. The platform admin console and branding live in `identity` (ADR 0003).
   - Every package has `package-info.java` with `@NullMarked`.
 - **Layer rules (enforced by `LayerRulesTests`):** api → application → domain ← infrastructure. The domain has no Spring or JPA code. JPA entities and Spring Data adapters (`SpringDataX`, `JpaX`) live in `infrastructure`. `@Transactional` only in `application`, on methods **and on classes** **(updated 2026-10-22)**. Features never import `config`.
@@ -168,4 +169,4 @@ Every feature must meet all of these before it is reported as done:
 - Brazilian fiscal features (NFe, NFS-e, Pix) are not started.
 - **(updated 2026-10-23)** Review leftovers (L9, bundle budget back to 500 kB, is done): tenant-scoped composite foreign keys (review L5); OnPush on the remaining older components (L8, partly done); ArchUnit support for class file 71 (I1, upstream).
 - **(updated 2026-10-22)** E-mail delivery of activation links, billing, and enforcing `subscription_until` are not built (ADR 0003).
-- **(updated 2026-10-23)** Planned refactor: one generic save (`shared.persistence.Upserts` + `DomainEntity`) for the `Jpa*Repository` adapters; see `docs/plans/jpa-adapter-upsert.md`.
+- **(updated 2026-10-24)** Done: one generic save (`shared.persistence.Upserts` + `DomainEntity`) for the `Jpa*Repository` adapters; see `docs/plans/jpa-adapter-upsert.md`.

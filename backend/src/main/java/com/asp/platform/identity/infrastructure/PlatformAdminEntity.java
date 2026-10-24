@@ -9,10 +9,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import com.asp.platform.identity.domain.PlatformAdmin;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 @Entity
 @Table(name = "platform_admin")
-class PlatformAdminEntity {
+class PlatformAdminEntity implements DomainEntity<PlatformAdmin> {
 
     @Id
     private UUID id;
@@ -42,14 +43,16 @@ class PlatformAdminEntity {
         apply(admin);
     }
 
-    void apply(PlatformAdmin admin) {
+    @Override
+    public void apply(PlatformAdmin admin) {
         this.name = admin.name();
         this.email = admin.email();
         this.passwordHash = admin.passwordHash();
         this.active = admin.active();
     }
 
-    PlatformAdmin toDomain() {
+    @Override
+    public PlatformAdmin toDomain() {
         return new PlatformAdmin(id, name, email, passwordHash, active, createdAt);
     }
 }

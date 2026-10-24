@@ -22,6 +22,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.shared.persistence.DomainEntity;
 import com.asp.platform.stock.domain.PurchaseOrder;
 import com.asp.platform.stock.domain.PurchaseOrderDetails;
 import com.asp.platform.stock.domain.PurchaseOrderLine;
@@ -30,7 +31,7 @@ import com.asp.platform.stock.domain.PurchaseOrderStatus;
 /// `tenant_id` is filled by the database from the connection's workshop and checked by row-level security.
 @Entity
 @Table(name = "purchase_order")
-class PurchaseOrderEntity {
+class PurchaseOrderEntity implements DomainEntity<PurchaseOrder> {
 
     @Id
     private UUID id;
@@ -81,7 +82,8 @@ class PurchaseOrderEntity {
     }
 
     /// Copies the changeable state, adding and removing lines to match (a line keeps its id while it stays).
-    void apply(PurchaseOrder order) {
+    @Override
+    public void apply(PurchaseOrder order) {
         PurchaseOrderDetails d = order.details();
         this.supplier = d.supplier();
         this.notes = d.notes();
@@ -99,7 +101,8 @@ class PurchaseOrderEntity {
         }
     }
 
-    PurchaseOrder toDomain() {
+    @Override
+    public PurchaseOrder toDomain() {
         Long v = version;
         return new PurchaseOrder(id, number,
                 new PurchaseOrderDetails(supplier, notes,

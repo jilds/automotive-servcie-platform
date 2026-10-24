@@ -19,11 +19,12 @@ import org.jspecify.annotations.Nullable;
 import com.asp.platform.catalogue.domain.ServiceDetails;
 import com.asp.platform.catalogue.domain.ServiceItem;
 import com.asp.platform.catalogue.domain.ServicePricing;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 /// `tenant_id` is filled by the database from the connection's workshop and checked by row-level security.
 @Entity
 @Table(name = "service_item")
-class ServiceItemEntity {
+class ServiceItemEntity implements DomainEntity<ServiceItem> {
 
     @Id
     private UUID id;
@@ -78,7 +79,8 @@ class ServiceItemEntity {
         apply(item);
     }
 
-    void apply(ServiceItem item) {
+    @Override
+    public void apply(ServiceItem item) {
         ServiceDetails d = item.details();
         this.name = d.name();
         this.description = d.description();
@@ -92,7 +94,8 @@ class ServiceItemEntity {
         this.listedOnline = d.listedOnline();
     }
 
-    ServiceItem toDomain() {
+    @Override
+    public ServiceItem toDomain() {
         Long v = version;
         return new ServiceItem(id, new ServiceDetails(name, description, category, standardHours, pricing, priceCents,
                 vatRate,

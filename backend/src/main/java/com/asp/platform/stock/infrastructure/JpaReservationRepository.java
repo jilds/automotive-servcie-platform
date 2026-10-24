@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Repository;
 
+import com.asp.platform.shared.persistence.Upserts;
 import com.asp.platform.stock.ReservationSource;
 import com.asp.platform.stock.domain.Reservation;
 import com.asp.platform.stock.domain.ReservationRepository;
@@ -24,16 +25,10 @@ class JpaReservationRepository implements ReservationRepository {
         this.jpa = jpa;
     }
 
+    /// Flushes at once: the next "how much is reserved?" query must see it.
     @Override
     public Reservation save(Reservation reservation) {
-        StockReservationEntity entity = jpa.findById(reservation.id())
-                .map(existing -> {
-                    existing.apply(reservation);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new StockReservationEntity(reservation)));
-        jpa.flush(); // the next "how much is reserved?" query must see it
-        return entity.toDomain();
+        return Upserts.upsert(jpa, reservation.id(), reservation, StockReservationEntity::new);
     }
 
     @Override

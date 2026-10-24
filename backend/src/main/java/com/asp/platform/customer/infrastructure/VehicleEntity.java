@@ -18,11 +18,12 @@ import org.jspecify.annotations.Nullable;
 import com.asp.platform.customer.domain.Vehicle;
 import com.asp.platform.customer.domain.VehicleDetails;
 import com.asp.platform.customer.domain.VehicleRegistration;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 /// `tenant_id` is filled by the database from the connection's workshop (see [CustomerEntity]).
 @Entity
 @Table(name = "vehicle")
-class VehicleEntity {
+class VehicleEntity implements DomainEntity<Vehicle> {
 
     @Id
     private UUID id;
@@ -75,7 +76,8 @@ class VehicleEntity {
         apply(vehicle);
     }
 
-    void apply(Vehicle vehicle) {
+    @Override
+    public void apply(Vehicle vehicle) {
         VehicleDetails d = vehicle.details();
         this.customerId = vehicle.customerId();
         this.plate = d.plate();
@@ -91,7 +93,8 @@ class VehicleEntity {
         this.registrationDate = month == null ? null : month.atDay(1);
     }
 
-    Vehicle toDomain() {
+    @Override
+    public Vehicle toDomain() {
         LocalDate date = registrationDate;
         return new Vehicle(id, customerId, new VehicleDetails(plate, vin, make, model, year, fuelType),
                 new VehicleRegistration(registrationCountry, date == null ? null : YearMonth.from(date)), mileage,

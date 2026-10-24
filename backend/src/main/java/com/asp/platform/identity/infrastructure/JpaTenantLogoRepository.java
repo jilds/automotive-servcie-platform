@@ -17,6 +17,7 @@ class JpaTenantLogoRepository implements TenantLogoRepository {
         this.jpa = jpa;
     }
 
+    /// Not [com.asp.platform.shared.persistence.Upserts]: keyed by the tenant, not the logo, and returns nothing.
     @Override
     public void save(UUID tenantId, Logo logo) {
         jpa.findById(tenantId).ifPresentOrElse(existing -> existing.apply(logo),

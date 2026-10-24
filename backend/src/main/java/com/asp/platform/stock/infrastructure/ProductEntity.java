@@ -16,6 +16,7 @@ import org.hibernate.annotations.OptimisticLock;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.shared.persistence.DomainEntity;
 import com.asp.platform.stock.domain.Product;
 import com.asp.platform.stock.domain.ProductDetails;
 
@@ -27,7 +28,7 @@ import com.asp.platform.stock.domain.ProductDetails;
 @Entity
 @Table(name = "product")
 @DynamicUpdate
-class ProductEntity {
+class ProductEntity implements DomainEntity<Product> {
 
     @Id
     private UUID id;
@@ -90,7 +91,8 @@ class ProductEntity {
         apply(product);
     }
 
-    void apply(Product product) {
+    @Override
+    public void apply(Product product) {
         ProductDetails d = product.details();
         this.sku = d.sku();
         this.name = d.name();
@@ -109,7 +111,8 @@ class ProductEntity {
         }
     }
 
-    Product toDomain() {
+    @Override
+    public Product toDomain() {
         Long v = version;
         return new Product(id, new ProductDetails(sku, name, brand, unit, costCents, salePriceCents, vatRate,
                 minStock, bin, active, listedOnline), onHand, v == null ? 0 : v);

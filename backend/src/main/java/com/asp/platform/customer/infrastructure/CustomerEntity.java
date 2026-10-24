@@ -16,12 +16,13 @@ import org.jspecify.annotations.Nullable;
 import com.asp.platform.customer.domain.Address;
 import com.asp.platform.customer.domain.ContactDetails;
 import com.asp.platform.customer.domain.Customer;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 /// `tenant_id` is not mapped: the database fills it from the connection's workshop and row-level security
 /// checks it on every read and write.
 @Entity
 @Table(name = "customer")
-class CustomerEntity {
+class CustomerEntity implements DomainEntity<Customer> {
 
     @Id
     private UUID id;
@@ -73,7 +74,8 @@ class CustomerEntity {
         apply(customer);
     }
 
-    void apply(Customer customer) {
+    @Override
+    public void apply(Customer customer) {
         ContactDetails c = customer.contact();
         this.name = c.name();
         this.nif = c.nif();
@@ -88,7 +90,8 @@ class CustomerEntity {
         this.marketingConsent = c.marketingConsent();
     }
 
-    Customer toDomain() {
+    @Override
+    public Customer toDomain() {
         return new Customer(id, new ContactDetails(name, nif, phone, email, address(), marketingConsent), version());
     }
 

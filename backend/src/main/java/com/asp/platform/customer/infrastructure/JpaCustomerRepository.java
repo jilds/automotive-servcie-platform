@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.asp.platform.customer.domain.Customer;
 import com.asp.platform.customer.domain.CustomerRepository;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaCustomerRepository implements CustomerRepository {
@@ -21,14 +22,7 @@ class JpaCustomerRepository implements CustomerRepository {
 
     @Override
     public Customer save(Customer customer) {
-        CustomerEntity entity = jpa.findById(customer.id())
-                .map(existing -> {
-                    existing.apply(customer);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new CustomerEntity(customer)));
-        jpa.flush(); // so the returned version is the stored one
-        return entity.toDomain();
+        return Upserts.upsert(jpa, customer.id(), customer, CustomerEntity::new);
     }
 
     @Override

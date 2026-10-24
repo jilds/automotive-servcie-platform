@@ -1,19 +1,18 @@
 package com.asp.platform.stock.infrastructure;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 
-import org.hibernate.exception.ConstraintViolationException;
 import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
+import com.asp.platform.shared.persistence.Constraints;
+import com.asp.platform.shared.persistence.Upserts;
 import com.asp.platform.stock.domain.DuplicateSkuException;
 import com.asp.platform.stock.domain.Product;
 import com.asp.platform.stock.domain.ProductRepository;
@@ -36,16 +35,9 @@ class JpaProductRepository implements ProductRepository {
     @Override
     public Product save(Product product) {
         try {
-            ProductEntity entity = jpa.findById(product.id())
-                    .map(existing -> {
-                        existing.apply(product);
-                        return existing;
-                    })
-                    .orElseGet(() -> jpa.save(new ProductEntity(product)));
-            jpa.flush(); // so the returned version is the stored one
-            return entity.toDomain();
+            return Upserts.upsert(jpa, product.id(), product, ProductEntity::new);
         } catch (DataIntegrityViolationException e) {
-            if (isUniqueSkuViolation(e)) {
+            if (Constraints.violated(e, UNIQUE_SKU_CONSTRAINT)) {
                 throw new DuplicateSkuException(product.details().sku());
             }
             throw e;
@@ -80,19 +72,5 @@ class JpaProductRepository implements ProductRepository {
     @Override
     public boolean skuTaken(String sku, @Nullable UUID exceptId) {
         return exceptId == null ? jpa.skuTaken(sku) : jpa.skuTakenByOther(sku, exceptId);
-    }
-
-    private static boolean isUniqueSkuViolation(DataIntegrityViolationException e) {
-        for (@Nullable Throwable cause = e; cause != null; cause = cause.getCause()) {
-            if (cause instanceof ConstraintViolationException violation
-                    && UNIQUE_SKU_CONSTRAINT.equalsIgnoreCase(violation.getConstraintName())) {
-                return true;
-            }
-            if (cause instanceof SQLException sql && sql.getMessage() != null
-                    && sql.getMessage().toLowerCase(Locale.ROOT).contains(UNIQUE_SKU_CONSTRAINT)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
