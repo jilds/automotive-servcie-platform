@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { Dashboard, InviteUserRequest, TeamMember, UpdateUserRequest, WorkshopSettings } from './backoffice.models';
+import { ActivationLink, Dashboard, Invitation, InviteUserRequest, TeamMember, UpdateUserRequest, WorkshopSettings } from './backoffice.models';
 
 const API = '/api/v1';
 
@@ -18,7 +18,11 @@ export class BackofficeApi {
     return this.http.get<TeamMember[]>(`${API}/users`);
   }
   inviteUser(body: InviteUserRequest) {
-    return this.http.post<TeamMember>(`${API}/users`, body);
+    return this.http.post<Invitation>(`${API}/users`, body);
+  }
+  /** A new activation link for a member who has not activated yet. */
+  reissueLink(id: string) {
+    return this.http.post<ActivationLink>(`${API}/users/${id}/activation-link`, null);
   }
   updateUser(id: string, body: UpdateUserRequest) {
     return this.http.put<TeamMember>(`${API}/users/${id}`, body);

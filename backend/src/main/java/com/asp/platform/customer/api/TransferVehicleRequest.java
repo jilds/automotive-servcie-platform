@@ -4,5 +4,6 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
 
-record TransferVehicleRequest(@NotNull UUID customerId) {
+/// @param version the vehicle version the editor read; a different stored version answers 409 `stale-data`
+record TransferVehicleRequest(@NotNull UUID customerId, @NotNull Long version) {
 }

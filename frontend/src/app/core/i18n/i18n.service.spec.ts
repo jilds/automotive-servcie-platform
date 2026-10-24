@@ -2,12 +2,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 
 import { I18nService, Language, LANGUAGES } from './i18n.service';
-import { en, MessageKey, PluralKey } from './messages.en';
-import { ptBR } from './messages.pt-BR';
-import { ptPT } from './messages.pt-PT';
+import { allTexts } from './all-texts';
+import { MessageKey, PluralKey } from './messages.en';
 
-const DICTIONARIES: Record<Language, Partial<Record<string, string>>> = { en, 'pt-PT': ptPT, 'pt-BR': ptBR };
-const PLURAL_KEYS = Object.keys(en)
+const DICTIONARIES: Record<Language, Partial<Record<string, string>>> = {
+  en: allTexts('en'),
+  'pt-PT': allTexts('pt-PT'),
+  'pt-BR': allTexts('pt-BR'),
+};
+const PLURAL_KEYS = Object.keys(DICTIONARIES.en)
   .filter((key) => key.endsWith('.other'))
   .map((key) => key.slice(0, -'.other'.length) as PluralKey);
 

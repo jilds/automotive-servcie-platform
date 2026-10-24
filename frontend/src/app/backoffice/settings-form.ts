@@ -1,5 +1,6 @@
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 
+import { nifValidator } from '../shared/nif';
 import { WorkshopSettings } from './backoffice.models';
 
 /** Countries offered in the select; a stored country outside this list is added to it. */
@@ -59,9 +60,12 @@ export function maxDecimals(digits: number): ValidatorFn {
   };
 }
 
-/** Typed form for the workshop settings. The labour rate is edited in euros and sent in cents. */
+/**
+ * Typed form for the workshop settings. The labour rate is edited in euros and sent in cents. A Portuguese workshop's
+ * NIF must pass the check digit (`nif` error); it is re-checked when the country changes.
+ */
 export function settingsForm() {
-  return new FormGroup({
+  const form = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, notBlank] }),
     nif: new FormControl('', { nonNullable: true, validators: [Validators.pattern(/^\d{9}$/)] }),
     country: new FormControl('PT', { nonNullable: true, validators: [Validators.required, Validators.pattern(/^[A-Za-z]{2}$/)] }),
@@ -69,12 +73,15 @@ export function settingsForm() {
     defaultVatRate: new FormControl<number | null>(23, [Validators.required, Validators.min(0), Validators.max(100), maxDecimals(2)]),
     labourRateEuros: new FormControl<number | null>(0, [Validators.required, Validators.min(0), maxDecimals(2)]),
   });
+  form.controls.nif.setValidators(nifValidator(() => form.controls.country.value));
+  form.controls.country.valueChanges.subscribe(() => form.controls.nif.updateValueAndValidity({ emitEvent: false }));
+  return form;
 }
 
 export type SettingsForm = ReturnType<typeof settingsForm>;
 
 /** Form control name for a field of the API (`errors` keys of a validation problem). */
-export const FIELD_CONTROL: Record<keyof WorkshopSettings, keyof SettingsForm['controls']> = {
+export const FIELD_CONTROL: Record<Exclude<keyof WorkshopSettings, 'version'>, keyof SettingsForm['controls']> = {
   name: 'name',
   nif: 'nif',
   country: 'country',
@@ -94,7 +101,8 @@ export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
   };
 }
 
-export function toSettings(form: SettingsForm): WorkshopSettings {
+/** The PUT body; `version` is the workshop version the form was loaded with. */
+export function toSettings(form: SettingsForm, version: number): WorkshopSettings {
   const v = form.getRawValue();
   const nif = v.nif.trim();
   return {
@@ -104,5 +112,6 @@ export function toSettings(form: SettingsForm): WorkshopSettings {
     timezone: v.timezone,
     defaultVatRate: Number(v.defaultVatRate),
     labourRateCents: Math.round(Number(v.labourRateEuros) * 100),
+    version,
   };
 }

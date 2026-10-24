@@ -31,10 +31,10 @@ describe('BackofficeApi', () => {
     api.dashboard().subscribe();
     http.expectOne('/api/v1/dashboard').flush({});
 
-    api.updateUser('user-1', { role: 'FRONT_DESK', active: false }).subscribe();
+    api.updateUser('user-1', { role: 'FRONT_DESK', active: false, version: 3 }).subscribe();
     const request = http.expectOne('/api/v1/users/user-1');
     expect(request.request.method).toBe('PUT');
-    expect(request.request.body).toEqual({ role: 'FRONT_DESK', active: false });
+    expect(request.request.body).toEqual({ role: 'FRONT_DESK', active: false, version: 3 });
     request.flush({});
   });
 });
@@ -58,13 +58,13 @@ describe('workshop settings form', () => {
 
     form.patchValue({ name: ' Oficina Central ', nif: '', country: 'pt', timezone: 'Europe/Lisbon', defaultVatRate: 23.5, labourRateEuros: 45.25 });
     expect(form.valid).toBe(true);
-    expect(toSettings(form)).toMatchObject({ name: 'Oficina Central', nif: null, country: 'PT', labourRateCents: 4525 });
+    expect(toSettings(form, 4)).toMatchObject({ name: 'Oficina Central', nif: null, country: 'PT', labourRateCents: 4525, version: 4 });
   });
 });
 
 describe('Team', () => {
   const currentUser: TeamMember = {
-    id: 'owner-1', tenantId: 'tenant-1', name: 'Owner', email: 'owner@example.test', role: 'OWNER', active: true,
+    id: 'owner-1', tenantId: 'tenant-1', name: 'Owner', email: 'owner@example.test', role: 'OWNER', active: true, version: 0,
   };
 
   it('does not render role or activation controls for the signed-in owner', async () => {
@@ -104,7 +104,7 @@ describe('BackofficeApi (team and settings)', () => {
     api.users().subscribe();
     expect(http.expectOne('/api/v1/users').request.method).toBe('GET');
 
-    const body = { name: 'Rui', email: 'rui@oficina.pt', role: 'MECHANIC' as const, temporaryPassword: 'secret123' };
+    const body = { name: 'Rui', email: 'rui@oficina.pt', role: 'MECHANIC' as const };
     api.inviteUser(body).subscribe();
     const invite = http.expectOne('/api/v1/users');
     expect(invite.request.method).toBe('POST');
@@ -116,7 +116,7 @@ describe('BackofficeApi (team and settings)', () => {
     api.settings().subscribe();
     expect(http.expectOne('/api/v1/workshop/settings').request.method).toBe('GET');
 
-    const settings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500 };
+    const settings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500, version: 0 };
     api.saveSettings(settings).subscribe();
     const put = http.expectOne('/api/v1/workshop/settings');
     expect(put.request.method).toBe('PUT');
@@ -204,7 +204,7 @@ describe('Dashboard loading', () => {
 });
 
 describe('Settings server errors', () => {
-  const settings: WorkshopSettings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500 };
+  const settings: WorkshopSettings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500, version: 0 };
 
   it('shows API validation errors on the matching fields, in the UI language', () => {
     TestBed.configureTestingModule({
@@ -245,14 +245,14 @@ describe('settings form helpers', () => {
     expect(form.controls.labourRateEuros.hasError('decimals')).toBe(true);
     form.patchValue({ labourRateEuros: 0.1 + 0.2 });
     expect(form.controls.labourRateEuros.valid).toBe(true);
-    expect(toSettings(form).labourRateCents).toBe(30);
+    expect(toSettings(form, 0).labourRateCents).toBe(30);
   });
 
   it('round-trips the API shape (cents to euros and back)', () => {
     const form = settingsForm();
-    form.reset(toFormValue({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550 }));
+    form.reset(toFormValue({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, version: 2 }));
     expect(form.controls.labourRateEuros.value).toBe(45.5);
-    expect(toSettings(form)).toEqual({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550 });
+    expect(toSettings(form, 2)).toEqual({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, version: 2 });
   });
 
   it('falls back to a fixed time zone list and always keeps the stored zone', () => {
@@ -277,8 +277,8 @@ describe('dashboard view model (workload)', () => {
 
 describe('Team (other users)', () => {
   it('renders role and deactivate controls for the other members', async () => {
-    const owner: TeamMember = { id: 'owner-1', tenantId: 't', name: 'Owner', email: 'o@example.test', role: 'OWNER', active: true };
-    const mechanic: TeamMember = { id: 'mech-1', tenantId: 't', name: 'Rui', email: 'r@example.test', role: 'MECHANIC', active: true };
+    const owner: TeamMember = { id: 'owner-1', tenantId: 't', name: 'Owner', email: 'o@example.test', role: 'OWNER', active: true, version: 0 };
+    const mechanic: TeamMember = { id: 'mech-1', tenantId: 't', name: 'Rui', email: 'r@example.test', role: 'MECHANIC', active: true, version: 0 };
     await TestBed.configureTestingModule({
       imports: [Team],
       providers: [

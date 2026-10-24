@@ -3,8 +3,10 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { AuthService } from '../core/auth/auth.service';
 import { Role } from '../core/api/models';
+import { isStale } from '../core/api/problem';
 import { I18nService } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { CopyLink } from '../identity/copy-link';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { BackofficeApi } from './backoffice-api.service';
@@ -30,7 +32,7 @@ function byName(a: TeamMember, b: TeamMember): number {
 @Component({
   selector: 'app-backoffice-team',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslatePipe, Alert, Icon],
+  imports: [ReactiveFormsModule, TranslatePipe, Alert, Icon, CopyLink],
   template: `
     <header class="d-flex flex-wrap align-items-end gap-3 mb-4">
       <div class="me-auto">
@@ -83,7 +85,9 @@ function byName(a: TeamMember, b: TeamMember): number {
                   <td class="text-break" [attr.data-label]="'common.email' | t">{{ u.email }}</td>
                   <td [attr.data-label]="'backoffice.team.role' | t"><span [class]="roleBadge(u.role)">{{ roleKey(u.role) | t }}</span></td>
                   <td [attr.data-label]="'backoffice.team.status' | t">
-                    @if (u.active) {
+                    @if (u.pending) {
+                      <span class="badge bg-warning-subtle text-warning-emphasis">{{ 'backoffice.team.pending' | t }}</span>
+                    } @else if (u.active) {
                       <span class="badge bg-success-subtle text-success-emphasis">{{ 'backoffice.team.active' | t }}</span>
                     } @else {
                       <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ 'backoffice.team.inactive' | t }}</span>
@@ -92,6 +96,9 @@ function byName(a: TeamMember, b: TeamMember): number {
                   <td class="cell-actions">
                     @if (u.id !== meId()) {
                       <span class="d-inline-flex flex-wrap align-items-center justify-content-end gap-2">
+                        @if (u.pending) {
+                          <button type="button" class="btn btn-sm btn-link" [disabled]="busyId() === u.id" (click)="newLink(u)">{{ 'backoffice.team.newLink' | t }}</button>
+                        }
                         <select
                           class="form-select form-select-sm w-auto"
                           [value]="u.role"
@@ -134,6 +141,21 @@ function byName(a: TeamMember, b: TeamMember): number {
 
     <dialog #inviteDialog class="modal" aria-labelledby="invite-title">
       <div class="modal-dialog">
+        @if (shownLink(); as l) {
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="modal-title" id="invite-title">{{ 'backoffice.team.linkTitle' | t: { name: l.name } }}</h2>
+              <button type="button" class="btn-close" [attr.aria-label]="'common.close' | t" (click)="inviteDialog.close()"></button>
+            </div>
+            <div class="modal-body vstack gap-3">
+              <p class="mb-0">{{ 'backoffice.team.linkBody' | t: { name: l.name } }}</p>
+              <app-copy-link [path]="l.path" [expiresAt]="l.expiresAt" [recipient]="l.name" />
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" (click)="inviteDialog.close()">{{ 'common.close' | t }}</button>
+            </div>
+          </div>
+        } @else {
         <form class="modal-content" [formGroup]="invite" (ngSubmit)="sendInvite()">
           <div class="modal-header">
             <h2 class="modal-title" id="invite-title">{{ 'backoffice.team.inviteTitle' | t }}</h2>
@@ -162,12 +184,7 @@ function byName(a: TeamMember, b: TeamMember): number {
                   }
                 </select>
               </div>
-              <div class="col-sm-6">
-                <label class="form-label" for="inv-password">{{ 'backoffice.team.temporaryPassword' | t }}</label>
-                <input id="inv-password" class="form-control" formControlName="temporaryPassword" type="password" autocomplete="new-password" minlength="8"
-                  [class.is-invalid]="invite.controls.temporaryPassword.invalid && invite.controls.temporaryPassword.touched" />
-                <div class="form-text">{{ 'backoffice.team.temporaryPasswordHelp' | t }}</div>
-              </div>
+              <p class="col-12 form-text mb-0">{{ 'backoffice.team.inviteHelp' | t }}</p>
             </div>
           </div>
           <div class="modal-footer">
@@ -180,6 +197,7 @@ function byName(a: TeamMember, b: TeamMember): number {
             </button>
           </div>
         </form>
+        }
       </div>
     </dialog>
 
@@ -222,12 +240,13 @@ export class Team implements OnInit {
   protected readonly pending = signal<TeamMember | null>(null);
   protected readonly inviting = signal(false);
   protected readonly inviteError = signal<string | null>(null);
+  /** The activation link just issued, shown once in the invite dialog. */
+  protected readonly shownLink = signal<{ name: string; path: string; expiresAt: string } | null>(null);
 
   protected readonly invite = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required, notBlank] }),
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     role: new FormControl<Role>('MECHANIC', { nonNullable: true, validators: [Validators.required] }),
-    temporaryPassword: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }),
   });
 
   ngOnInit(): void {
@@ -254,6 +273,24 @@ export class Team implements OnInit {
     return ROLE_BADGE[role];
   }
 
+  /** A new activation link for a member who has not activated yet; their previous link stops working. */
+  protected newLink(user: TeamMember): void {
+    this.busyId.set(user.id);
+    this.error.set(null);
+    this.api.reissueLink(user.id).subscribe({
+      next: (link) => {
+        this.busyId.set(null);
+        this.inviteError.set(null);
+        this.shownLink.set({ name: user.name, path: link.activationPath, expiresAt: link.expiresAt });
+        showModal(this.inviteDialog().nativeElement);
+      },
+      error: (e) => {
+        this.error.set(this.i18n.error(e));
+        this.busyId.set(null);
+      },
+    });
+  }
+
   protected changeRole(user: TeamMember, select: HTMLSelectElement): void {
     const role = select.value as Role;
     if (role === user.role) return;
@@ -277,6 +314,7 @@ export class Team implements OnInit {
 
   protected openInvite(): void {
     this.invite.reset();
+    this.shownLink.set(null);
     this.inviteError.set(null);
     showModal(this.inviteDialog().nativeElement);
   }
@@ -286,11 +324,13 @@ export class Team implements OnInit {
     const v = this.invite.getRawValue();
     this.inviting.set(true);
     this.inviteError.set(null);
-    this.api.inviteUser({ name: v.name.trim(), email: v.email.trim(), role: v.role, temporaryPassword: v.temporaryPassword }).subscribe({
+    this.api.inviteUser({ name: v.name.trim(), email: v.email.trim(), role: v.role }).subscribe({
       next: (created) => {
-        this.users.update((list) => [...list, created].sort(byName));
+        const { activationPath, activationExpiresAt, ...member } = created;
+        this.users.update((list) => [...list, member].sort(byName));
         this.inviting.set(false);
-        this.inviteDialog().nativeElement.close();
+        // The link is shown once, here; the server keeps only its hash.
+        this.shownLink.set({ name: created.name, path: activationPath, expiresAt: activationExpiresAt });
         this.toasts.show(this.i18n.t('backoffice.team.invited', { name: created.name }));
       },
       error: (e) => {
@@ -308,7 +348,7 @@ export class Team implements OnInit {
   ): void {
     this.busyId.set(user.id);
     this.error.set(null);
-    this.api.updateUser(user.id, body).subscribe({
+    this.api.updateUser(user.id, { ...body, version: user.version }).subscribe({
       next: (saved) => {
         this.users.update((list) => list.map((u) => (u.id === saved.id ? saved : u)));
         this.busyId.set(null);
@@ -316,8 +356,12 @@ export class Team implements OnInit {
       },
       error: (e) => {
         onError?.();
-        this.error.set(this.i18n.error(e));
         this.busyId.set(null);
+        if (isStale(e)) {
+          // Someone else changed this member since the list loaded: show the team as it is now, then say why.
+          this.load();
+        }
+        this.error.set(this.i18n.error(e));
       },
     });
   }

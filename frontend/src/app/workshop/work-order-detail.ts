@@ -14,11 +14,14 @@ import { KmPipe } from '../shared/km.pipe';
 import { Plate } from '../shared/plate';
 import { MoneyPipe } from '../shared/money.pipe';
 import { CheckInEditDialog } from './check-in-edit-dialog';
+import { CataloguePicker } from '../catalogue/catalogue-picker';
+import { StockPicker } from '../stock/stock-picker';
+import { MechanicCard } from './mechanic-card';
 
 @Component({
   selector: 'app-work-order-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog],
+  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker],
   template: `
     <a routerLink="/board" class="d-inline-block mb-2 small fw-medium text-body-secondary text-decoration-none">{{ 'workOrder.back' | t }}</a>
     @if (error()) {
@@ -50,6 +53,9 @@ import { CheckInEditDialog } from './check-in-edit-dialog';
           </div>
         }
       </header>
+      @if (w.readOnly) {
+        <app-alert tone="info">{{ 'workOrder.readOnly' | t }}</app-alert>
+      }
       @if (notice()) {
         <app-alert tone="warning">{{ notice() }}</app-alert>
       }
@@ -81,6 +87,10 @@ import { CheckInEditDialog } from './check-in-edit-dialog';
         </div>
       }
 
+      @if (auth.hasRole('OWNER', 'FRONT_DESK')) {
+        <app-mechanic-card [workOrder]="w" (changed)="mechanicChanged($event)" />
+      }
+
       <h2 class="mt-5 mb-3">{{ 'workOrder.lines' | t }}</h2>
       <div class="card table-stack mb-4">
         <div class="table-responsive">
@@ -103,7 +113,12 @@ import { CheckInEditDialog } from './check-in-edit-dialog';
                       <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ 'line.PART' | t }}</span>
                     }
                   </td>
-                  <td class="cell-title">{{ l.description }}</td>
+                  <td class="cell-title">
+                    {{ l.description }}
+                    @if (l.serviceItemId) {
+                      <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis fw-normal ms-1" [title]="'catalogue.lineBadgeTitle' | t">{{ 'catalogue.lineBadge' | t }}</span>
+                    }
+                  </td>
                   <td class="text-end" [attr.data-label]="'workOrder.qty' | t">{{ l.quantity | number: '1.0-2' }}</td>
                   @if (auth.canSeePrices()) {
                     <td class="text-end" [attr.data-label]="'workOrder.unit' | t">{{ l.unitPriceCents | money }}</td>
@@ -137,6 +152,8 @@ import { CheckInEditDialog } from './check-in-edit-dialog';
 
       @if (auth.canSeePrices() && editable(w.status)) {
         <h3 class="mt-4 mb-3">{{ 'workOrder.addLine' | t }}</h3>
+        <app-catalogue-picker [workOrderId]="w.id" (added)="catalogueAdded($event)" />
+        <app-stock-picker [workOrderId]="w.id" (added)="catalogueAdded($event)" />
         <form [formGroup]="lineForm" (ngSubmit)="addLine()" class="card shadow-sm mb-4">
           <div class="card-body">
             <div class="row g-3">
@@ -209,6 +226,16 @@ export class WorkOrderDetail implements OnInit {
   }
 
   protected checkInSaved(w: WorkOrder): void {
+    this.notice.set(null);
+    this.wo.set(w);
+  }
+
+  protected catalogueAdded(w: WorkOrder): void {
+    this.error.set(null);
+    this.wo.set(w);
+  }
+
+  protected mechanicChanged(w: WorkOrder): void {
     this.notice.set(null);
     this.wo.set(w);
   }

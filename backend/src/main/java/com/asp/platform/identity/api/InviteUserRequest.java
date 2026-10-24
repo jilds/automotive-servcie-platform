@@ -8,13 +8,13 @@ import jakarta.validation.constraints.Size;
 import com.asp.platform.identity.application.InviteUserCommand;
 import com.asp.platform.shared.Role;
 
+/// Release 3: no password any more; the response carries an activation link instead.
 record InviteUserRequest(
-        @NotBlank String name,
-        @NotBlank @Email String email,
-        @NotNull Role role,
-        @NotBlank @Size(min = 8) String temporaryPassword) {
+        @NotBlank @Size(max = 120) String name,
+        @NotBlank @Email @Size(max = 254) String email,
+        @NotNull Role role) {
 
     InviteUserCommand toCommand() {
-        return new InviteUserCommand(name, email, role, temporaryPassword);
+        return new InviteUserCommand(name, email, role);
     }
 }

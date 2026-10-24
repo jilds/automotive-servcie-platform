@@ -63,7 +63,8 @@ class VehiclePlateApiTests extends ApiTestSupport {
                 {"customerId":"%s","plate":"1234 BCD","registrationCountry":"pt"}""".formatted(customerId)), owner));
 
         String vehicleId = createVehicle(owner, customerId, "12-AB-34");
-        expectInvalidPlate(call(put("/api/v1/vehicles/" + vehicleId).content("{\"plate\":\"12-AB-3\"}"), owner));
+        expectInvalidPlate(call(put("/api/v1/vehicles/" + vehicleId).content(withVersion("{\"plate\":\"12-AB-3\"}",
+                versionAt(owner, "/api/v1/vehicles/" + vehicleId))), owner));
 
         call(get("/api/v1/vehicles/" + vehicleId), owner).andExpect(jsonPath("$.plate").value("12AB34"));
     }
@@ -84,17 +85,20 @@ class VehiclePlateApiTests extends ApiTestSupport {
                 .andExpect(jsonPath("$.registrationDate").value("2019-07")));
 
         // An edit without a country keeps Spain, so the plate is still free-form.
-        call(put("/api/v1/vehicles/" + vehicleId).content("{\"plate\":\"5678-XYZ\"}"), owner)
+        call(put("/api/v1/vehicles/" + vehicleId).content(withVersion("{\"plate\":\"5678-XYZ\"}",
+                versionAt(owner, "/api/v1/vehicles/" + vehicleId))), owner)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.plate").value("5678XYZ"))
                 .andExpect(jsonPath("$.registrationCountry").value("ES"))
                 .andExpect(jsonPath("$.registrationDate").isEmpty());
 
         // Moving it to Portugal checks the plate against the Portuguese formats.
-        expectInvalidPlate(call(put("/api/v1/vehicles/" + vehicleId).content("""
-                {"plate":"5678XYZ","registrationCountry":"PT"}"""), owner));
-        call(put("/api/v1/vehicles/" + vehicleId).content("""
-                {"plate":"56-xy-78","registrationCountry":"PT","registrationDate":"2012-04"}"""), owner)
+        expectInvalidPlate(call(put("/api/v1/vehicles/" + vehicleId).content(withVersion("""
+                {"plate":"5678XYZ","registrationCountry":"PT"}""",
+                versionAt(owner, "/api/v1/vehicles/" + vehicleId))), owner));
+        call(put("/api/v1/vehicles/" + vehicleId).content(withVersion("""
+                {"plate":"56-xy-78","registrationCountry":"PT","registrationDate":"2012-04"}""",
+                versionAt(owner, "/api/v1/vehicles/" + vehicleId))), owner)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.plateDisplay").value("56-XY-78"))
                 .andExpect(jsonPath("$.plateEra").value("PT_2005"))
@@ -105,9 +109,10 @@ class VehiclePlateApiTests extends ApiTestSupport {
     @Test
     void should_default_the_registration_country_to_the_workshops_country() throws Exception {
         String owner = signup("Taller Vigo");
-        call(put("/api/v1/workshop/settings").content("""
+        call(put("/api/v1/workshop/settings").content(withVersion("""
                 {"name":"Taller Vigo","country":"ES","timezone":"Europe/Madrid","defaultVatRate":21,
-                 "labourRateCents":4000}"""), owner).andExpect(status().isOk());
+                 "labourRateCents":4000}""",
+                 versionAt(owner, "/api/v1/workshop/settings"))), owner).andExpect(status().isOk());
 
         call(post("/api/v1/vehicles").content("""
                 {"customerId":"%s","plate":"1234 BCD"}""".formatted(createCustomer(owner, "Lucía"))), owner)
@@ -211,10 +216,12 @@ class VehiclePlateApiTests extends ApiTestSupport {
                 .andExpect(jsonPath("$.plate").value("ABC123"))
                 .andExpect(jsonPath("$.plateDisplay").value("ABC123"))
                 .andExpect(jsonPath("$.plateEra").isEmpty());
-        call(put("/api/v1/vehicles/" + vehicleId).content("{\"plate\":\"abc 123\",\"make\":\"Fiat\"}"), owner)
+        call(put("/api/v1/vehicles/" + vehicleId).content(withVersion("{\"plate\":\"abc 123\",\"make\":\"Fiat\"}",
+                versionAt(owner, "/api/v1/vehicles/" + vehicleId))), owner)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.make").value("Fiat"));
-        expectInvalidPlate(call(put("/api/v1/vehicles/" + vehicleId).content("{\"plate\":\"ABC124\"}"), owner));
+        expectInvalidPlate(call(put("/api/v1/vehicles/" + vehicleId).content(withVersion("{\"plate\":\"ABC124\"}",
+                versionAt(owner, "/api/v1/vehicles/" + vehicleId))), owner));
     }
 
     private static void expectInvalidPlate(ResultActions result) throws Exception {

@@ -31,11 +31,39 @@ export interface User {
   role: Role;
 }
 
+/** Who is signed in: a workshop user, or a platform admin (no workshop, role `PLATFORM_ADMIN`). */
+export type AccountRole = Role | 'PLATFORM_ADMIN';
+
+export interface SessionUser {
+  id: string;
+  /** Null for a platform admin. */
+  tenantId: string | null;
+  name: string;
+  email: string;
+  role: AccountRole;
+}
+
 export interface TokenResponse {
   accessToken: string;
   tokenType: string;
   expiresIn: number;
-  user: User;
+  user: SessionUser;
+}
+
+/** A workshop's theme (`GET /branding`, `GET /branding/{slug}`). Unset colours fall back to the ASP theme. */
+export interface Branding {
+  slug: string;
+  /** Display name, or the workshop name when none is set. */
+  name: string;
+  displayName: string | null;
+  /** `#rrggbb`. */
+  primaryColor: string | null;
+  /** `#ffffff` or `#000000`, whichever reaches 4.5:1 on the primary colour. */
+  primaryTextColor: string | null;
+  accentColor: string | null;
+  logoUrl: string | null;
+  /** Workshop version (optimistic locking); sent back with the next theme change. */
+  version: number;
 }
 
 export interface Address {
@@ -54,6 +82,8 @@ export interface Customer {
   email: string | null;
   address: Address | null;
   marketingConsent: boolean;
+  /** Optimistic locking: sent back with `PUT /customers/{id}`; a newer save answers 409 `stale-data`. */
+  version: number;
 }
 
 export interface Vehicle {
@@ -70,9 +100,11 @@ export interface Vehicle {
   year: number | null;
   fuelType: string | null;
   mileage: number | null;
+  /** Optimistic locking: sent back with `PUT /vehicles/{id}` and `PUT /vehicles/{id}/owner`. */
+  version: number;
 }
 
-/** Body of `POST /customers` and `PUT /customers/{id}`; PUT replaces every field. */
+/** Body of `POST /customers` and `PUT /customers/{id}`; PUT replaces every field and needs `version`. */
 export interface CustomerRequest {
   name: string;
   nif: string | null;
@@ -80,6 +112,8 @@ export interface CustomerRequest {
   email: string | null;
   address: Address | null;
   marketingConsent: boolean;
+  /** Required on PUT: the version the form was opened with. */
+  version?: number;
 }
 
 /** Body of `PUT /vehicles/{id}`. A null mileage keeps the recorded reading; a null registration date clears it. */
@@ -94,10 +128,12 @@ export interface VehicleUpdateRequest {
   registrationCountry: string;
   /** `YYYY-MM`, 1937-01 up to the current month. */
   registrationDate: string | null;
+  /** The version the form was opened with (optimistic locking). */
+  version: number;
 }
 
 /** Body of `POST /vehicles`. A null registration country means the workshop's country. */
-export interface VehicleCreateRequest extends Omit<VehicleUpdateRequest, 'registrationCountry'> {
+export interface VehicleCreateRequest extends Omit<VehicleUpdateRequest, 'registrationCountry' | 'version'> {
   customerId: string;
   registrationCountry: string | null;
 }
@@ -122,6 +158,10 @@ export interface WorkOrderLine {
   discountPercent: number | null;
   vatRate: number | null;
   netCents: number | null;
+  /** The catalogue service the line was added from; null for a line typed by hand. */
+  serviceItemId?: string | null;
+  /** The stock product a part line reserves; null for a line that does not come from stock. */
+  productId?: string | null;
 }
 
 export interface WorkOrder extends PlateInfo {
@@ -141,6 +181,8 @@ export interface WorkOrder extends PlateInfo {
   netCents: number | null;
   vatCents: number | null;
   totalCents: number | null;
+  /** True for a mechanic viewing a job that is not theirs (from the vehicle history): no actions. */
+  readOnly: boolean;
 }
 
 export interface BoardCard extends PlateInfo {
@@ -154,4 +196,30 @@ export interface BoardCard extends PlateInfo {
 
 export interface Board {
   columns: Partial<Record<WorkOrderStatus, BoardCard[]>>;
+}
+
+/** An active mechanic a work order can be given to (`GET /mechanics`). */
+export interface Mechanic {
+  id: string;
+  name: string;
+}
+
+/** One change of a work order's mechanic. Names are null only when the user no longer exists. */
+export interface MechanicChange {
+  fromMechanicId: string | null;
+  fromName: string | null;
+  toMechanicId: string | null;
+  toName: string | null;
+  /** Required when a mechanic was replaced or removed; may be null for a first assignment. */
+  reason: string | null;
+  changedById: string;
+  changedByName: string | null;
+  changedAt: string;
+}
+
+/** `GET /work-orders/{id}/mechanic`: who works on it now and every change, oldest first. */
+export interface MechanicAssignment {
+  mechanicId: string | null;
+  mechanicName: string | null;
+  changes: MechanicChange[];
 }

@@ -23,25 +23,28 @@ class TeamApiTests extends ApiTestSupport {
         call(get("/api/v1/users"), owner)
                 .andExpect(jsonPath("$[?(@.id == '%s')].active".formatted(userId)).value(true));
 
-        call(put("/api/v1/users/" + userId).content("{\"role\":\"MECHANIC\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + userId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":true}",
+                userVersion(owner, userId))), owner)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId))
                 .andExpect(jsonPath("$.role").value("MECHANIC"))
                 .andExpect(jsonPath("$.active").value(true));
-        login(email, "password123");
+        login(email, PASSWORD);
 
-        call(put("/api/v1/users/" + userId).content("{\"role\":\"MECHANIC\",\"active\":false}"), owner)
+        call(put("/api/v1/users/" + userId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":false}",
+                userVersion(owner, userId))), owner)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(false));
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"%s\",\"password\":\"password123\"}".formatted(email)))
+                .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("invalid-credentials"));
 
         // Reactivated, they can log in again.
-        call(put("/api/v1/users/" + userId).content("{\"role\":\"MECHANIC\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + userId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":true}",
+                userVersion(owner, userId))), owner)
                 .andExpect(status().isOk());
-        login(email, "password123");
+        login(email, PASSWORD);
     }
 
     @Test
@@ -49,14 +52,17 @@ class TeamApiTests extends ApiTestSupport {
         String owner = signup("Oficina Eu");
         String ownerId = ownId(owner);
 
-        call(put("/api/v1/users/" + ownerId).content("{\"role\":\"FRONT_DESK\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + ownerId).content(withVersion("{\"role\":\"FRONT_DESK\",\"active\":true}",
+                userVersion(owner, ownerId))), owner)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.type").value("/problems/own-account-change"))
                 .andExpect(jsonPath("$.code").value("own-account-change"));
-        call(put("/api/v1/users/" + ownerId).content("{\"role\":\"OWNER\",\"active\":false}"), owner)
+        call(put("/api/v1/users/" + ownerId).content(withVersion("{\"role\":\"OWNER\",\"active\":false}",
+                userVersion(owner, ownerId))), owner)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("own-account-change"));
-        call(put("/api/v1/users/" + ownerId).content("{\"role\":\"OWNER\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + ownerId).content(withVersion("{\"role\":\"OWNER\",\"active\":true}",
+                userVersion(owner, ownerId))), owner)
                 .andExpect(status().isOk());
     }
 
@@ -68,14 +74,16 @@ class TeamApiTests extends ApiTestSupport {
         String firstId = ownId(first);
         String secondEmail = uniqueEmail("owner2");
         String secondId = invite(first, "OWNER", secondEmail);
-        String second = login(secondEmail, "password123");
+        String second = login(secondEmail, PASSWORD);
 
         // The second owner deactivates the first; one active owner is left.
-        call(put("/api/v1/users/" + firstId).content("{\"role\":\"OWNER\",\"active\":false}"), second)
+        call(put("/api/v1/users/" + firstId).content(withVersion("{\"role\":\"OWNER\",\"active\":false}",
+                userVersion(second, firstId))), second)
                 .andExpect(status().isOk());
 
         // The first owner's token has not expired, but it no longer works at all.
-        call(put("/api/v1/users/" + secondId).content("{\"role\":\"OWNER\",\"active\":false}"), first)
+        call(put("/api/v1/users/" + secondId).content(withVersion("{\"role\":\"OWNER\",\"active\":false}",
+                userVersion(first, secondId))), first)
                 .andExpect(status().isUnauthorized());
         call(get("/api/v1/users"), second)
                 .andExpect(jsonPath("$[?(@.id == '%s')].active".formatted(secondId)).value(true))
@@ -88,7 +96,8 @@ class TeamApiTests extends ApiTestSupport {
         String b = signup("Oficina Pessoas B");
         String userOfA = invite(a, "MECHANIC", uniqueEmail("mec"));
 
-        call(put("/api/v1/users/" + userOfA).content("{\"role\":\"OWNER\",\"active\":true}"), b)
+        call(put("/api/v1/users/" + userOfA).content(withVersion("{\"role\":\"OWNER\",\"active\":true}",
+                userVersion(b, userOfA))), b)
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.type").value("/problems/user-not-found"))
                 .andExpect(jsonPath("$.code").value("user-not-found"));
@@ -102,12 +111,12 @@ class TeamApiTests extends ApiTestSupport {
         String deskEmail = uniqueEmail("desk");
         String deskId = invite(owner, "FRONT_DESK", deskEmail);
 
-        call(put("/api/v1/users/" + deskId).content("{}"), owner)
+        call(put("/api/v1/users/" + deskId).content(withVersion("{}", userVersion(owner, deskId))), owner)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.role").exists())
                 .andExpect(jsonPath("$.errors.active").exists());
-        call(put("/api/v1/users/" + deskId).content("{\"role\":\"MECHANIC\",\"active\":true}"),
-                login(deskEmail, "password123"))
+        call(put("/api/v1/users/" + deskId).content("{\"role\":\"MECHANIC\",\"active\":true,\"version\":0}"),
+                login(deskEmail, PASSWORD))
                 .andExpect(status().isForbidden());
     }
 

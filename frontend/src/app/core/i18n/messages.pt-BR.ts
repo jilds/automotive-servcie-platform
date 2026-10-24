@@ -1,9 +1,11 @@
-import { backofficePtBR } from '../../backoffice/i18n/backoffice.pt-BR';
-import { MessageKey } from './messages.en';
+import { catalogueCorePtBR } from '../../catalogue/i18n/catalogue-core.pt-BR';
+import { identityCorePtBR } from '../../identity/i18n/identity-core.pt-BR';
+import { stockCorePtBR } from '../../stock/i18n/stock-core.pt-BR';
+import { CoreKey } from './messages.en';
 import { PortugueseDictionary } from './plural';
 
 /** Portuguese (Brazil) texts. */
-export const ptBR: PortugueseDictionary<MessageKey> = {
+export const ptBR: PortugueseDictionary<CoreKey> = {
   'app.title': 'ASP - Automotive Service Platform',
   'language.label': 'Idioma',
 
@@ -36,15 +38,7 @@ export const ptBR: PortugueseDictionary<MessageKey> = {
 
   'login.subtitle': 'Entre na sua oficina',
   'login.submit': 'Entrar',
-  'login.newWorkshop': 'Oficina nova?',
-  'login.createAccount': 'Criar conta',
 
-  'signup.title': 'Crie sua oficina',
-  'signup.workshopName': 'Nome da oficina',
-  'signup.ownerName': 'Seu nome',
-  'signup.password': 'Senha (mínimo 8 caracteres)',
-  'signup.submit': 'Criar conta',
-  'signup.alreadyRegistered': 'Já tem cadastro?',
 
   'customers.title': 'Clientes',
   'customers.new': 'Novo cliente',
@@ -114,11 +108,16 @@ export const ptBR: PortugueseDictionary<MessageKey> = {
   'board.title': 'Quadro da oficina',
   'board.since': 'desde {time}',
   'board.empty': 'Nada aqui',
+  'board.hint': 'Arraste um cartão para outra coluna ou use "Mover para…" no cartão.',
+  'board.moveTo': 'Mover para…',
+  'board.moveLabel': 'Mover a ordem de serviço nº {number}',
+  'board.moved': 'Ordem de serviço nº {number} movida para {status}.',
+  'board.moveFailed': 'A ordem de serviço nº {number} não foi movida. {reason}',
 
   'checkIn.title': 'Recepção de veículo',
-  'checkIn.platePlaceholder': 'Placa, ex. AA-00-AA',
+  'checkIn.platePlaceholder': 'Placa ou chassi (VIN), ex. AA-00-AA',
   'checkIn.find': 'Buscar',
-  'checkIn.notFound': 'Nenhum veículo com essa placa.',
+  'checkIn.notFound': 'Nenhum veículo com essa placa ou chassi (VIN).',
   'checkIn.registerFirst': 'Cadastre primeiro o cliente e o veículo.',
   'checkIn.lastMileage': 'última quilometragem {km}',
   'checkIn.mileageNow': 'Quilometragem atual (km)',
@@ -204,5 +203,29 @@ export const ptBR: PortugueseDictionary<MessageKey> = {
   'error.last-owner': 'A oficina precisa manter pelo menos um proprietário ativo.',
   'error.own-account-change': 'Você não pode alterar a própria função nem se desativar.',
   'error.user-not-found': 'Esse usuário não existe mais.',
-  ...backofficePtBR,
+  'error.reason-required': 'Informe por que o mecânico muda.',
+  'mechanic.title': 'Mecânico',
+  'mechanic.change': 'Trocar mecânico',
+  'mechanic.new': 'Novo mecânico',
+  'mechanic.reason': 'Motivo',
+  'mechanic.optional': '(opcional)',
+  'mechanic.reasonPlaceholder': 'Por exemplo: o Rui está doente hoje',
+  'mechanic.reasonHelp': 'Fica no histórico da ordem de serviço. Obrigatório ao substituir ou remover um mecânico.',
+  'mechanic.reasonRequired': 'Informe por que o mecânico muda.',
+  'mechanic.reasonTooLong': 'Use no máximo 500 caracteres.',
+  'mechanic.history': 'Alterações',
+  'mechanic.reasonShown': 'Motivo: {reason}',
+  'mechanic.changedBy': '{name} · {date}',
+  'error.stale-data': 'Outra pessoa alterou este registro enquanto você editava. A versão mais recente já está na tela; confira e salve novamente.',
+  'error.invalid-nif': 'NIF português inválido. Confira os 9 dígitos.',
+  'error.invalid-postal-code': 'O código postal português tem o formato 1100-053.',
+  'error.invalid-vin': 'O chassi (VIN) tem 17 caracteres.',
+  'common.nifCheckDigit': 'Este NIF não é válido (dígito verificador). Confira o número.',
+  'checkIn.foundByPlate': 'Encontrado pela placa',
+  'checkIn.foundByVin': 'Encontrado pelo chassi (VIN)',
+  'workOrder.readOnly': 'Atribuída a outro mecânico: você pode consultar esta ordem, mas não alterá-la.',
+  'history.otherMechanic': 'Outro mecânico',
+  ...identityCorePtBR,
+  ...catalogueCorePtBR,
+  ...stockCorePtBR,
 };

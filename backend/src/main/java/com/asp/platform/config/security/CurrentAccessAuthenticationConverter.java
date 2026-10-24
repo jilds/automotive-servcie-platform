@@ -16,12 +16,17 @@ import com.asp.platform.identity.AccessDirectory;
 import com.asp.platform.identity.TokenClaims;
 import com.asp.platform.identity.UserAccess;
 
-/// Turns a verified token into an authentication using the user's **current** access, not the role and
-/// state written into the token when it was issued. A token of a deactivated or unknown user, or one whose
-/// workshop no longer matches, is rejected with 401; a changed role applies to the next request.
+/// Turns a verified token into an authentication using the account's **current** access, not the role and
+/// state written into the token when it was issued:
+/// - a workshop user's token is rejected with 401 when the user is deactivated or unknown, when their workshop
+///   no longer matches, or (code `workshop-suspended`) when the workshop's subscription is suspended or cancelled;
+///   a changed role applies to the next request;
+/// - a platform admin's token (role claim `PLATFORM_ADMIN`, no tenant) is rejected when the admin is inactive or
+///   unknown, and only ever grants `ROLE_PLATFORM_ADMIN`.
 class CurrentAccessAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     static final String ROLE_PREFIX = "ROLE_";
+    static final String PLATFORM_ADMIN_AUTHORITY = ROLE_PREFIX + TokenClaims.PLATFORM_ADMIN;
 
     private final AccessDirectory directory;
 
@@ -31,14 +36,26 @@ class CurrentAccessAuthenticationConverter implements Converter<Jwt, AbstractAut
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        UUID userId = uuid(jwt.getSubject());
+        UUID subject = uuid(jwt.getSubject());
+        if (TokenClaims.PLATFORM_ADMIN.equals(jwt.getClaimAsString(TokenClaims.ROLE))) {
+            if (subject == null || jwt.hasClaim(TokenClaims.TENANT_ID) || !directory.isActivePlatformAdmin(subject)) {
+                throw new InvalidBearerTokenException("The account may no longer sign in");
+            }
+            return authenticated(jwt, PLATFORM_ADMIN_AUTHORITY);
+        }
         UUID tokenTenant = uuid(jwt.getClaimAsString(TokenClaims.TENANT_ID));
-        UserAccess access = Optional.ofNullable(userId).flatMap(directory::access)
+        UserAccess access = Optional.ofNullable(subject).flatMap(directory::access)
                 .filter(UserAccess::active)
                 .filter(current -> current.tenantId().equals(tokenTenant))
                 .orElseThrow(() -> new InvalidBearerTokenException("The user may no longer sign in"));
-        return new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority(ROLE_PREFIX + access.role())),
-                jwt.getSubject());
+        if (!directory.workshopOpen(access.tenantId())) {
+            throw new WorkshopSuspendedAuthenticationException();
+        }
+        return authenticated(jwt, ROLE_PREFIX + access.role());
+    }
+
+    private static JwtAuthenticationToken authenticated(Jwt jwt, String authority) {
+        return new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority(authority)), jwt.getSubject());
     }
 
     private static @Nullable UUID uuid(@Nullable String value) {

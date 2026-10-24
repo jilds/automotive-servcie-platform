@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.asp.platform.shared.ConflictException;
+import com.asp.platform.shared.InvalidInputException;
 import com.asp.platform.shared.NotFoundException;
+import com.asp.platform.shared.StaleDataException;
 
 /// Maps errors to RFC 9457 problem responses with a stable `type` and `code`.
 /// Feature-specific mappings live in an advice in that feature's `api` package.
@@ -42,6 +45,24 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.CONFLICT, "try-again", "The data is being changed by someone else; try again");
     }
 
+    /// Two saves of the same record raced: both read the same version, the other one was written first. Same
+    /// answer as a stale version sent by the client (`StaleDataException`): reload and try again.
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ProblemDetail staleData(OptimisticLockingFailureException e) {
+        return problem(HttpStatus.CONFLICT, StaleDataException.CODE,
+                "Someone else changed this record; reload it and try again");
+    }
+
+    /// A domain rule rejected one field: reported like a validation error, with the rule's own code.
+    @ExceptionHandler(InvalidInputException.class)
+    ProblemDetail invalidInput(InvalidInputException e) {
+        ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, e.code(), e.getMessage());
+        problem.setProperty("errors", Map.of(e.field(), String.valueOf(e.getMessage())));
+        return problem;
+    }
+
+    /// Last resort for domain invariants that have no code of their own yet. Rules users can break through the
+    /// forms have coded exceptions ([InvalidInputException]), so this mostly guards programming errors.
     @ExceptionHandler(IllegalArgumentException.class)
     ProblemDetail badRequest(IllegalArgumentException e) {
         return problem(HttpStatus.BAD_REQUEST, "bad-request", e.getMessage());

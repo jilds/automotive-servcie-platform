@@ -66,6 +66,11 @@ class JpaVehicleRepository implements VehicleRepository {
     }
 
     @Override
+    public Optional<Vehicle> findByVin(String normalizedVin) {
+        return jpa.findFirstByVinOrderByUpdatedAtDesc(normalizedVin).map(VehicleEntity::toDomain);
+    }
+
+    @Override
     public boolean existsByPlate(String normalizedPlate) {
         return jpa.existsByPlate(normalizedPlate);
     }

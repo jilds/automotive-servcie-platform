@@ -12,5 +12,8 @@ interface SpringDataVehicleRepository extends JpaRepository<VehicleEntity, UUID>
 
     boolean existsByPlate(String plate);
 
+    /// VINs are not unique (older records were never checked), so the most recently changed vehicle wins.
+    Optional<VehicleEntity> findFirstByVinOrderByUpdatedAtDesc(String vin);
+
     List<VehicleEntity> findByCustomerIdOrderByPlate(UUID customerId);
 }

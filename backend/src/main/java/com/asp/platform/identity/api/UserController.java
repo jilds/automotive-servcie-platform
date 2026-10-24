@@ -31,10 +31,11 @@ class UserController {
         this.identity = identity;
     }
 
+    /// Adds a member without a password; the response carries their one-time activation link.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    UserResponse invite(CurrentUser user, @Valid @RequestBody InviteUserRequest request) {
-        return UserResponse.of(identity.invite(user.tenantId(), request.toCommand()));
+    InvitationResponse invite(CurrentUser user, @Valid @RequestBody InviteUserRequest request) {
+        return InvitationResponse.of(identity.invite(user.tenantId(), request.toCommand()));
     }
 
     @GetMapping
@@ -46,6 +47,12 @@ class UserController {
     @PutMapping("/{id}")
     UserResponse update(CurrentUser user, @PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         return UserResponse.of(identity.changeAccess(user.tenantId(), user.userId(), id, request.role(),
-                request.active()));
+                request.active(), request.version()));
+    }
+
+    /// A new activation link for a member who has not activated yet; the previous link stops working.
+    @PostMapping("/{id}/activation-link")
+    ActivationLinkResponse reissue(CurrentUser user, @PathVariable UUID id) {
+        return ActivationLinkResponse.of(identity.reissueInvitation(user.tenantId(), id).link());
     }
 }

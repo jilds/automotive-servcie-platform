@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.asp.platform.customer.application.CustomerService;
 import com.asp.platform.customer.domain.PlateFormats;
+import com.asp.platform.shared.CurrentUser;
 
 /// Customer personal data is for the owner and the front desk only.
 @RestController
@@ -37,13 +38,16 @@ class CustomerController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    CustomerResponse create(@Valid @RequestBody CustomerRequest request) {
-        return CustomerResponse.of(customers.create(request.toContactDetails()));
+    CustomerResponse create(CurrentUser user, @Valid @RequestBody CustomerRequest request) {
+        return CustomerResponse.of(customers.create(user.tenantId(), request.toContactDetails()));
     }
 
+    /// Needs the version the editor read; someone else's newer save answers 409 `stale-data`.
     @PutMapping("/{id}")
-    CustomerResponse update(@PathVariable UUID id, @Valid @RequestBody CustomerRequest request) {
-        return CustomerResponse.of(customers.update(id, request.toContactDetails()));
+    CustomerResponse update(CurrentUser user, @PathVariable UUID id,
+            @Valid @RequestBody CustomerUpdateRequest request) {
+        return CustomerResponse.of(
+                customers.update(user.tenantId(), id, request.toContactDetails(), request.version()));
     }
 
     @GetMapping

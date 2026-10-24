@@ -46,20 +46,26 @@ class VehicleController {
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     VehicleResponse update(@PathVariable UUID id, @Valid @RequestBody VehicleUpdateRequest request) {
         return response(customers.updateVehicle(id, request.toDetails(), request.registrationCountry(),
-                request.registrationDate(), request.mileage()));
+                request.registrationDate(), request.mileage(), request.version()));
     }
 
     /// Hands the vehicle to another customer; its service history goes with it.
     @PutMapping("/{id}/owner")
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     VehicleResponse transfer(@PathVariable UUID id, @Valid @RequestBody TransferVehicleRequest request) {
-        return response(customers.transferVehicle(id, request.customerId()));
+        return response(customers.transferVehicle(id, request.customerId(), request.version()));
     }
 
     /// Mechanics may look up a vehicle, but never the customer's personal data.
     @GetMapping(params = "plate")
     VehicleResponse byPlate(@RequestParam String plate) {
         return response(customers.vehicleByPlate(plate));
+    }
+
+    /// Exact match on the 17-character VIN, in any case and with or without spaces. Mechanics may use it too.
+    @GetMapping(params = "vin")
+    VehicleResponse byVin(@RequestParam String vin) {
+        return response(customers.vehicleByVin(vin));
     }
 
     @GetMapping("/{id}")

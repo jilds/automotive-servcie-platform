@@ -54,6 +54,14 @@ class WorkOrderLineEntity {
     @Column(name = "vat_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal vatRate;
 
+    /// The catalogue service the line was added from; null for lines typed by hand.
+    @Column(name = "service_item_id", updatable = false)
+    private @Nullable UUID serviceItemId;
+
+    /// The stock product the line reserves; null when it does not come from stock.
+    @Column(name = "product_id", updatable = false)
+    private @Nullable UUID productId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private @Nullable Instant createdAt;
@@ -76,6 +84,8 @@ class WorkOrderLineEntity {
         this.unitPriceCents = line.unitPriceCents();
         this.discountPercent = line.discountPercent();
         this.vatRate = line.vatRate();
+        this.serviceItemId = line.serviceItemId();
+        this.productId = line.productId();
     }
 
     UUID getId() {
@@ -84,6 +94,6 @@ class WorkOrderLineEntity {
 
     WorkOrderLine toDomain() {
         return new WorkOrderLine(id, position, type, description, quantity, unitPriceCents, discountPercent,
-                vatRate);
+                vatRate, serviceItemId, productId);
     }
 }

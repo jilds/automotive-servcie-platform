@@ -8,6 +8,6 @@ record TokenResponse(String accessToken, String tokenType, long expiresIn, UserR
 
     static TokenResponse of(Session session) {
         return new TokenResponse(session.token().value(), BEARER, session.token().ttl().toSeconds(),
-                UserResponse.of(session.user()));
+                UserResponse.of(session.account()));
     }
 }

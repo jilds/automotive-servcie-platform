@@ -1,0 +1,48 @@
+import { PortugueseDictionary } from '../../core/i18n/plural';
+import { AdminKey } from './admin.en';
+
+/** Portuguese (Brazil) texts of the platform admin console. */
+export const adminPtBR: PortugueseDictionary<AdminKey> = {
+  'admin.tagline': 'Plataforma',
+  'admin.workshops.title': 'Oficinas',
+  'admin.workshops.subtitle': 'Todas as oficinas assinantes, o plano e quem é o dono',
+  'admin.workshops.new': 'Nova oficina',
+  'admin.workshops.name': 'Oficina',
+  'admin.workshops.country': 'País',
+  'admin.workshops.plan': 'Plano',
+  'admin.workshops.status': 'Situação',
+  'admin.workshops.created': 'Criada',
+  'admin.workshops.owner': 'Dono',
+  'admin.workshops.users': 'Usuários',
+  'admin.workshops.empty': 'Nenhuma oficina ainda',
+
+  'admin.plan.STARTER': 'Starter',
+  'admin.plan.PRO': 'Pro',
+  'admin.plan.ENTERPRISE': 'Enterprise',
+  'admin.status.TRIAL': 'Teste',
+  'admin.status.ACTIVE': 'Ativa',
+  'admin.status.SUSPENDED': 'Suspensa',
+  'admin.status.CANCELLED': 'Cancelada',
+
+  'admin.create.title': 'Cadastrar uma oficina',
+  'admin.create.timezone': 'Fuso horário',
+  'admin.create.slugHelp': 'Opcional. Gerado a partir do nome se ficar vazio.',
+  'admin.create.owner': 'Primeiro dono',
+  'admin.create.ownerHelp': 'Recebe um link de ativação para escolher a senha.',
+  'admin.create.submit': 'Cadastrar oficina',
+  'admin.create.doneTitle': '{name} foi cadastrada',
+  'admin.create.doneBody': 'Envie este link para {email}. Ele permite ao dono escolher a senha e entrar.',
+  'admin.create.openWorkshop': 'Configurar o tema',
+
+  'admin.detail.back': 'Todas as oficinas',
+  'admin.subscription.title': 'Assinatura',
+  'admin.subscription.until': 'Teste ou pago até',
+  'admin.subscription.help': 'Oficinas suspensas ou canceladas não podem entrar; as sessões abertas terminam na ação seguinte.',
+  'admin.subscription.suspend': 'Suspender',
+  'admin.subscription.reactivate': 'Reativar',
+  'admin.subscription.save': 'Salvar assinatura',
+  'admin.subscription.saved': 'Assinatura salva: {status}.',
+  'admin.owner.title': 'Acesso do dono',
+  'admin.owner.help': 'Um novo link substitui o anterior. Se o dono já tinha senha, o link define uma nova.',
+  'admin.owner.reissue': 'Emitir novo link de ativação',
+};

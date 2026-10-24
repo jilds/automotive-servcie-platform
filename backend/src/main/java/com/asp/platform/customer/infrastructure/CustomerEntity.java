@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -49,6 +50,12 @@ class CustomerEntity {
     @Column(name = "marketing_consent", nullable = false)
     private boolean marketingConsent;
 
+    /// Optimistic lock: Hibernate adds `where version = ?` to every update and raises it by one. Null until the
+    /// entity is first saved, so Spring Data persists new entities instead of merging them.
+    @Version
+    @Column(nullable = false)
+    private @Nullable Long version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private @Nullable Instant createdAt;
@@ -82,7 +89,7 @@ class CustomerEntity {
     }
 
     Customer toDomain() {
-        return new Customer(id, new ContactDetails(name, nif, phone, email, address(), marketingConsent));
+        return new Customer(id, new ContactDetails(name, nif, phone, email, address(), marketingConsent), version());
     }
 
     /// Rows migrated from the old free-text address may have only a street; they read as no address
@@ -93,5 +100,10 @@ class CustomerEntity {
         }
         return new Address(addressStreet, addressDetail, postalCode, locality,
                 country == null ? Address.PORTUGAL : country);
+    }
+
+    private long version() {
+        Long v = version;
+        return v == null ? 0 : v;
     }
 }

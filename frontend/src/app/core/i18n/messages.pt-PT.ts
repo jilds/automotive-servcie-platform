@@ -1,9 +1,11 @@
-import { backofficePtPT } from '../../backoffice/i18n/backoffice.pt-PT';
-import { MessageKey } from './messages.en';
+import { catalogueCorePtPT } from '../../catalogue/i18n/catalogue-core.pt-PT';
+import { identityCorePtPT } from '../../identity/i18n/identity-core.pt-PT';
+import { stockCorePtPT } from '../../stock/i18n/stock-core.pt-PT';
+import { CoreKey } from './messages.en';
 import { PortugueseDictionary } from './plural';
 
 /** Portuguese (Portugal) texts, the default language. */
-export const ptPT: PortugueseDictionary<MessageKey> = {
+export const ptPT: PortugueseDictionary<CoreKey> = {
   'app.title': 'ASP - Automotive Service Platform',
   'language.label': 'Idioma',
 
@@ -36,15 +38,7 @@ export const ptPT: PortugueseDictionary<MessageKey> = {
 
   'login.subtitle': 'Entre na sua oficina',
   'login.submit': 'Entrar',
-  'login.newWorkshop': 'Oficina nova?',
-  'login.createAccount': 'Criar conta',
 
-  'signup.title': 'Crie a sua oficina',
-  'signup.workshopName': 'Nome da oficina',
-  'signup.ownerName': 'O seu nome',
-  'signup.password': 'Palavra-passe (mínimo 8 caracteres)',
-  'signup.submit': 'Criar conta',
-  'signup.alreadyRegistered': 'Já tem conta?',
 
   'customers.title': 'Clientes',
   'customers.new': 'Novo cliente',
@@ -114,11 +108,16 @@ export const ptPT: PortugueseDictionary<MessageKey> = {
   'board.title': 'Quadro da oficina',
   'board.since': 'desde {time}',
   'board.empty': 'Nada aqui',
+  'board.hint': 'Arraste um cartão para outra coluna ou use "Mover para…" no cartão.',
+  'board.moveTo': 'Mover para…',
+  'board.moveLabel': 'Mover a ordem de reparação n.º {number}',
+  'board.moved': 'Ordem de reparação n.º {number} movida para {status}.',
+  'board.moveFailed': 'A ordem de reparação n.º {number} não foi movida. {reason}',
 
   'checkIn.title': 'Receção de viatura',
-  'checkIn.platePlaceholder': 'Matrícula, ex. AA-00-AA',
+  'checkIn.platePlaceholder': 'Matrícula ou VIN, ex. AA-00-AA',
   'checkIn.find': 'Procurar',
-  'checkIn.notFound': 'Não existe nenhuma viatura com essa matrícula.',
+  'checkIn.notFound': 'Não existe nenhuma viatura com essa matrícula ou VIN.',
   'checkIn.registerFirst': 'Registe primeiro o cliente e a viatura.',
   'checkIn.lastMileage': 'últimos {km}',
   'checkIn.mileageNow': 'Quilometragem atual (km)',
@@ -204,5 +203,29 @@ export const ptPT: PortugueseDictionary<MessageKey> = {
   'error.last-owner': 'A oficina tem de manter pelo menos um proprietário ativo.',
   'error.own-account-change': 'Não pode alterar a sua própria função nem desativar-se.',
   'error.user-not-found': 'Esse utilizador já não existe.',
-  ...backofficePtPT,
+  'error.reason-required': 'Indique porque muda o mecânico.',
+  'mechanic.title': 'Mecânico',
+  'mechanic.change': 'Mudar mecânico',
+  'mechanic.new': 'Novo mecânico',
+  'mechanic.reason': 'Motivo',
+  'mechanic.optional': '(opcional)',
+  'mechanic.reasonPlaceholder': 'Por exemplo: o Rui está doente hoje',
+  'mechanic.reasonHelp': 'Fica no histórico da ordem de reparação. Obrigatório ao substituir ou retirar um mecânico.',
+  'mechanic.reasonRequired': 'Indique porque muda o mecânico.',
+  'mechanic.reasonTooLong': 'Use no máximo 500 caracteres.',
+  'mechanic.history': 'Alterações',
+  'mechanic.reasonShown': 'Motivo: {reason}',
+  'mechanic.changedBy': '{name} · {date}',
+  'error.stale-data': 'Outra pessoa alterou este registo enquanto editava. Já está a ver a versão mais recente; confirme e guarde novamente.',
+  'error.invalid-nif': 'NIF português inválido. Confirme os 9 dígitos.',
+  'error.invalid-postal-code': 'O código postal português tem o formato 1100-053.',
+  'error.invalid-vin': 'O VIN tem 17 caracteres.',
+  'common.nifCheckDigit': 'Este NIF não é válido (dígito de controlo). Confirme o número.',
+  'checkIn.foundByPlate': 'Encontrada pela matrícula',
+  'checkIn.foundByVin': 'Encontrada pelo VIN',
+  'workOrder.readOnly': 'Atribuída a outro mecânico: pode consultar esta ordem, mas não alterá-la.',
+  'history.otherMechanic': 'Outro mecânico',
+  ...identityCorePtPT,
+  ...catalogueCorePtPT,
+  ...stockCorePtPT,
 };

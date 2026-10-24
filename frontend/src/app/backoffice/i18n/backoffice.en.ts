@@ -1,4 +1,4 @@
-/** English texts of the owner backoffice. Spread into `messages.en.ts`, so these keys are part of `MessageKey`. */
+/** English texts of the owner backoffice. Loaded with its routes (`core/i18n/feature-texts.ts`); keys typed in `MessageKey`. */
 export const backofficeEn = {
   'backoffice.sections': 'Backoffice sections',
   'backoffice.tab.dashboard': 'Dashboard',
@@ -28,9 +28,12 @@ export const backofficeEn = {
   'backoffice.team.invite': 'Invite user',
   'backoffice.team.inviteTitle': 'Invite a user',
   'backoffice.team.sendInvite': 'Create user',
-  'backoffice.team.temporaryPassword': 'Temporary password',
-  'backoffice.team.temporaryPasswordHelp': 'At least 8 characters. Share it with the user in person.',
-  'backoffice.team.invited': '{name} can now sign in with the temporary password.',
+  'backoffice.team.inviteHelp': 'They get a one-time activation link to choose their own password.',
+  'backoffice.team.invited': '{name} was added. Send them the activation link.',
+  'backoffice.team.pending': 'Pending activation',
+  'backoffice.team.newLink': 'New link',
+  'backoffice.team.linkTitle': 'Activation link for {name}',
+  'backoffice.team.linkBody': 'With this link {name} chooses a password and signs in. It works once, for 72 hours.',
   'backoffice.team.role': 'Role',
   'backoffice.team.status': 'Status',
   'backoffice.team.actions': 'Actions',

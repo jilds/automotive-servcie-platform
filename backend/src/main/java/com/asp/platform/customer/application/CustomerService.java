@@ -20,6 +20,7 @@ import com.asp.platform.customer.domain.CustomerNotFoundException;
 import com.asp.platform.customer.domain.CustomerRepository;
 import com.asp.platform.customer.domain.DuplicatePlateException;
 import com.asp.platform.customer.domain.FormattedPlate;
+import com.asp.platform.customer.domain.InvalidVinException;
 import com.asp.platform.customer.domain.PlateEra;
 import com.asp.platform.customer.domain.PlateFormats;
 import com.asp.platform.customer.domain.Vehicle;
@@ -45,14 +46,24 @@ public class CustomerService implements CustomerManagement {
         this.plates = plates;
     }
 
+    /// The NIF is checked against the address country, else the workshop's country.
+    ///
+    /// @throws com.asp.platform.shared.InvalidNifException when a Portuguese NIF is not valid
     @Transactional
-    public Customer create(ContactDetails contact) {
+    public Customer create(UUID tenantId, ContactDetails contact) {
+        contact.checkNif(workshops.country(tenantId));
         return customers.save(new Customer(UUID.randomUUID(), contact));
     }
 
+    /// Also re-checks the NIF, so a NIF stored before the check existed must be corrected on the next edit.
+    ///
+    /// @param expectedVersion the version the editor read
+    /// @throws com.asp.platform.shared.StaleDataException when someone else saved the customer since
     @Transactional
-    public Customer update(UUID id, ContactDetails contact) {
+    public Customer update(UUID tenantId, UUID id, ContactDetails contact, long expectedVersion) {
         Customer customer = customer(id);
+        customer.requireVersion(expectedVersion);
+        contact.checkNif(workshops.country(tenantId));
         customer.update(contact);
         return customers.save(customer);
     }
@@ -86,8 +97,9 @@ public class CustomerService implements CustomerManagement {
     /// Without a registration country the vehicle keeps the one it has.
     @Transactional
     public Vehicle updateVehicle(UUID id, VehicleDetails details, @Nullable String registrationCountry,
-            @Nullable YearMonth registrationDate, @Nullable Integer mileage) {
+            @Nullable YearMonth registrationDate, @Nullable Integer mileage, long expectedVersion) {
         Vehicle vehicle = vehicle(id);
+        vehicle.requireVersion(expectedVersion);
         String country = registrationCountry == null ? vehicle.registration().country() : registrationCountry;
         if (!vehicle.hasPlate(details.plate()) && vehicles.existsByPlate(details.plate())) {
             throw new DuplicatePlateException(details.plate());
@@ -98,8 +110,9 @@ public class CustomerService implements CustomerManagement {
 
     /// Moves a vehicle to another customer of the workshop; its work orders stay with it.
     @Transactional
-    public Vehicle transferVehicle(UUID id, UUID newCustomerId) {
+    public Vehicle transferVehicle(UUID id, UUID newCustomerId, long expectedVersion) {
         Vehicle vehicle = vehicle(id);
+        vehicle.requireVersion(expectedVersion);
         customer(newCustomerId);
         vehicle.transferTo(newCustomerId);
         return vehicles.save(vehicle);
@@ -109,6 +122,16 @@ public class CustomerService implements CustomerManagement {
     public Vehicle vehicleByPlate(String plate) {
         return vehicles.findByPlate(VehicleDetails.normalizePlate(plate))
                 .orElseThrow(() -> new VehicleNotFoundException(plate));
+    }
+
+    /// @throws InvalidVinException when the VIN does not have 17 characters
+    @Transactional(readOnly = true)
+    public Vehicle vehicleByVin(String vin) {
+        String normalized = VehicleDetails.normalizeVin(vin);
+        if (normalized.length() != VehicleDetails.VIN_LENGTH) {
+            throw new InvalidVinException();
+        }
+        return vehicles.findByVin(normalized).orElseThrow(VehicleNotFoundException::byVin);
     }
 
     @Transactional(readOnly = true)

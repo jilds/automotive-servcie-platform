@@ -59,6 +59,9 @@ import { MoneyPipe } from '../shared/money.pipe';
           <div class="d-flex flex-wrap align-items-center gap-2 column-gap-3 mb-2">
             <strong>#{{ w.number }}</strong>
             <span class="text-body-secondary small">{{ w.statusChangedAt | date: 'dd/MM/yyyy' }}</span>
+            @if (w.readOnly) {
+              <span class="badge bg-secondary-subtle text-secondary-emphasis fw-normal">{{ 'history.otherMechanic' | t }}</span>
+            }
             <span class="badge status-badge ms-auto" [attr.data-status]="w.status">{{ statusKey(w.status) | t }}</span>
           </div>
           <p class="mb-2">{{ w.complaint || ('history.noComplaint' | t) }}</p>

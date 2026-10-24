@@ -1,14 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, output, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ApiService } from '../core/api/api.service';
 import { Customer, CustomerRequest } from '../core/api/models';
-import { applyProblem, fieldMessage, shownOnFields } from '../core/api/problem';
+import { applyProblem, fieldMessage, isStale, shownOnFields } from '../core/api/problem';
 import { I18nService } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
+import { nifValidator } from '../shared/nif';
+import { WorkshopCountry } from '../shared/workshop-country';
 import { addressForm, COUNTRIES, toAddress } from './address';
+
+/** Domain codes that belong to one field. */
+const CUSTOMER_CODE_FIELDS = { 'invalid-nif': 'nif', 'invalid-postal-code': 'address.postalCode' };
 
 /** Modal form that edits a customer's contact details (PUT /customers/{id}). Open it with `open(customer)`. */
 @Component({
@@ -125,7 +131,10 @@ export class CustomerEditDialog {
   private readonly api = inject(ApiService);
   private readonly i18n = inject(I18nService);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly workshopCountry = inject(WorkshopCountry);
   private customerId: string | null = null;
+  /** Version the form was opened with; the API refuses the save (409 `stale-data`) if the customer changed since. */
+  private version = 0;
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly countries = computed(() => {
@@ -135,17 +144,32 @@ export class CustomerEditDialog {
   /** Mirrors the backend CustomerRequest rules. */
   readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', Validators.required],
-    nif: ['', Validators.pattern(/^\d{9}$/)],
+    nif: ['', nifValidator(() => this.nifCountry())],
     phone: [''],
     email: ['', Validators.email],
     address: addressForm(),
     marketingConsent: [false],
   });
 
+  constructor() {
+    // The NIF rule depends on the address country: re-check it when the country or street changes.
+    this.form.controls.address.valueChanges.pipe(takeUntilDestroyed()).subscribe(() =>
+      this.form.controls.nif.updateValueAndValidity({ emitEvent: false }),
+    );
+  }
+
   open(customer: Customer): void {
-    this.customerId = customer.id;
+    this.workshopCountry.load();
     this.error.set(null);
     this.busy.set(false);
+    this.fill(customer);
+    this.dialog().nativeElement.showModal();
+  }
+
+  /** Puts the customer as stored into the form, with the version to send back. */
+  private fill(customer: Customer): void {
+    this.customerId = customer.id;
+    this.version = customer.version;
     const a = customer.address;
     this.form.reset({
       name: customer.name,
@@ -161,7 +185,6 @@ export class CustomerEditDialog {
       },
       marketingConsent: customer.marketingConsent,
     });
-    this.dialog().nativeElement.showModal();
   }
 
   close(): void {
@@ -178,6 +201,7 @@ export class CustomerEditDialog {
       email: v.email.trim() || null,
       address: toAddress(this.form.controls.address),
       marketingConsent: v.marketingConsent,
+      version: this.version,
     };
   }
 
@@ -199,7 +223,11 @@ export class CustomerEditDialog {
       },
       error: (e) => {
         this.busy.set(false);
-        const marked = applyProblem(this.form, e);
+        if (isStale(e)) {
+          this.reload(e);
+          return;
+        }
+        const marked = applyProblem(this.form, e, CUSTOMER_CODE_FIELDS);
         this.error.set(shownOnFields(e, marked) ? null : this.i18n.error(e));
       },
     });
@@ -209,8 +237,23 @@ export class CustomerEditDialog {
     return fieldMessage(this.form.controls[field], {
       required: 'common.required',
       pattern: 'customers.nifInvalid',
+      nif: 'common.nifCheckDigit',
       email: 'customers.emailInvalid',
     });
+  }
+
+  /** The NIF is Portuguese when the address is in Portugal, or when there is no address and the workshop is. */
+  private nifCountry(): string {
+    const address = this.form?.controls.address.getRawValue();
+    return address?.street.trim() ? address.country : this.workshopCountry.country();
+  }
+
+  /** Someone else saved the customer: show the stored values and the new version, and say why. */
+  private reload(e: unknown): void {
+    const id = this.customerId;
+    if (!id) return;
+    this.error.set(this.i18n.error(e));
+    this.api.customer(id).subscribe({ next: (c) => this.fill(c), error: () => {} });
   }
 
   /** Server verdicts on address parts (`address.postalCode` and so on), shown under the address. */

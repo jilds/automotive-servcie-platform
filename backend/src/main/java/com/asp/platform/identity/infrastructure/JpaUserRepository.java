@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.asp.platform.identity.domain.User;
 import com.asp.platform.identity.domain.UserRepository;
+import com.asp.platform.shared.Role;
 
 @Repository
 class JpaUserRepository implements UserRepository {
@@ -26,6 +27,7 @@ class JpaUserRepository implements UserRepository {
                     return existing;
                 })
                 .orElseGet(() -> jpa.save(new UserEntity(user)));
+        jpa.flush(); // so the returned version is the stored one
         return entity.toDomain();
     }
 
@@ -47,6 +49,11 @@ class JpaUserRepository implements UserRepository {
     @Override
     public List<User> findByTenant(UUID tenantId) {
         return jpa.findByTenantIdOrderByName(tenantId).stream().map(UserEntity::toDomain).toList();
+    }
+
+    @Override
+    public Optional<User> findFirstOwner(UUID tenantId) {
+        return jpa.findFirstByTenantIdAndRoleOrderByCreatedAtAscIdAsc(tenantId, Role.OWNER).map(UserEntity::toDomain);
     }
 
     @Override

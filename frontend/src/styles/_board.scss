@@ -91,11 +91,90 @@
       margin: 0;
       padding: 0;
     }
+
+    // A card dragged into a compact column takes the full width under the header.
+    .cdk-drag-placeholder {
+      flex-basis: 100%;
+    }
   }
 
   .column-empty {
     padding: 0;
     border: 0;
     font-size: 0.75rem;
+  }
+}
+
+// Drag and drop (Angular CDK). While a card is dragged, allowed columns are outlined in the column tone and the
+// others are dimmed; the CDK enter predicate refuses them too. The preview is a clone of the card, so it keeps the
+// plate. Movement transitions only run when the user has not asked for reduced motion.
+.wo-card {
+  -webkit-touch-callout: none;
+
+  &.is-movable {
+    cursor: grab;
+  }
+
+  &.is-pending {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .wo-move {
+    position: relative;
+    z-index: 2; // above the card's stretched link
+  }
+}
+
+.board.is-dragging {
+  .column {
+    transition:
+      opacity 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+
+  .drop-allowed {
+    border-color: var(--asp-tone, var(--bs-primary));
+    box-shadow: inset 0 0 0 1px var(--asp-tone, var(--bs-primary));
+    background: var(--asp-tone-bg, var(--bs-primary-bg-subtle));
+  }
+
+  .drop-blocked {
+    opacity: 0.45;
+  }
+}
+
+.cdk-drag-preview.wo-card {
+  cursor: grabbing;
+  box-shadow: $box-shadow-lg;
+  border-color: var(--asp-border-strong);
+  transform-origin: center;
+  rotate: 1.5deg;
+}
+
+.cdk-drag-placeholder.wo-card {
+  opacity: 0.35;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+// Hide the empty-column hint while a placeholder sits in that column.
+.column:has(.cdk-drag-placeholder) .column-empty {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cdk-drag-animating {
+    transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  .cdk-drop-list-dragging .wo-card:not(.cdk-drag-placeholder) {
+    transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdk-drag-preview.wo-card {
+    rotate: none;
   }
 }

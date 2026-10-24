@@ -8,6 +8,7 @@ import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { MoneyPipe } from '../shared/money.pipe';
+import { StockApi } from '../stock/stock-api.service';
 import { BackofficeApi } from './backoffice-api.service';
 import { Dashboard as DashboardData } from './backoffice.models';
 import { monthDate, statusBars, workloadBars } from './dashboard.model';
@@ -76,6 +77,19 @@ import { monthDate, statusBars, workloadBars } from './dashboard.model';
             </div>
           </div>
         </div>
+
+        @if (lowStock(); as low) {
+          <a class="card shadow-sm border-warning-subtle text-decoration-none d-block mb-4" routerLink="/stock" [queryParams]="{ low: 1 }">
+            <div class="card-body d-flex flex-wrap align-items-center gap-3 py-3">
+              <span class="text-warning-emphasis d-inline-flex"><app-icon name="alert-triangle" /></span>
+              <span class="d-flex flex-column me-auto">
+                <span class="fw-semibold text-body">{{ 'stock.dashboard.lowStock' | t }}: {{ low }}</span>
+                <span class="small text-body-secondary">{{ 'stock.dashboard.lowStockHint' | t }}</span>
+              </span>
+              <span class="small fw-semibold d-inline-flex align-items-center gap-1">{{ 'stock.dashboard.open' | t }}<app-icon name="arrow-right" [size]="14" /></span>
+            </div>
+          </a>
+        }
 
         <div class="row g-3">
           <div class="col-lg-6">
@@ -150,6 +164,9 @@ export class Dashboard implements OnInit {
   protected readonly data = signal<DashboardData | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  private readonly stock = inject(StockApi);
+  /** How many active products are below their minimum stock; null until known. */
+  protected readonly lowStock = signal<number | null>(null);
 
   protected readonly byStatus = computed(() => statusBars(this.data()?.openByStatus ?? {}));
   protected readonly workload = computed(() => workloadBars(this.data() ?? { mechanicWorkload: [] }));
@@ -190,5 +207,7 @@ export class Dashboard implements OnInit {
 
   load(): void {
     this.reloads.next();
+    // Low-stock tile: hidden when nothing is low or the list cannot be read.
+    this.stock.lowStock().subscribe({ next: (list) => this.lowStock.set(list.length), error: () => this.lowStock.set(null) });
   }
 }

@@ -18,6 +18,9 @@ public interface UserRepository {
 
     List<User> findByTenant(UUID tenantId);
 
+    /// The workshop's first owner by creation time: the one the platform admin registered.
+    Optional<User> findFirstOwner(UUID tenantId);
+
     /// Same as [#findByTenant] but locks the rows until the transaction ends, so two owners changing roles
     /// at the same time cannot both remove the last active owner.
     List<User> lockTeam(UUID tenantId);

@@ -28,6 +28,16 @@ app:
     token:
       issuer: asp
       ttl: 12h
+  # Workshops do not sign up themselves: the platform owner registers them (ADR 0003).
+  platform:
+    # "Want ASP for your workshop?" block on the login page; hidden while both are empty.
+    contact-email: ${ASP_CONTACT_EMAIL:}
+    contact-phone: ${ASP_CONTACT_PHONE:}
+    # First platform admin, created at startup only while none exists. Set both through the environment,
+    # never in this file; the password needs 12 to 72 characters. Remove them after the first start.
+    bootstrap-admin-email: ${ASP_BOOTSTRAP_ADMIN_EMAIL:}
+    bootstrap-admin-password: ${ASP_BOOTSTRAP_ADMIN_PASSWORD:}
+    bootstrap-admin-name: ${ASP_BOOTSTRAP_ADMIN_NAME:}
 
 management:
   endpoints:

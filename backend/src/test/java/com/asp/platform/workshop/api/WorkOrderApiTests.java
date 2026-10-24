@@ -32,9 +32,7 @@ class WorkOrderApiTests extends ApiTestSupport {
         String vehicleId = createVehicle(owner, createCustomer(owner, "Ana Pereira"), "12-AB-34");
 
         String mechanicEmail = uniqueEmail("mec");
-        String mechanicId = idOf(call(post("/api/v1/users").content("""
-                {"name":"Rui","email":"%s","role":"MECHANIC","temporaryPassword":"mechanic123"}"""
-                .formatted(mechanicEmail)), owner).andExpect(status().isCreated()));
+        String mechanicId = invite(owner, "MECHANIC", mechanicEmail);
 
         String woId = idOf(call(post("/api/v1/work-orders").content("""
                 {"vehicleId":"%s","mileageIn":123456,"fuelLevel":4,"complaint":"Brake noise","assignedMechanicId":"%s"}"""
@@ -60,7 +58,7 @@ class WorkOrderApiTests extends ApiTestSupport {
         call(patch("/api/v1/work-orders/" + woId + "/status").content("{\"status\":\"DELIVERED\"}"), owner)
                 .andExpect(status().isConflict());
 
-        String mechanic = login(mechanicEmail, "mechanic123");
+        String mechanic = login(mechanicEmail, PASSWORD);
         call(get("/api/v1/work-orders/" + woId), mechanic)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lines[0].unitPriceCents").doesNotExist())
@@ -76,9 +74,18 @@ class WorkOrderApiTests extends ApiTestSupport {
                 .andExpect(jsonPath("$.columns.IN_PROGRESS[0].plate").value("12AB34"))
                 .andExpect(jsonPath("$.columns.IN_PROGRESS[0].vehicle").value("Renault Clio"));
 
-        // Unassigned: the mechanic no longer sees it.
-        call(put("/api/v1/work-orders/" + woId + "/mechanic").content("{}"), owner).andExpect(status().isOk());
-        call(get("/api/v1/work-orders/" + woId), mechanic).andExpect(status().isNotFound());
+        // Unassigned: gone from the mechanic's board, but still readable (from the vehicle history), read-only.
+        call(put("/api/v1/work-orders/" + woId + "/mechanic").content("{\"reason\":\"Mechanic off sick\"}"), owner)
+                .andExpect(status().isOk());
+        call(get("/api/v1/work-orders/board"), mechanic)
+                .andExpect(jsonPath("$.columns.IN_PROGRESS.length()").value(0));
+        call(get("/api/v1/work-orders/" + woId), mechanic)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.readOnly").value(true))
+                .andExpect(jsonPath("$.allowedNext.length()").value(0))
+                .andExpect(jsonPath("$.totalCents").doesNotExist());
+        call(patch("/api/v1/work-orders/" + woId + "/status").content("{\"status\":\"READY\"}"), mechanic)
+                .andExpect(status().isForbidden());
 
         call(get("/api/v1/vehicles/" + vehicleId + "/work-orders"), owner)
                 .andExpect(jsonPath("$.length()").value(1));
@@ -143,7 +150,7 @@ class WorkOrderApiTests extends ApiTestSupport {
 
         String mechanicEmail = uniqueEmail("mec");
         invite(owner, "MECHANIC", mechanicEmail);
-        call(put("/api/v1/work-orders/" + woId + "/check-in").content("{}"), login(mechanicEmail, "password123"))
+        call(put("/api/v1/work-orders/" + woId + "/check-in").content("{}"), login(mechanicEmail, PASSWORD))
                 .andExpect(status().isForbidden());
 
         call(patch("/api/v1/work-orders/" + woId + "/status").content("{\"status\":\"IN_PROGRESS\"}"), owner);
@@ -167,9 +174,31 @@ class WorkOrderApiTests extends ApiTestSupport {
         String woId = idOf(call(post("/api/v1/work-orders").content("""
                 {"vehicleId":"%s","complaint":"Oil leak"}""".formatted(vehicleId)), a));
 
+        String lineId = JsonPath.read(call(post("/api/v1/work-orders/" + woId + "/lines").content("""
+                {"type":"PART","description":"Filter","quantity":1,"unitPriceCents":1500,"vatRate":23}"""), a)
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.lines[0].id");
+
+        call(get("/api/v1/work-orders/" + woId), b)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("work-order-not-found"));
+        call(get("/api/v1/vehicles/" + vehicleId + "/work-orders"), b).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
         call(put("/api/v1/work-orders/" + woId + "/check-in").content("{\"complaint\":\"Hacked\"}"), b)
                 .andExpect(status().isNotFound());
         call(get("/api/v1/work-orders/" + woId), a).andExpect(jsonPath("$.complaint").value("Oil leak"));
+        call(post("/api/v1/work-orders/" + woId + "/lines").content("""
+                {"type":"LABOR","description":"Hacked","quantity":1,"unitPriceCents":1,"vatRate":23}"""), b)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("work-order-not-found"));
+        call(delete("/api/v1/work-orders/" + woId + "/lines/" + lineId), b)
+                .andExpect(status().isNotFound());
+        call(patch("/api/v1/work-orders/" + woId + "/status").content("{\"status\":\"CANCELLED\"}"), b)
+                .andExpect(status().isNotFound());
+
+        call(get("/api/v1/work-orders/" + woId), a)
+                .andExpect(jsonPath("$.status").value("DIAGNOSTICS"))
+                .andExpect(jsonPath("$.lines.length()").value(1))
+                .andExpect(jsonPath("$.lines[0].description").value("Filter"));
     }
 
     @Test
@@ -184,7 +213,8 @@ class WorkOrderApiTests extends ApiTestSupport {
     void should_reject_an_inactive_mechanic_with_invalid_mechanic() throws Exception {
         String owner = signup("Oficina Mecânico Inativo");
         String retired = invite(owner, "MECHANIC", uniqueEmail("mec"));
-        call(put("/api/v1/users/" + retired).content("{\"role\":\"MECHANIC\",\"active\":false}"), owner)
+        call(put("/api/v1/users/" + retired).content(withVersion("{\"role\":\"MECHANIC\",\"active\":false}",
+                userVersion(owner, retired))), owner)
                 .andExpect(status().isOk());
 
         expectInvalidMechanic(owner, retired);
@@ -222,7 +252,8 @@ class WorkOrderApiTests extends ApiTestSupport {
         String mechanic = invite(owner, "MECHANIC", uniqueEmail("ok"));
         call(put("/api/v1/work-orders/" + woId + "/mechanic").content("{\"mechanicId\":\"%s\"}".formatted(mechanic)),
                 owner).andExpect(status().isOk()).andExpect(jsonPath("$.assignedMechanicId").value(mechanic));
-        call(put("/api/v1/work-orders/" + woId + "/mechanic").content("{\"mechanicId\":null}"), owner)
+        call(put("/api/v1/work-orders/" + woId + "/mechanic")
+                .content("{\"mechanicId\":null,\"reason\":\"Back to the queue\"}"), owner)
                 .andExpect(status().isOk());
     }
 
@@ -238,7 +269,7 @@ class WorkOrderApiTests extends ApiTestSupport {
         call(post("/api/v1/work-orders").content("""
                 {"vehicleId":"%s","assignedMechanicId":"%s"}""".formatted(vehicleId, mechanicId)), owner)
                 .andExpect(status().isCreated());
-        String mechanic = login(mechanicEmail, "password123");
+        String mechanic = login(mechanicEmail, PASSWORD);
 
         call(get("/api/v1/work-orders/board"), mechanic)
                 .andExpect(status().isOk())
@@ -300,6 +331,63 @@ class WorkOrderApiTests extends ApiTestSupport {
     void should_return_404_when_checking_in_an_unknown_vehicle() throws Exception {
         String owner = signup("Oficina 404");
         call(post("/api/v1/work-orders").content("{\"vehicleId\":\"00000000-0000-0000-0000-000000000000\"}"), owner)
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value("/problems/vehicle-not-found"))
+                .andExpect(jsonPath("$.code").value("vehicle-not-found"));
+    }
+
+    @Test
+    void should_show_a_mechanic_the_whole_vehicle_history_without_prices_and_read_only() throws Exception {
+        String owner = signup("Oficina Historico");
+        String vehicleId = createVehicle(owner, createCustomer(owner, "Marta"), "90-XY-12");
+        String mineEmail = uniqueEmail("mec");
+        String mine = invite(owner, "MECHANIC", mineEmail);
+        String other = invite(owner, "MECHANIC", uniqueEmail("mec"));
+        String myJob = idOf(call(post("/api/v1/work-orders").content("""
+                {"vehicleId":"%s","complaint":"Mine","assignedMechanicId":"%s"}""".formatted(vehicleId, mine)), owner));
+        String otherJob = idOf(call(post("/api/v1/work-orders").content("""
+                {"vehicleId":"%s","complaint":"Theirs","assignedMechanicId":"%s"}""".formatted(vehicleId, other)),
+                owner));
+        call(post("/api/v1/work-orders/" + otherJob + "/lines").content("""
+                {"type":"PART","description":"Pads","quantity":1,"unitPriceCents":5000,"vatRate":23}"""), owner)
+                .andExpect(status().isCreated());
+        String mechanic = login(mineEmail, PASSWORD);
+
+        // The history lists every job of the vehicle, never with prices.
+        call(get("/api/v1/vehicles/" + vehicleId + "/work-orders"), mechanic)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].totalCents").doesNotExist())
+                .andExpect(jsonPath("$[1].totalCents").doesNotExist())
+                // Newest first: the other mechanic's job was opened last.
+                .andExpect(jsonPath("$[0].id").value(otherJob))
+                .andExpect(jsonPath("$[0].readOnly").value(true))
+                .andExpect(jsonPath("$[1].id").value(myJob))
+                .andExpect(jsonPath("$[1].readOnly").value(false));
+
+        // Another mechanic's job opens read-only: lines without prices, no status moves offered or accepted.
+        call(get("/api/v1/work-orders/" + otherJob), mechanic)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.complaint").value("Theirs"))
+                .andExpect(jsonPath("$.readOnly").value(true))
+                .andExpect(jsonPath("$.allowedNext.length()").value(0))
+                .andExpect(jsonPath("$.lines[0].description").value("Pads"))
+                .andExpect(jsonPath("$.lines[0].unitPriceCents").doesNotExist())
+                .andExpect(jsonPath("$.lines[0].netCents").doesNotExist())
+                .andExpect(jsonPath("$.totalCents").doesNotExist());
+        call(patch("/api/v1/work-orders/" + otherJob + "/status").content("{\"status\":\"IN_PROGRESS\"}"),
+                mechanic)
+                .andExpect(status().isForbidden());
+        call(get("/api/v1/work-orders/" + myJob), mechanic)
+                .andExpect(jsonPath("$.readOnly").value(false))
+                .andExpect(jsonPath("$.allowedNext").isNotEmpty());
+
+        // The board still shows only the mechanic's own job.
+        call(get("/api/v1/work-orders/board"), mechanic)
+                .andExpect(jsonPath("$.columns.DIAGNOSTICS.length()").value(1))
+                .andExpect(jsonPath("$.columns.DIAGNOSTICS[0].id").value(myJob));
+        call(get("/api/v1/work-orders/" + otherJob), owner)
+                .andExpect(jsonPath("$.readOnly").value(false))
+                .andExpect(jsonPath("$.totalCents").value(6150));
     }
 }

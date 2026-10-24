@@ -20,6 +20,10 @@ public interface VehicleRepository {
 
     Optional<Vehicle> findByPlate(String normalizedPlate);
 
+    /// @param normalizedVin 17 characters, upper case
+    /// @return the vehicle with this VIN; the most recently changed one if older records share it
+    Optional<Vehicle> findByVin(String normalizedVin);
+
     boolean existsByPlate(String normalizedPlate);
 
     List<Vehicle> findByCustomer(UUID customerId);

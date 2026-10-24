@@ -36,7 +36,7 @@ describe('ApiService (Release 2 edits)', () => {
   });
 
   it('updates a vehicle with PUT /vehicles/{id}', () => {
-    const body: VehicleUpdateRequest = { plate: '11-AA-11', vin: null, make: 'Renault', model: 'Clio', year: 2020, fuelType: 'Diesel', mileage: null, registrationCountry: 'PT', registrationDate: '2020-01' };
+    const body: VehicleUpdateRequest = { plate: '11-AA-11', vin: null, make: 'Renault', model: 'Clio', year: 2020, fuelType: 'Diesel', mileage: null, registrationCountry: 'PT', registrationDate: '2020-01', version: 3 };
     api.updateVehicle('v1', body).subscribe();
     const req = http.expectOne('/api/v1/vehicles/v1');
     expect(req.request.method).toBe('PUT');
@@ -45,10 +45,10 @@ describe('ApiService (Release 2 edits)', () => {
   });
 
   it('transfers a vehicle with PUT /vehicles/{id}/owner', () => {
-    api.transferVehicle('v1', 'c2').subscribe();
+    api.transferVehicle('v1', 'c2', 4).subscribe();
     const req = http.expectOne('/api/v1/vehicles/v1/owner');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ customerId: 'c2' });
+    expect(req.request.body).toEqual({ customerId: 'c2', version: 4 });
     req.flush({});
   });
 

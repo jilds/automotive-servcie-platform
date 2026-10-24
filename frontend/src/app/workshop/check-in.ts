@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, OnInit, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -16,12 +16,18 @@ import { formatPlate, plateMessage, registrationControls } from '../shared/plate
 import { countryOptions } from '../shared/registration-fields';
 import { WorkshopCountry } from '../shared/workshop-country';
 
+/** A search term that is a VIN rather than a plate: 17 letters or digits once spaces are removed. */
+export function looksLikeVin(term: string): boolean {
+  return /^[A-Z0-9]{17}$/i.test(term.replace(/\s/g, ''));
+}
+
 /** Problem codes that belong to one field of the check-in form, so they show next to it. */
 export const CHECK_IN_CODE_FIELDS = { 'invalid-mechanic': 'assignedMechanicId' };
 
-/** Opens a work order when a car arrives: find it by plate, record mileage, fuel and damage. */
+/** Opens a work order when a car arrives: find it by plate or VIN, record mileage, fuel and damage. */
 @Component({
   selector: 'app-check-in',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink, TranslatePipe, KmPipe, Alert, Icon, Plate],
   template: `
     <header class="mb-4">
@@ -63,6 +69,12 @@ export const CHECK_IN_CODE_FIELDS = { 'invalid-mechanic': 'assignedMechanicId' }
         <div class="card-body d-flex flex-wrap align-items-center gap-2 column-gap-3 fs-5">
           <app-plate [plate]="v.plateDisplay ?? v.plate" [era]="v.plateEra" [country]="v.registrationCountry" [registrationDate]="v.registrationDate" />
           <strong>{{ v.make }} {{ v.model }} {{ v.year }}</strong>
+          @if (matchedBy(); as by) {
+            <span class="badge bg-secondary-subtle text-secondary-emphasis fs-6 fw-normal">{{ (by === 'vin' ? 'checkIn.foundByVin' : 'checkIn.foundByPlate') | t }}</span>
+          }
+          @if (matchedBy() === 'vin' && v.vin) {
+            <span class="font-monospace small text-body-secondary text-break">{{ v.vin }}</span>
+          }
           <span class="d-inline-flex align-items-center gap-1 text-body-secondary fs-6"><app-icon name="gauge" [size]="16" /> {{ 'checkIn.lastMileage' | t: { km: (v.mileage | km: lang()) } }}</span>
         </div>
       </div>
@@ -134,6 +146,8 @@ export class CheckIn implements OnInit {
   protected readonly vehicle = signal<Vehicle | null>(null);
   protected readonly mechanics = signal<User[]>([]);
   protected readonly notFound = signal(false);
+  /** Which field found the vehicle, shown next to it. */
+  protected readonly matchedBy = signal<'plate' | 'vin' | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly form = inject(FormBuilder).group({
@@ -163,30 +177,37 @@ export class CheckIn implements OnInit {
     this.api.users().subscribe({ next: (u) => this.mechanics.set(u.filter((x) => x.role === 'MECHANIC')), error: () => {} });
   }
 
-  /** On blur: a Portuguese plate becomes `XX-XX-XX` upper case. */
+  /** On blur: a Portuguese plate becomes `XX-XX-XX` upper case; a VIN is left as typed. */
   protected tidy(): void {
     const control = this.search.plate;
+    if (looksLikeVin(control.value)) return;
     const tidy = formatPlate(control.value, this.search.registrationCountry.value);
     if (tidy !== control.value) control.setValue(tidy);
   }
 
+  /** The plate layout hint; none for a VIN. */
   protected plateMessage() {
-    return plateMessage(this.search.plate);
+    return looksLikeVin(this.search.plate.value) ? null : plateMessage(this.search.plate);
   }
 
   protected mechanicMessage() {
     return fieldMessage(this.form.controls.assignedMechanicId);
   }
 
-  find(plate: string): void {
+  /** Looks the vehicle up by VIN when the term has 17 letters or digits, otherwise by plate. */
+  find(term: string): void {
     this.search.plate.markAsTouched();
     this.error.set(null);
     this.notFound.set(false);
     this.vehicle.set(null);
-    if (!plate.trim()) return;
-    this.api.vehicleByPlate(plate).subscribe({
+    this.matchedBy.set(null);
+    if (!term.trim()) return;
+    const by = looksLikeVin(term) ? 'vin' : 'plate';
+    const lookup = by === 'vin' ? this.api.vehicleByVin(term.replace(/\s/g, '')) : this.api.vehicleByPlate(term);
+    lookup.subscribe({
       next: (v) => {
         this.vehicle.set(v);
+        this.matchedBy.set(by);
         this.form.patchValue({ mileageIn: v.mileage });
       },
       error: (e) => (e.status === 404 ? this.notFound.set(true) : this.error.set(this.i18n.error(e))),

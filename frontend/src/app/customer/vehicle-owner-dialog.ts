@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, inject, OnDestroy, outp
 
 import { ApiService } from '../core/api/api.service';
 import { Customer, Vehicle } from '../core/api/models';
+import { isStale } from '../core/api/problem';
 import { I18nService } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
@@ -141,7 +142,7 @@ export class VehicleOwnerDialog implements OnDestroy {
     if (!vehicle || !to) return;
     this.busy.set(true);
     this.error.set(null);
-    this.api.transferVehicle(vehicle.id, to.id).subscribe({
+    this.api.transferVehicle(vehicle.id, to.id, vehicle.version).subscribe({
       next: (updated) => {
         this.busy.set(false);
         this.transferred.emit({ vehicle: updated, from: this.from(), to });
@@ -150,6 +151,19 @@ export class VehicleOwnerDialog implements OnDestroy {
       error: (e) => {
         this.busy.set(false);
         this.error.set(this.i18n.error(e));
+        if (isStale(e)) {
+          // The vehicle changed since the dialog opened: reload it (new version, maybe a new owner) and let the
+          // user confirm again.
+          this.api.vehicle(vehicle.id).subscribe({
+            next: (fresh) => {
+              this.vehicle.set(fresh);
+              if (fresh.customerId !== vehicle.customerId) {
+                this.api.customer(fresh.customerId).subscribe({ next: (c) => this.from.set(c), error: () => {} });
+              }
+            },
+            error: () => {},
+          });
+        }
       },
     });
   }

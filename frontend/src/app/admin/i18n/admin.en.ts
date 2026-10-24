@@ -1,0 +1,47 @@
+/** English texts of the platform admin console. Loaded with its routes (`core/i18n/feature-texts.ts`); keys typed in `MessageKey`. */
+export const adminEn = {
+  'admin.tagline': 'Platform',
+  'admin.workshops.title': 'Workshops',
+  'admin.workshops.subtitle': 'Every subscribed workshop, its plan and who owns it',
+  'admin.workshops.new': 'New workshop',
+  'admin.workshops.name': 'Workshop',
+  'admin.workshops.country': 'Country',
+  'admin.workshops.plan': 'Plan',
+  'admin.workshops.status': 'Status',
+  'admin.workshops.created': 'Created',
+  'admin.workshops.owner': 'Owner',
+  'admin.workshops.users': 'Users',
+  'admin.workshops.empty': 'No workshops yet',
+
+  'admin.plan.STARTER': 'Starter',
+  'admin.plan.PRO': 'Pro',
+  'admin.plan.ENTERPRISE': 'Enterprise',
+  'admin.status.TRIAL': 'Trial',
+  'admin.status.ACTIVE': 'Active',
+  'admin.status.SUSPENDED': 'Suspended',
+  'admin.status.CANCELLED': 'Cancelled',
+
+  'admin.create.title': 'Register a workshop',
+  'admin.create.timezone': 'Time zone',
+  'admin.create.slugHelp': 'Optional. Made from the name when left empty.',
+  'admin.create.owner': 'First owner',
+  'admin.create.ownerHelp': 'They get an activation link to choose their password.',
+  'admin.create.submit': 'Register workshop',
+  'admin.create.doneTitle': '{name} is registered',
+  'admin.create.doneBody': 'Send this link to {email}. It lets the owner choose a password and sign in.',
+  'admin.create.openWorkshop': 'Set up the theme',
+
+  'admin.detail.back': 'All workshops',
+  'admin.subscription.title': 'Subscription',
+  'admin.subscription.until': 'Trial or paid until',
+  'admin.subscription.help': 'Suspended and cancelled workshops cannot sign in; open sessions end at their next action.',
+  'admin.subscription.suspend': 'Suspend',
+  'admin.subscription.reactivate': 'Reactivate',
+  'admin.subscription.save': 'Save subscription',
+  'admin.subscription.saved': 'Subscription saved: {status}.',
+  'admin.owner.title': 'Owner access',
+  'admin.owner.help': 'A new link replaces the previous one. If the owner had a password, the link sets a new one.',
+  'admin.owner.reissue': 'Issue a new activation link',
+} as const;
+
+export type AdminKey = keyof typeof adminEn;

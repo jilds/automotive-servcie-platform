@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -51,6 +52,12 @@ class VehicleEntity {
     @Column(name = "registration_date")
     private @Nullable LocalDate registrationDate;
 
+    /// Optimistic lock: Hibernate adds `where version = ?` to every update and raises it by one. Null until the
+    /// entity is first saved, so Spring Data persists new entities instead of merging them.
+    @Version
+    @Column(nullable = false)
+    private @Nullable Long version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private @Nullable Instant createdAt;
@@ -87,6 +94,12 @@ class VehicleEntity {
     Vehicle toDomain() {
         LocalDate date = registrationDate;
         return new Vehicle(id, customerId, new VehicleDetails(plate, vin, make, model, year, fuelType),
-                new VehicleRegistration(registrationCountry, date == null ? null : YearMonth.from(date)), mileage);
+                new VehicleRegistration(registrationCountry, date == null ? null : YearMonth.from(date)), mileage,
+                version());
+    }
+
+    private long version() {
+        Long v = version;
+        return v == null ? 0 : v;
     }
 }

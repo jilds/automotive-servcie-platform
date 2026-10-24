@@ -1,17 +1,22 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../core/api/api.service';
 import { Customer } from '../core/api/models';
+import { applyProblem } from '../core/api/problem';
 import { I18nService } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
+import { nifValidator } from '../shared/nif';
+import { WorkshopCountry } from '../shared/workshop-country';
 import { addressForm, COUNTRIES, toAddress } from './address';
 
 @Component({
   selector: 'app-customer-list',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink, TranslatePipe, Alert, Icon],
   template: `
     <header class="d-flex flex-wrap align-items-end gap-3 mb-4">
@@ -32,6 +37,11 @@ import { addressForm, COUNTRIES, toAddress } from './address';
           <div class="col-sm-6 col-lg-3">
             <label class="form-label" for="cn-nif">{{ 'common.nif' | t }}</label>
             <input id="cn-nif" class="form-control" formControlName="nif" inputmode="numeric" maxlength="9" [class.is-invalid]="form.controls.nif.invalid && form.controls.nif.touched" />
+            @if (form.controls.nif.touched && form.controls.nif.hasError('pattern')) {
+              <div class="invalid-feedback">{{ 'customers.nifInvalid' | t }}</div>
+            } @else if (form.controls.nif.touched && form.controls.nif.hasError('nif')) {
+              <div class="invalid-feedback">{{ 'common.nifCheckDigit' | t }}</div>
+            }
           </div>
           <div class="col-sm-6 col-lg-3">
             <label class="form-label" for="cn-phone">{{ 'common.phone' | t }}</label>
@@ -138,6 +148,8 @@ import { addressForm, COUNTRIES, toAddress } from './address';
 export class CustomerList implements OnInit {
   private readonly api = inject(ApiService);
   private readonly i18n = inject(I18nService);
+  private readonly workshopCountry = inject(WorkshopCountry);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly customers = signal<Customer[]>([]);
   protected readonly showForm = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -147,7 +159,7 @@ export class CustomerList implements OnInit {
   });
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', Validators.required],
-    nif: ['', Validators.pattern(/^\d{9}$/)],
+    nif: ['', nifValidator(() => this.nifCountry())],
     phone: [''],
     email: ['', Validators.email],
     address: addressForm(),
@@ -156,6 +168,10 @@ export class CustomerList implements OnInit {
   private timer?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
+    this.workshopCountry.load();
+    this.form.controls.address.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() =>
+      this.form.controls.nif.updateValueAndValidity({ emitEvent: false }),
+    );
     this.search('');
   }
 
@@ -169,7 +185,17 @@ export class CustomerList implements OnInit {
     }, 250);
   }
 
+  /** The NIF is Portuguese when the address is in Portugal, or when there is no address and the workshop is. */
+  private nifCountry(): string {
+    const address = this.form?.controls.address.getRawValue();
+    return address?.street.trim() ? address.country : this.workshopCountry.country();
+  }
+
   create(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     const v = this.form.getRawValue();
     this.error.set(null);
     this.api
@@ -187,7 +213,10 @@ export class CustomerList implements OnInit {
           this.form.reset();
           this.showForm.set(false);
         },
-        error: (e) => this.error.set(this.i18n.error(e)),
+        error: (e) => {
+          applyProblem(this.form, e, { 'invalid-nif': 'nif', 'invalid-postal-code': 'address.postalCode' });
+          this.error.set(this.i18n.error(e));
+        },
       });
   }
 }

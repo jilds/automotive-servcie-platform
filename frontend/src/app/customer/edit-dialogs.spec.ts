@@ -47,6 +47,7 @@ const ana: Customer = {
   email: 'ana@example.pt',
   address: { street: 'Rua Augusta 10', detail: null, postalCode: '1100-053', locality: 'Lisboa', country: 'PT' },
   marketingConsent: true,
+  version: 2,
 };
 
 const clio: Vehicle = {
@@ -63,6 +64,7 @@ const clio: Vehicle = {
   year: 2020,
   fuelType: 'Diesel',
   mileage: 100000,
+  version: 5,
 };
 
 describe('CustomerEditDialog', () => {
@@ -95,7 +97,7 @@ describe('CustomerEditDialog', () => {
   it('sends blank optional fields and an empty address as null', () => {
     dialog.open({ ...ana, address: null });
     dialog.form.patchValue({ nif: '', phone: '  ', email: '', marketingConsent: false });
-    expect(dialog.request()).toEqual({ name: 'Ana Silva', nif: null, phone: null, email: null, address: null, marketingConsent: false });
+    expect(dialog.request()).toEqual({ name: 'Ana Silva', nif: null, phone: null, email: null, address: null, marketingConsent: false, version: 2 });
   });
 
   it('mirrors the backend rules and does not call the API while invalid', () => {
@@ -121,6 +123,35 @@ describe('CustomerEditDialog', () => {
     expect(req.request.body.name).toBe('Ana M. Silva');
     req.flush({ ...ana, name: 'Ana M. Silva' });
     expect(saved).toHaveBeenCalledWith({ ...ana, name: 'Ana M. Silva' });
+  });
+
+  it('checks the Portuguese NIF check digit, and only for a Portuguese address', () => {
+    dialog.open(ana);
+    dialog.form.patchValue({ nif: '123456780' });
+    expect(dialog.form.controls.nif.hasError('nif')).toBe(true);
+    dialog.form.patchValue({ nif: '509999999' });
+    expect(dialog.form.controls.nif.valid).toBe(true);
+    // A customer living in Spain keeps the tax number as given.
+    dialog.form.patchValue({ nif: '123456780' });
+    dialog.form.controls.address.patchValue({ country: 'ES', postalCode: '28013' });
+    expect(dialog.form.controls.nif.valid).toBe(true);
+  });
+
+  it('sends the version it opened and, when someone else saved first, reloads the customer and says why', () => {
+    const saved = vi.fn();
+    dialog.saved.subscribe(saved);
+    dialog.open(ana);
+    dialog.form.patchValue({ name: 'Ana Old Tab' });
+    dialog.save();
+    const put = http.expectOne('/api/v1/customers/c1');
+    expect(put.request.body.version).toBe(2);
+    put.flush({ code: 'stale-data' }, { status: 409, statusText: 'Conflict' });
+
+    http.expectOne({ method: 'GET', url: '/api/v1/customers/c1' }).flush({ ...ana, name: 'Ana Newer', version: 3 });
+    expect(saved).not.toHaveBeenCalled();
+    expect(dialog.form.controls.name.value).toBe('Ana Newer');
+    expect(dialog.request().version).toBe(3);
+    expect(dialog['error']()).toBe(TestBed.inject(I18nService).t('error.stale-data'));
   });
 
   it('shows server validation errors on the fields, including the nested address', () => {
@@ -170,6 +201,7 @@ describe('VehicleEditDialog', () => {
       mileage: null,
       registrationCountry: 'PT',
       registrationDate: null,
+      version: 5,
     });
   });
 
@@ -331,7 +363,7 @@ describe('VehicleOwnerDialog', () => {
     dialog.confirm();
     const req = http.expectOne('/api/v1/vehicles/v1/owner');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ customerId: 'c2' });
+    expect(req.request.body).toEqual({ customerId: 'c2', version: 5 });
     req.flush({ ...clio, customerId: 'c2' });
     expect(done).toHaveBeenCalledWith({ vehicle: { ...clio, customerId: 'c2' }, from: ana, to: bruno });
   });

@@ -11,4 +11,13 @@ public class VehicleNotFoundException extends NotFoundException {
     public VehicleNotFoundException(String plate) {
         super("vehicle-not-found", "No vehicle with plate " + plate);
     }
+
+    private VehicleNotFoundException(String code, String message) {
+        super(code, message);
+    }
+
+    /// No vehicle has the VIN. The VIN is not repeated in the message.
+    public static VehicleNotFoundException byVin() {
+        return new VehicleNotFoundException("vehicle-not-found", "No vehicle with this VIN");
+    }
 }

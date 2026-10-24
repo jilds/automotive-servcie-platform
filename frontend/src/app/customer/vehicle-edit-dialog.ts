@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ApiService } from '../core/api/api.service';
 import { Vehicle, VehicleUpdateRequest } from '../core/api/models';
-import { applyProblem, fieldMessage, shownOnFields } from '../core/api/problem';
+import { applyProblem, fieldMessage, isStale, shownOnFields } from '../core/api/problem';
 import { I18nService } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
@@ -101,6 +101,8 @@ export class VehicleEditDialog {
   protected readonly lang = this.i18n.lang;
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private vehicleId: string | null = null;
+  /** Version the form was opened with; the API refuses the save (409 `stale-data`) if the vehicle changed since. */
+  private version = 0;
   /** The registration as opened: an unchanged plate is not re-checked (the API does the same). */
   private stored: StoredRegistration | null = null;
   protected readonly vinLength = VIN_LENGTH;
@@ -122,11 +124,18 @@ export class VehicleEditDialog {
   });
 
   open(vehicle: Vehicle): void {
-    this.vehicleId = vehicle.id;
-    const country = vehicle.registrationCountry ?? 'PT';
-    this.stored = { plate: vehicle.plate, country };
     this.error.set(null);
     this.busy.set(false);
+    this.fill(vehicle);
+    this.dialog().nativeElement.showModal();
+  }
+
+  /** Puts the vehicle as stored into the form, with the version to send back. */
+  private fill(vehicle: Vehicle): void {
+    this.vehicleId = vehicle.id;
+    this.version = vehicle.version;
+    const country = vehicle.registrationCountry ?? 'PT';
+    this.stored = { plate: vehicle.plate, country };
     this.fuels.set(fuelOptions(vehicle.fuelType));
     this.recordedMileage.set(vehicle.mileage);
     this.form.controls.mileage.setValidators(Validators.min(vehicle.mileage ?? 0));
@@ -141,7 +150,6 @@ export class VehicleEditDialog {
       fuelType: vehicle.fuelType ?? '',
       mileage: vehicle.mileage,
     });
-    this.dialog().nativeElement.showModal();
   }
 
   close(): void {
@@ -161,18 +169,20 @@ export class VehicleEditDialog {
       mileage: v.mileage,
       registrationCountry: v.registrationCountry.toUpperCase(),
       registrationDate: v.registrationDate || null,
+      version: this.version,
     };
   }
 
   save(): void {
-    if (!this.vehicleId) return;
+    const id = this.vehicleId;
+    if (!id) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     this.busy.set(true);
     this.error.set(null);
-    this.api.updateVehicle(this.vehicleId, this.request()).subscribe({
+    this.api.updateVehicle(id, this.request()).subscribe({
       next: (vehicle) => {
         this.busy.set(false);
         this.saved.emit(vehicle);
@@ -180,6 +190,12 @@ export class VehicleEditDialog {
       },
       error: (e) => {
         this.busy.set(false);
+        if (isStale(e)) {
+          // Someone else saved it (or a check-in raised the mileage): show the stored values and say why.
+          this.error.set(this.i18n.error(e));
+          this.api.vehicle(id).subscribe({ next: (v) => this.fill(v), error: () => {} });
+          return;
+        }
         const marked = applyProblem(this.form, e, VEHICLE_CODE_FIELDS);
         this.error.set(shownOnFields(e, marked) ? null : this.i18n.error(e));
       },

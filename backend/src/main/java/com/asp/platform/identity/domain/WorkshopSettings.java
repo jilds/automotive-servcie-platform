@@ -8,6 +8,7 @@ import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.shared.CountryCodes;
+import com.asp.platform.shared.PortugueseNif;
 
 /// How a workshop presents itself and what it charges by default.
 ///
@@ -47,9 +48,24 @@ public record WorkshopSettings(String name, @Nullable String nif, String country
         }
     }
 
+    /// Checks a Portuguese NIF (check digit and first digit). Called when settings are written, not when they are
+    /// read, so a NIF stored before the check existed stays readable until the owner edits the settings.
+    ///
+    /// @throws com.asp.platform.shared.InvalidNifException when the country is PT and the NIF is not valid
+    public WorkshopSettings checkNif() {
+        PortugueseNif.check(nif, country);
+        return this;
+    }
+
     /// Release 1 sells in Portugal only, so new workshops start with Portuguese defaults.
     public static WorkshopSettings portugueseDefaults(String name, @Nullable String nif) {
-        return new WorkshopSettings(name, nif, "PT", "Europe/Lisbon", new BigDecimal("23.00"), 0);
+        return initial(name, nif, "PT", "Europe/Lisbon");
+    }
+
+    /// Settings of a workshop the platform admin registers: the owner sets VAT and labour rate later.
+    /// The 23% VAT default is Portugal's standard rate, the first market.
+    public static WorkshopSettings initial(String name, @Nullable String nif, String country, String timezone) {
+        return new WorkshopSettings(name, nif, country, timezone, new BigDecimal("23.00"), 0);
     }
 
     public ZoneId zone() {

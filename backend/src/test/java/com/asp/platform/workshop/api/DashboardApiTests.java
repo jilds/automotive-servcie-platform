@@ -22,7 +22,8 @@ class DashboardApiTests extends ApiTestSupport {
         String rui = invite(owner, "MECHANIC", uniqueEmail("rui"));
         String ze = invite(owner, "MECHANIC", uniqueEmail("ze"));
         String retired = invite(owner, "MECHANIC", uniqueEmail("old"));
-        call(put("/api/v1/users/" + retired).content("{\"role\":\"MECHANIC\",\"active\":false}"), owner)
+        call(put("/api/v1/users/" + retired).content(withVersion("{\"role\":\"MECHANIC\",\"active\":false}",
+                userVersion(owner, retired))), owner)
                 .andExpect(status().isOk());
         String customer = createCustomer(owner, "Frota Lda");
 
@@ -90,8 +91,8 @@ class DashboardApiTests extends ApiTestSupport {
         String other = signup("Oficina Ocupada");
         checkIn(other, createVehicle(other, createCustomer(other, "Outro"), "20-BB-01"), null);
 
-        call(get("/api/v1/dashboard"), login(deskEmail, "password123")).andExpect(status().isForbidden());
-        call(get("/api/v1/dashboard"), login(mechanicEmail, "password123")).andExpect(status().isForbidden());
+        call(get("/api/v1/dashboard"), login(deskEmail, PASSWORD)).andExpect(status().isForbidden());
+        call(get("/api/v1/dashboard"), login(mechanicEmail, PASSWORD)).andExpect(status().isForbidden());
         call(get("/api/v1/dashboard"), owner).andExpect(jsonPath("$.carsInShop").value(0));
         call(get("/api/v1/dashboard"), other).andExpect(jsonPath("$.carsInShop").value(1));
     }

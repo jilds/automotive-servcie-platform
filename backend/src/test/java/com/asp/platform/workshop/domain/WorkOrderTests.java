@@ -85,6 +85,43 @@ class WorkOrderTests {
         assertThatThrownBy(() -> new CheckInDetails(null, 9, null, null)).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void should_need_a_reason_to_replace_or_remove_a_mechanic_but_not_for_the_first_one() {
+        UUID rui = UUID.randomUUID();
+        UUID ze = UUID.randomUUID();
+        UUID desk = UUID.randomUUID();
+        WorkOrder order = WorkOrder.open(UUID.randomUUID(), 1, UUID.randomUUID(), CHECK_IN, null, NOW);
+
+        MechanicChange first = order.reassign(rui, "  ", desk, UUID.randomUUID(), NOW).orElseThrow();
+        assertThat(first.fromMechanicId()).isNull();
+        assertThat(first.toMechanicId()).isEqualTo(rui);
+        assertThat(first.reason()).isNull();
+
+        assertThatThrownBy(() -> order.reassign(ze, null, desk, UUID.randomUUID(), NOW))
+                .isInstanceOf(ReasonRequiredException.class);
+        assertThatThrownBy(() -> order.reassign(null, " ", desk, UUID.randomUUID(), NOW))
+                .isInstanceOf(ReasonRequiredException.class);
+        assertThat(order.assignedMechanicId()).isEqualTo(rui);
+
+        MechanicChange replaced = order.reassign(ze, "  Rui is off sick  ", desk, UUID.randomUUID(), NOW).orElseThrow();
+        assertThat(replaced.fromMechanicId()).isEqualTo(rui);
+        assertThat(replaced.toMechanicId()).isEqualTo(ze);
+        assertThat(replaced.reason()).isEqualTo("Rui is off sick");
+        assertThat(replaced.changedBy()).isEqualTo(desk);
+        assertThat(order.assignedMechanicId()).isEqualTo(ze);
+
+        assertThat(order.reassign(ze, "same", desk, UUID.randomUUID(), NOW)).isEmpty();
+    }
+
+    @Test
+    void should_keep_the_mechanic_of_a_delivered_or_cancelled_work_order() {
+        WorkOrder order = WorkOrder.open(UUID.randomUUID(), 1, UUID.randomUUID(), CHECK_IN, null, NOW);
+        order.moveTo(WorkOrderStatus.CANCELLED, NOW);
+
+        assertThatThrownBy(() -> order.reassign(UUID.randomUUID(), "late", UUID.randomUUID(), UUID.randomUUID(), NOW))
+                .isInstanceOf(WorkOrderLockedException.class);
+    }
+
     private static NewLine line(LineType type, String quantity, long unitPriceCents, String discount) {
         return new NewLine(type, "line", new BigDecimal(quantity), unitPriceCents,
                 discount == null ? null : new BigDecimal(discount), BigDecimal.valueOf(23));

@@ -20,7 +20,10 @@ class AddressTests {
     @Test
     void should_reject_a_portuguese_postal_code_in_the_wrong_format() {
         assertThatThrownBy(() -> new Address("Rua A", null, "1100053", "Lisboa", "PT"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(InvalidPostalCodeException.class, e -> {
+                    assertThat(e.code()).isEqualTo("invalid-postal-code");
+                    assertThat(e.field()).isEqualTo("address.postalCode");
+                });
     }
 
     @Test

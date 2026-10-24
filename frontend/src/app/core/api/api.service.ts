@@ -7,6 +7,8 @@ import {
   Customer,
   CustomerRequest,
   LineType,
+  Mechanic,
+  MechanicAssignment,
   User,
   Vehicle,
   VehicleCreateRequest,
@@ -44,11 +46,15 @@ export class ApiService {
   updateVehicle(id: string, body: VehicleUpdateRequest) {
     return this.http.put<Vehicle>(`${API}/vehicles/${id}`, body);
   }
-  transferVehicle(id: string, customerId: string) {
-    return this.http.put<Vehicle>(`${API}/vehicles/${id}/owner`, { customerId });
+  transferVehicle(id: string, customerId: string, version: number) {
+    return this.http.put<Vehicle>(`${API}/vehicles/${id}/owner`, { customerId, version });
   }
   vehicleByPlate(plate: string) {
     return this.http.get<Vehicle>(`${API}/vehicles`, { params: new HttpParams().set('plate', plate) });
+  }
+  /** Exact 17-character VIN, any case. 400 `invalid-vin` for another length, 404 `vehicle-not-found`. */
+  vehicleByVin(vin: string) {
+    return this.http.get<Vehicle>(`${API}/vehicles`, { params: new HttpParams().set('vin', vin) });
   }
   vehicle(id: string) {
     return this.http.get<Vehicle>(`${API}/vehicles/${id}`);
@@ -89,8 +95,17 @@ export class ApiService {
   move(id: string, status: WorkOrderStatus) {
     return this.http.patch<WorkOrder>(`${API}/work-orders/${id}/status`, { status });
   }
-  assign(id: string, mechanicId: string | null) {
-    return this.http.put<WorkOrder>(`${API}/work-orders/${id}/mechanic`, { mechanicId });
+  /** Gives the work order to a mechanic or to nobody; replacing or removing one needs a reason (`reason-required`). */
+  assign(id: string, mechanicId: string | null, reason: string | null) {
+    return this.http.put<WorkOrder>(`${API}/work-orders/${id}/mechanic`, { mechanicId, reason });
+  }
+  /** Current mechanic and the history of changes with reasons (owner, front desk). */
+  mechanicAssignment(id: string) {
+    return this.http.get<MechanicAssignment>(`${API}/work-orders/${id}/mechanic`);
+  }
+  /** Active mechanics of the workshop (owner, front desk). */
+  mechanics() {
+    return this.http.get<Mechanic[]>(`${API}/mechanics`);
   }
 
   // Users

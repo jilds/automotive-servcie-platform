@@ -10,18 +10,35 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.asp.platform.identity.domain.InvalidCredentialsException;
+import com.asp.platform.identity.domain.InvalidLogoException;
+import com.asp.platform.identity.domain.WorkshopSuspendedException;
 
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class IdentityExceptionHandler {
 
-    private static final String CODE = "invalid-credentials";
-
     @ExceptionHandler(InvalidCredentialsException.class)
     ProblemDetail invalidCredentials(InvalidCredentialsException e) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, e.getMessage());
-        problem.setType(URI.create("/problems/" + CODE));
-        problem.setProperty("code", CODE);
+        return problem(HttpStatus.UNAUTHORIZED, "invalid-credentials", e.getMessage());
+    }
+
+    /// Right password, but the workshop's subscription is suspended or cancelled.
+    @ExceptionHandler(WorkshopSuspendedException.class)
+    ProblemDetail workshopSuspended(WorkshopSuspendedException e) {
+        return problem(HttpStatus.FORBIDDEN, WorkshopSuspendedException.CODE, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidLogoException.class)
+    ProblemDetail invalidLogo(InvalidLogoException e) {
+        HttpStatus status = InvalidLogoException.TOO_LARGE.equals(e.code())
+                ? HttpStatus.CONTENT_TOO_LARGE : HttpStatus.BAD_REQUEST;
+        return problem(status, e.code(), e.getMessage());
+    }
+
+    private static ProblemDetail problem(HttpStatus status, String code, String detail) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+        problem.setType(URI.create("/problems/" + code));
+        problem.setProperty("code", code);
         return problem;
     }
 }

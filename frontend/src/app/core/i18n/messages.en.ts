@@ -1,7 +1,14 @@
-import { backofficeEn } from '../../backoffice/i18n/backoffice.en';
+import { catalogueCoreEn } from '../../catalogue/i18n/catalogue-core.en';
+import { identityCoreEn } from '../../identity/i18n/identity-core.en';
+import { stockCoreEn } from '../../stock/i18n/stock-core.en';
+import type { AdminKey } from '../../admin/i18n/admin.en';
+import type { CatalogueKey } from '../../catalogue/i18n/catalogue.en';
+import type { BackofficeKey } from '../../backoffice/i18n/backoffice.en';
+import type { IdentityKey } from '../../identity/i18n/identity.en';
+import type { StockKey } from '../../stock/i18n/stock.en';
 import { PluralBase } from './plural';
 
-/** English texts. This dictionary defines every message key; the other languages must translate all of them. */
+/** English start-up texts. This dictionary defines every core key; the other languages must translate all of them. */
 export const en = {
   'app.title': 'ASP - Automotive Service Platform',
   'language.label': 'Language',
@@ -35,15 +42,7 @@ export const en = {
 
   'login.subtitle': 'Sign in to your workshop',
   'login.submit': 'Sign in',
-  'login.newWorkshop': 'New workshop?',
-  'login.createAccount': 'Create an account',
 
-  'signup.title': 'Create your workshop',
-  'signup.workshopName': 'Workshop name',
-  'signup.ownerName': 'Your name',
-  'signup.password': 'Password (8+ characters)',
-  'signup.submit': 'Create account',
-  'signup.alreadyRegistered': 'Already registered?',
 
   'customers.title': 'Customers',
   'customers.new': 'New customer',
@@ -113,11 +112,16 @@ export const en = {
   'board.title': 'Workshop board',
   'board.since': 'since {time}',
   'board.empty': 'Nothing here',
+  'board.hint': 'Drag a card to another column, or use "Move to…" on the card.',
+  'board.moveTo': 'Move to…',
+  'board.moveLabel': 'Move work order #{number}',
+  'board.moved': 'Work order #{number} moved to {status}.',
+  'board.moveFailed': 'Work order #{number} was not moved. {reason}',
 
   'checkIn.title': 'Check in a vehicle',
-  'checkIn.platePlaceholder': 'Plate, e.g. AA-00-AA',
+  'checkIn.platePlaceholder': 'Plate or VIN, e.g. AA-00-AA',
   'checkIn.find': 'Find',
-  'checkIn.notFound': 'No vehicle with that plate.',
+  'checkIn.notFound': 'No vehicle with that plate or VIN.',
   'checkIn.registerFirst': 'Register the customer and vehicle first.',
   'checkIn.lastMileage': 'last mileage {km}',
   'checkIn.mileageNow': 'Mileage now (km)',
@@ -202,10 +206,41 @@ export const en = {
   'error.last-owner': 'The workshop must keep at least one active owner.',
   'error.own-account-change': 'You cannot change your own role or deactivate yourself.',
   'error.user-not-found': 'That user no longer exists.',
-  ...backofficeEn,
+  'error.reason-required': 'Say why the mechanic changes.',
+  'mechanic.title': 'Mechanic',
+  'mechanic.change': 'Change mechanic',
+  'mechanic.new': 'New mechanic',
+  'mechanic.reason': 'Reason',
+  'mechanic.optional': '(optional)',
+  'mechanic.reasonPlaceholder': 'For example: Rui is off sick today',
+  'mechanic.reasonHelp': 'Kept in the work order history. Required when a mechanic is replaced or removed.',
+  'mechanic.reasonRequired': 'Say why the mechanic changes.',
+  'mechanic.reasonTooLong': 'Use at most 500 characters.',
+  'mechanic.history': 'Changes',
+  'mechanic.reasonShown': 'Reason: {reason}',
+  'mechanic.changedBy': '{name} · {date}',
+  'error.stale-data': 'Someone else changed this record while you were editing. The latest version is now shown; check it and save again.',
+  'error.invalid-nif': 'Not a valid Portuguese NIF. Check the 9 digits.',
+  'error.invalid-postal-code': 'Portuguese postal codes look like 1100-053.',
+  'error.invalid-vin': 'A VIN has 17 characters.',
+  'common.nifCheckDigit': 'This NIF is not valid (check digit). Check the number.',
+  'checkIn.foundByPlate': 'Found by plate',
+  'checkIn.foundByVin': 'Found by VIN',
+  'workOrder.readOnly': 'Assigned to another mechanic: you can read this job but not change it.',
+  'history.otherMechanic': 'Other mechanic',
+  ...identityCoreEn,
+  ...catalogueCoreEn,
+  ...stockCoreEn,
 } as const;
 
-export type MessageKey = keyof typeof en;
+/** Keys of the start-up dictionaries (this file and the `*-core` feature files spread into it). */
+export type CoreKey = keyof typeof en;
+
+/**
+ * Every message key: the core keys plus the feature dictionaries that load with their routes (see `feature-texts.ts`).
+ * The feature keys are imported as types only, so they add no code to the start-up bundle.
+ */
+export type MessageKey = CoreKey | AdminKey | BackofficeKey | CatalogueKey | IdentityKey | StockKey;
 
 /** A count message, such as `history.lines`, translated with the plural form `Intl.PluralRules` picks for `{count}`. */
 export type PluralKey = PluralBase<MessageKey>;

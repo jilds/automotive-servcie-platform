@@ -1,4 +1,5 @@
-/// Identity: workshop signup, login, users and roles, workshop settings.
+/// Identity: login, platform admin and subscription onboarding (no public signup), activation links, users and roles,
+/// workshop settings and branding.
 /// Public API: [TokenClaims], [AccessDirectory] and [UserAccess], [WorkshopDirectory] and [TeamMember].
 @ApplicationModule(displayName = "Identity")
 @NullMarked

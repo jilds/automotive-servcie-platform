@@ -1,6 +1,7 @@
 package com.asp.platform.config.security;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -22,6 +23,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.asp.platform.identity.AccessDirectory;
+import com.asp.platform.identity.TokenClaims;
+import com.asp.platform.shared.Role;
 
 /// Stateless JWT authentication. Authorization rules (which role may call what) live with each feature.
 @Configuration(proxyBeanMethods = false)
@@ -34,14 +37,22 @@ class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/activate").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/activation", "/api/v1/platform/contact",
+                                "/api/v1/branding/*", "/api/v1/branding/*/logo").permitAll()
+                        // The platform admin's console, and nothing else for platform admins: they belong to no
+                        // workshop, so every other API (customers, board, dashboard, ...) answers them 403.
+                        .requestMatchers("/api/v1/admin/**").hasRole(TokenClaims.PLATFORM_ADMIN)
+                        .requestMatchers("/api/**").hasAnyRole(workshopRoles())
                         // Everything outside /api is the Angular app, its static files, health/info and API docs.
                         .anyRequest().permitAll())
-                // Role and active state come from the database on every request (cached briefly), so a
-                // deactivated or demoted user's older token loses its rights on the next call.
-                .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(
-                        new CurrentAccessAuthenticationConverter(accessDirectory))));
+                // Role, active state and the workshop's subscription come from the database on every request
+                // (cached briefly), so a deactivated or demoted user's older token loses its rights on the next
+                // call, and so does every token of a suspended workshop.
+                .oauth2ResourceServer(rs -> rs
+                        .authenticationEntryPoint(new ProblemBearerEntryPoint())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(
+                                new CurrentAccessAuthenticationConverter(accessDirectory))));
         return http.build();
     }
 
@@ -58,6 +69,10 @@ class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    private static String[] workshopRoles() {
+        return Arrays.stream(Role.values()).map(Role::name).toArray(String[]::new);
     }
 
     private static SecretKey signingKey(AppSecurityProperties properties) {

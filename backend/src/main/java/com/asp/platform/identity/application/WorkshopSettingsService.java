@@ -23,13 +23,18 @@ public class WorkshopSettingsService {
     }
 
     @Transactional(readOnly = true)
-    public WorkshopSettings settings(UUID tenantId) {
-        return tenant(tenantId).settings();
+    public Tenant workshop(UUID tenantId) {
+        return tenant(tenantId);
     }
 
+    /// @param expectedVersion the workshop version the editor read (settings, branding and subscription share it)
+    /// @throws com.asp.platform.shared.StaleDataException  when someone else saved the workshop since
+    /// @throws com.asp.platform.shared.InvalidNifException when a Portuguese NIF is not valid
     @Transactional
-    public WorkshopSettings update(UUID tenantId, WorkshopSettings settings) {
-        return tenants.save(tenant(tenantId).withSettings(settings)).settings();
+    public Tenant update(UUID tenantId, WorkshopSettings settings, long expectedVersion) {
+        Tenant tenant = tenant(tenantId);
+        tenant.requireVersion(expectedVersion);
+        return tenants.save(tenant.withSettings(settings.checkNif()));
     }
 
     private Tenant tenant(UUID tenantId) {

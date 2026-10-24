@@ -27,6 +27,7 @@ class JpaCustomerRepository implements CustomerRepository {
                     return existing;
                 })
                 .orElseGet(() -> jpa.save(new CustomerEntity(customer)));
+        jpa.flush(); // so the returned version is the stored one
         return entity.toDomain();
     }
 

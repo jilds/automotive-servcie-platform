@@ -19,6 +19,9 @@ import { Toasts } from './toasts';
       <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/team" routerLinkActive="active" ariaCurrentWhenActive="page">
         <app-icon name="users" [size]="16" />{{ 'backoffice.tab.team' | t }}
       </a>
+      <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/services" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <app-icon name="inbox" [size]="16" />{{ 'catalogue.tab' | t }}
+      </a>
       <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/settings" routerLinkActive="active" ariaCurrentWhenActive="page">
         <app-icon name="wrench" [size]="16" />{{ 'backoffice.tab.settings' | t }}
       </a>

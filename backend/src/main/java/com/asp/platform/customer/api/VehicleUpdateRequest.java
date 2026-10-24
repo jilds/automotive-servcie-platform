@@ -5,6 +5,7 @@ import java.time.YearMonth;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
@@ -15,6 +16,7 @@ import com.asp.platform.shared.IsoCountry;
 
 /// The same fields as [VehicleRequest] without the owner, which changes through its own endpoint.
 /// A null mileage keeps the current reading; a null registration country keeps the current country.
+/// `version` is the one the editor read; a different stored version answers 409 `stale-data`.
 record VehicleUpdateRequest(
         @NotBlank String plate,
         @Nullable @Size(min = 17, max = 17) String vin,
@@ -24,7 +26,8 @@ record VehicleUpdateRequest(
         @Nullable String fuelType,
         @Nullable @PositiveOrZero Integer mileage,
         @Nullable @IsoCountry String registrationCountry,
-        @Nullable @RegistrationMonth YearMonth registrationDate) {
+        @Nullable @RegistrationMonth YearMonth registrationDate,
+        @NotNull Long version) {
 
     VehicleDetails toDetails() {
         return new VehicleDetails(plate, vin, make, model, year, fuelType);

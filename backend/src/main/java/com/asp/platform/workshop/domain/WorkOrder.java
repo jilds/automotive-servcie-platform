@@ -3,6 +3,8 @@ package com.asp.platform.workshop.domain;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
@@ -66,8 +68,33 @@ public final class WorkOrder {
         this.checkIn = corrected;
     }
 
-    public void assign(@Nullable UUID mechanicId) {
+    /// The longest reason kept for a change of mechanic.
+    public static final int MAX_REASON_LENGTH = 500;
+
+    /// Hands the work order to another mechanic, or to nobody. Replacing or removing an assigned mechanic needs a
+    /// reason; a first assignment may give one. A delivered or cancelled work order keeps its mechanic.
+    ///
+    /// @return the change to record, or empty when the mechanic stays the same
+    /// @throws ReasonRequiredException  when an assigned mechanic is replaced or removed without a reason
+    /// @throws WorkOrderLockedException when the work order is delivered or cancelled
+    public Optional<MechanicChange> reassign(@Nullable UUID mechanicId, @Nullable String reason, UUID changedBy,
+            UUID changeId, Instant now) {
+        if (status == WorkOrderStatus.DELIVERED || status == WorkOrderStatus.CANCELLED) {
+            throw new WorkOrderLockedException(status);
+        }
+        if (Objects.equals(mechanicId, assignedMechanicId)) {
+            return Optional.empty();
+        }
+        String why = reason == null || reason.isBlank() ? null : reason.strip();
+        if (assignedMechanicId != null && why == null) {
+            throw new ReasonRequiredException();
+        }
+        if (why != null && why.length() > MAX_REASON_LENGTH) {
+            throw new IllegalArgumentException("Reason must be at most " + MAX_REASON_LENGTH + " characters");
+        }
+        MechanicChange change = new MechanicChange(changeId, id, assignedMechanicId, mechanicId, why, changedBy, now);
         this.assignedMechanicId = mechanicId;
+        return Optional.of(change);
     }
 
     public boolean isAssignedTo(UUID mechanicId) {

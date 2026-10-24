@@ -50,6 +50,7 @@ const order = (status: WorkOrderStatus, fuelLevel: number | null = 5): WorkOrder
   netCents: 0,
   vatCents: 0,
   totalCents: 0,
+  readOnly: false,
 });
 
 describe('CheckInEditDialog', () => {
@@ -152,6 +153,12 @@ describe('WorkOrderDetail check-in edit action', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('It has been reloaded');
     expect(editButton(fixture.nativeElement)).toBeUndefined();
+    // The owner's mechanic card loads the assignment for the order, and again after the reload.
+    http.match('/api/v1/work-orders/w1/mechanic').forEach((r) => r.flush({ mechanicId: null, mechanicName: null, changes: [] }));
+    // ...and the catalogue picker loads the services and packages it offers.
+    http.match((r) => r.url.startsWith('/api/v1/catalogue/')).forEach((r) => r.flush([]));
+    // ...and the stock picker loads the products it offers.
+    http.match((r) => r.url.startsWith('/api/v1/stock/')).forEach((r) => r.flush([]));
     http.verify();
   });
 });

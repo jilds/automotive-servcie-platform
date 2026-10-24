@@ -47,6 +47,22 @@ class LayerRulesTests {
             .should().beDeclaredInClassesThat().resideOutsideOfPackage("com.asp.platform.*.application..")
             .because("@Transactional boundaries live in the application layer");
 
+    /// The method rule above does not see `@Transactional` on a class, which makes every method transactional.
+    @ArchTest
+    static final ArchRule transactional_classes_live_in_application = noClasses()
+            .that().areAnnotatedWith(Transactional.class)
+            .or().areAnnotatedWith(jakarta.transaction.Transactional.class)
+            .should().resideOutsideOfPackage("com.asp.platform.*.application..")
+            .because("@Transactional boundaries live in the application layer, also when declared on a class")
+            .allowEmptyShould(true);
+
+    @ArchTest
+    static final ArchRule no_jakarta_transactional_methods = noMethods()
+            .that().areAnnotatedWith(jakarta.transaction.Transactional.class)
+            .should().beDeclaredInClassesThat().resideOutsideOfPackage("com.asp.platform.*.application..")
+            .because("@Transactional boundaries live in the application layer")
+            .allowEmptyShould(true);
+
     @ArchTest
     static final ArchRule features_do_not_import_config = noClasses()
             .that().resideOutsideOfPackage("com.asp.platform.config..")

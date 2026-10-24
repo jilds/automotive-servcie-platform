@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { Vehicle } from '../core/api/models';
 import { I18nService } from '../core/i18n/i18n.service';
-import { CheckIn } from './check-in';
+import { CheckIn, looksLikeVin } from './check-in';
 
 const vehicle: Vehicle = {
   id: 'v1',
@@ -21,6 +21,7 @@ const vehicle: Vehicle = {
   year: 2015,
   fuelType: null,
   mileage: 100100,
+  version: 0,
 };
 
 describe('CheckIn', () => {
@@ -62,5 +63,43 @@ describe('CheckIn', () => {
     expect(select.classList).toContain('is-invalid');
     expect(fixture.nativeElement.querySelector('#ci-mechanic-help').textContent).toContain('Choose an active mechanic of this workshop.');
     expect(fixture.nativeElement.querySelector('app-alert')).toBeNull();
+  });
+
+  it('tells the user to register the customer and vehicle first when no vehicle matches', () => {
+    const fixture = open('en');
+    fixture.componentInstance.find('99-ZZ-99');
+    http
+      .expectOne((r) => r.url === '/api/v1/vehicles' && r.params.get('plate') === '99-ZZ-99')
+      .flush({ code: 'vehicle-not-found' }, { status: 404, statusText: 'Not Found' });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('No vehicle with that plate or VIN.');
+    const link = fixture.nativeElement.querySelector('app-alert a') as HTMLAnchorElement;
+    expect(link.textContent).toContain('Register the customer and vehicle first.');
+    expect(link.getAttribute('href')).toBe('/customers');
+    expect(fixture.nativeElement.querySelector('#ci-mileage')).toBeNull();
+  });
+
+  it('searches by VIN when the term has 17 letters or digits, and says which field matched', () => {
+    const fixture = open('pt-PT');
+    expect(fixture.nativeElement.textContent).toContain('Encontrada pela matrícula');
+
+    fixture.componentInstance.find('vf1 rja00x 12345678');
+    http
+      .expectOne((r) => r.url === '/api/v1/vehicles' && r.params.get('vin') === 'vf1rja00x12345678')
+      .flush({ ...vehicle, vin: 'VF1RJA00X12345678' });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Encontrada pelo VIN');
+    expect(text).toContain('VF1RJA00X12345678');
+  });
+
+  it('tells a VIN from a plate', () => {
+    expect(looksLikeVin('VF1RJA00X12345678')).toBe(true);
+    expect(looksLikeVin(' vf1 rja00x 12345678 ')).toBe(true);
+    expect(looksLikeVin('11-AA-11')).toBe(false);
+    expect(looksLikeVin('VF1RJA00X1234567')).toBe(false);
   });
 });

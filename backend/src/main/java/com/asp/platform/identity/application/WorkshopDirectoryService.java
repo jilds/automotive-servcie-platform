@@ -2,7 +2,9 @@ package com.asp.platform.identity.application;
 
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,11 +46,23 @@ class WorkshopDirectoryService implements WorkshopDirectory {
 
     @Override
     @Transactional(readOnly = true)
+    public long labourRateCents(UUID tenantId) {
+        return tenant(tenantId).settings().labourRateCents();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<TeamMember> activeMechanics(UUID tenantId) {
         return users.findByTenant(tenantId).stream()
                 .filter(WorkshopDirectoryService::isActiveMechanic)
                 .map(WorkshopDirectoryService::member)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, String> memberNames(UUID tenantId) {
+        return users.findByTenant(tenantId).stream().collect(Collectors.toUnmodifiableMap(User::id, User::name));
     }
 
     @Override

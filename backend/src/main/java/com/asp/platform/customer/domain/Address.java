@@ -15,7 +15,9 @@ import org.jspecify.annotations.Nullable;
 public record Address(String street, @Nullable String detail, String postalCode, String locality, String country) {
 
     public static final String PORTUGAL = "PT";
-    private static final Pattern PT_POSTAL_CODE = Pattern.compile("\\d{4}-\\d{3}");
+    /// Portuguese postal code, for example "1100-053". Also used by the API check.
+    public static final String PT_POSTAL_CODE_REGEX = "\\d{4}-\\d{3}";
+    private static final Pattern PT_POSTAL_CODE = Pattern.compile(PT_POSTAL_CODE_REGEX);
     private static final Pattern COUNTRY_CODE = Pattern.compile("[A-Z]{2}");
 
     public Address {
@@ -28,8 +30,14 @@ public record Address(String street, @Nullable String detail, String postalCode,
             throw new IllegalArgumentException("Country must be a two-letter code");
         }
         if (PORTUGAL.equals(country) && !PT_POSTAL_CODE.matcher(postalCode).matches()) {
-            throw new IllegalArgumentException("Portuguese postal codes look like 1100-053");
+            throw new InvalidPostalCodeException();
         }
+    }
+
+    /// True unless the country is Portugal (null means Portugal) and the code is not NNNN-NNN.
+    public static boolean isValidPostalCode(@Nullable String country, String postalCode) {
+        boolean portugal = country == null || country.isBlank() || PORTUGAL.equalsIgnoreCase(country.trim());
+        return !portugal || PT_POSTAL_CODE.matcher(postalCode.trim()).matches();
     }
 
     private static String required(String value, String name) {

@@ -1,7 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl } from '@angular/forms';
 
-import { en, MessageKey } from '../i18n/messages.en';
+import type { MessageKey } from '../i18n/messages.en';
+// Every error code is a core key, and the default language's core texts are always loaded.
+import { ptPT } from '../i18n/messages.pt-PT';
 
 /** RFC 9457 problem detail as the API sends it (see docs/api/release-2.md, "Errors"). */
 export interface Problem {
@@ -28,6 +30,14 @@ export function problemOf(err: unknown): Problem | null {
 /** The problem `code`, such as `duplicate-plate`, or null. */
 export function problemCode(err: unknown): string | null {
   return problemOf(err)?.code ?? null;
+}
+
+/**
+ * True for 409 `stale-data`: someone else saved the record after this form loaded it. Forms reload the record and
+ * show `error.stale-data`, so the user sees the newer values before saving again.
+ */
+export function isStale(err: unknown): boolean {
+  return problemCode(err) === 'stale-data';
 }
 
 /**
@@ -76,7 +86,7 @@ export function fieldMessage(control: AbstractControl | null, client: Partial<Re
   const server = errors[SERVER_ERROR] as string | undefined;
   if (server) {
     const key = `error.${server}`;
-    return server !== 'validation' && key in en ? (key as MessageKey) : 'error.field';
+    return server !== 'validation' && key in ptPT ? (key as MessageKey) : 'error.field';
   }
   for (const name of Object.keys(errors)) {
     const key = client[name];

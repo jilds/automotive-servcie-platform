@@ -1,0 +1,48 @@
+import { PortugueseDictionary } from '../../core/i18n/plural';
+import { AdminKey } from './admin.en';
+
+/** Portuguese (Portugal) texts of the platform admin console. */
+export const adminPtPT: PortugueseDictionary<AdminKey> = {
+  'admin.tagline': 'Plataforma',
+  'admin.workshops.title': 'Oficinas',
+  'admin.workshops.subtitle': 'Todas as oficinas subscritoras, o plano e quem é o dono',
+  'admin.workshops.new': 'Nova oficina',
+  'admin.workshops.name': 'Oficina',
+  'admin.workshops.country': 'País',
+  'admin.workshops.plan': 'Plano',
+  'admin.workshops.status': 'Estado',
+  'admin.workshops.created': 'Criada',
+  'admin.workshops.owner': 'Dono',
+  'admin.workshops.users': 'Utilizadores',
+  'admin.workshops.empty': 'Ainda não há oficinas',
+
+  'admin.plan.STARTER': 'Starter',
+  'admin.plan.PRO': 'Pro',
+  'admin.plan.ENTERPRISE': 'Enterprise',
+  'admin.status.TRIAL': 'Experimental',
+  'admin.status.ACTIVE': 'Ativa',
+  'admin.status.SUSPENDED': 'Suspensa',
+  'admin.status.CANCELLED': 'Cancelada',
+
+  'admin.create.title': 'Registar uma oficina',
+  'admin.create.timezone': 'Fuso horário',
+  'admin.create.slugHelp': 'Opcional. Gerado a partir do nome se ficar vazio.',
+  'admin.create.owner': 'Primeiro dono',
+  'admin.create.ownerHelp': 'Recebe uma ligação de ativação para escolher a palavra-passe.',
+  'admin.create.submit': 'Registar oficina',
+  'admin.create.doneTitle': '{name} está registada',
+  'admin.create.doneBody': 'Envie esta ligação para {email}. Permite ao dono escolher a palavra-passe e entrar.',
+  'admin.create.openWorkshop': 'Configurar o tema',
+
+  'admin.detail.back': 'Todas as oficinas',
+  'admin.subscription.title': 'Subscrição',
+  'admin.subscription.until': 'Experimental ou paga até',
+  'admin.subscription.help': 'Oficinas suspensas ou canceladas não podem entrar; as sessões abertas terminam na ação seguinte.',
+  'admin.subscription.suspend': 'Suspender',
+  'admin.subscription.reactivate': 'Reativar',
+  'admin.subscription.save': 'Guardar subscrição',
+  'admin.subscription.saved': 'Subscrição guardada: {status}.',
+  'admin.owner.title': 'Acesso do dono',
+  'admin.owner.help': 'Uma nova ligação substitui a anterior. Se o dono já tinha palavra-passe, a ligação define uma nova.',
+  'admin.owner.reissue': 'Emitir nova ligação de ativação',
+};

@@ -10,15 +10,21 @@ class SpaForwardingController {
 
     @GetMapping({
             "/login",
-            "/signup",
+            "/activate",
+            "/w/{slug}",
+            "/admin",
+            "/admin/workshops/{id}",
             "/board",
             "/check-in",
             "/customers",
             "/customers/{id}",
             "/vehicles/{id}",
             "/work-orders/{id}",
+            "/stock",
+            "/stock/purchase-orders",
             "/backoffice",
             "/backoffice/team",
+            "/backoffice/services",
             "/backoffice/settings"
     })
     String forward() {

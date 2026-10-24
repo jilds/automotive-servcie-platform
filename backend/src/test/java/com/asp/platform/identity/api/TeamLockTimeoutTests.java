@@ -42,7 +42,8 @@ class TeamLockTimeoutTests extends ApiTestSupport {
             lockTeam(other, tenantId);
 
             long started = System.nanoTime();
-            call(put("/api/v1/users/" + deskId).content("{\"role\":\"MECHANIC\",\"active\":true}"), owner)
+            call(put("/api/v1/users/" + deskId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":true}",
+                    userVersion(owner, deskId))), owner)
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.type").value("/problems/try-again"))
                     .andExpect(jsonPath("$.code").value("try-again"));
@@ -52,7 +53,8 @@ class TeamLockTimeoutTests extends ApiTestSupport {
         }
 
         // Once the lock is released the same change goes through.
-        call(put("/api/v1/users/" + deskId).content("{\"role\":\"MECHANIC\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + deskId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":true}",
+                userVersion(owner, deskId))), owner)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("MECHANIC"));
     }

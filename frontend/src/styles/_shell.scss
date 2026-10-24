@@ -128,14 +128,21 @@
     align-items: flex-start;
   }
 
+  // The wrapper stretches to the full page height, so the graphite band runs to the bottom of long pages (also
+  // on full-page captures and in print); the aside inside it sticks to the viewport and scrolls on its own.
   .app-sidebar {
-    position: sticky;
-    top: 0;
+    align-self: stretch;
     flex: none;
     width: var(--asp-sidebar-width);
-    height: 100dvh;
-    overflow-y: auto;
+    min-height: 100dvh;
     background: var(--asp-chrome-bg);
+
+    > .offcanvas-lg {
+      position: sticky;
+      top: 0;
+      height: 100dvh !important; // beats .h-100, which would make it as tall as the page and never stick
+      overflow-y: auto;
+    }
   }
 
   .app-content {

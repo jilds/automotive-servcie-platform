@@ -27,12 +27,12 @@ class WorkshopSettingsController {
     @GetMapping
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     WorkshopSettingsResponse get(CurrentUser user) {
-        return WorkshopSettingsResponse.of(settings.settings(user.tenantId()));
+        return WorkshopSettingsResponse.of(settings.workshop(user.tenantId()));
     }
 
     @PutMapping
     @PreAuthorize("hasRole('OWNER')")
     WorkshopSettingsResponse update(CurrentUser user, @Valid @RequestBody WorkshopSettingsRequest request) {
-        return WorkshopSettingsResponse.of(settings.update(user.tenantId(), request.toSettings()));
+        return WorkshopSettingsResponse.of(settings.update(user.tenantId(), request.toSettings(), request.version()));
     }
 }

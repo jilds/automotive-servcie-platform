@@ -1,0 +1,128 @@
+// Runtime workshop theme (ADR 0003). TenantThemeService puts data-tenant-theme on <html> and sets the
+// --asp-brand-* properties computed in shared/theme.service.ts (brandPalette). The branding editor's live preview
+// uses the same attribute on its own element (.brand-preview).
+//
+// Bootstrap compiles .btn-primary, .form-check-input:checked, progress bars and the shell marks from Sass ($primary),
+// so their CSS variables are redefined here, in light and in dark mode. Without the attribute nothing changes and
+// the ASP amber theme applies.
+
+@mixin tenant-light {
+  --bs-primary: var(--asp-brand-primary, #{$primary});
+  --bs-primary-rgb: var(--asp-brand-primary-rgb, #{to-rgb($primary)});
+  --bs-primary-text-emphasis: var(--asp-brand-emphasis, #{$primary-text-emphasis});
+  --bs-primary-bg-subtle: var(--asp-brand-subtle-bg, #{$primary-bg-subtle});
+  --bs-primary-border-subtle: var(--asp-brand-subtle-border, #{$primary-border-subtle});
+  --bs-link-color: var(--asp-brand-link, #{$link-color});
+  --bs-link-color-rgb: var(--asp-brand-link-rgb, #{to-rgb($link-color)});
+  --bs-link-hover-color: var(--asp-brand-link-hover, #{$link-hover-color});
+  --bs-link-hover-color-rgb: var(--asp-brand-link-hover-rgb, #{to-rgb($link-hover-color)});
+  --asp-focus: var(--asp-brand-link, #{$link-color});
+  --asp-focus-ring: var(--asp-brand-focus-ring, rgba(122, 81, 0, 0.25));
+}
+
+@mixin tenant-dark {
+  --bs-primary-text-emphasis: var(--asp-brand-emphasis-dark, #{$primary-text-emphasis-dark});
+  --bs-primary-bg-subtle: var(--asp-brand-subtle-bg-dark, #{$primary-bg-subtle-dark});
+  --bs-primary-border-subtle: var(--asp-brand-subtle-border-dark, #{$primary-border-subtle-dark});
+  --bs-link-color: var(--asp-brand-link-dark, #{$link-color-dark});
+  --bs-link-color-rgb: var(--asp-brand-link-dark-rgb, #{to-rgb($link-color-dark)});
+  --bs-link-hover-color: var(--asp-brand-link-dark-hover, #{$link-hover-color-dark});
+  --bs-link-hover-color-rgb: var(--asp-brand-link-dark-hover-rgb, #{to-rgb($link-hover-color-dark)});
+  --asp-focus: var(--asp-brand-link-dark, #{$link-color-dark});
+  --asp-focus-ring: var(--asp-brand-focus-ring-dark, rgba(255, 201, 51, 0.3));
+}
+
+// Light values on the themed root; dark values wherever dark mode applies (the page in dark mode, and the graphite
+// chrome, which is always data-bs-theme="dark"). The dark selectors are more specific, so they win in dark mode.
+:root[data-tenant-theme],
+.brand-preview[data-tenant-theme] {
+  @include tenant-light;
+}
+
+:root[data-tenant-theme][data-bs-theme='dark'],
+:root[data-tenant-theme] [data-bs-theme='dark'],
+.brand-preview[data-tenant-theme] [data-bs-theme='dark'] {
+  @include tenant-dark;
+}
+
+[data-tenant-theme] {
+  .btn-primary {
+    --bs-btn-color: var(--asp-brand-on-primary, #{$component-active-color});
+    --bs-btn-bg: var(--asp-brand-primary, #{$primary});
+    --bs-btn-border-color: var(--asp-brand-primary, #{$primary});
+    --bs-btn-hover-color: var(--asp-brand-on-primary, #{$component-active-color});
+    --bs-btn-hover-bg: var(--asp-brand-primary-hover, #{$primary});
+    --bs-btn-hover-border-color: var(--asp-brand-primary-hover, #{$primary});
+    --bs-btn-focus-shadow-rgb: var(--asp-brand-primary-rgb, #{to-rgb($primary)});
+    --bs-btn-active-color: var(--asp-brand-on-primary, #{$component-active-color});
+    --bs-btn-active-bg: var(--asp-brand-primary-active, #{$primary});
+    --bs-btn-active-border-color: var(--asp-brand-primary-active, #{$primary});
+    --bs-btn-disabled-color: var(--asp-brand-on-primary, #{$component-active-color});
+    --bs-btn-disabled-bg: var(--asp-brand-primary, #{$primary});
+    --bs-btn-disabled-border-color: var(--asp-brand-primary, #{$primary});
+  }
+
+  .form-check-input:checked {
+    background-color: var(--asp-brand-primary, #{$primary});
+    border-color: var(--asp-brand-primary, #{$primary});
+  }
+
+  .progress,
+  .progress-stacked {
+    --bs-progress-bar-bg: var(--asp-brand-primary, #{$primary});
+  }
+
+  .nav-pills:not(.app-nav) {
+    --bs-nav-pills-link-active-bg: var(--asp-brand-primary, #{$primary});
+    --bs-nav-pills-link-active-color: var(--asp-brand-on-primary, #{$component-active-color});
+  }
+
+  // Shell marks (see _shell.scss): brand mark, active navigation bar and icon, focus outline on the chrome.
+  .app-brand-mark {
+    background: var(--asp-brand-accent, #{$primary});
+    color: var(--asp-brand-on-accent, #{$component-active-color});
+  }
+
+  .app-nav .nav-link.active::before {
+    background: var(--asp-brand-accent-chrome, #{$primary});
+  }
+
+  .app-nav .nav-link.active .icon {
+    color: var(--asp-brand-accent-chrome, #{$primary});
+  }
+
+  .app-sidebar :focus-visible,
+  .app-topbar :focus-visible {
+    outline-color: var(--asp-brand-accent-chrome, #{$primary});
+  }
+
+  ::selection {
+    background: var(--asp-brand-primary, #{$primary});
+    color: var(--asp-brand-on-primary, #{$component-active-color});
+  }
+}
+
+// A workshop logo instead of the wrench mark: fits the 36px mark, keeps its aspect ratio.
+.app-brand-logo {
+  display: block;
+  flex: none;
+  width: auto;
+  max-width: 7.5rem;
+  height: 2.25rem;
+  object-fit: contain;
+}
+
+.brand-preview {
+  overflow: hidden;
+  border: var(--bs-border-width) solid var(--bs-border-color);
+  border-radius: $border-radius-lg;
+}
+
+.brand-preview-chrome {
+  background: var(--asp-chrome-bg);
+}
+
+.form-control-color {
+  flex: none;
+  width: 3rem;
+}

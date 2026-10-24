@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
-import { applyProblem, fieldMessage, shownOnFields } from '../core/api/problem';
+import { applyProblem, fieldMessage, isStale, shownOnFields } from '../core/api/problem';
 import { I18nService } from '../core/i18n/i18n.service';
 import { MessageKey } from '../core/i18n/messages.en';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { BrandingEditor } from '../identity/branding-editor';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { BackofficeApi } from './backoffice-api.service';
@@ -17,7 +18,7 @@ import { HasUnsavedChanges } from './unsaved-changes.guard';
 @Component({
   selector: 'app-backoffice-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslatePipe, Alert, Icon],
+  imports: [ReactiveFormsModule, TranslatePipe, Alert, Icon, BrandingEditor],
   host: { '(window:beforeunload)': 'onBeforeUnload($event)' },
   template: `
     <header class="mb-4">
@@ -54,7 +55,7 @@ import { HasUnsavedChanges } from './unsaved-changes.guard';
               <label class="form-label" for="ws-nif">{{ 'common.nif' | t }}</label>
               <input id="ws-nif" class="form-control" formControlName="nif" inputmode="numeric" maxlength="9" [class.is-invalid]="invalid('nif')" />
               @if (invalid('nif')) {
-                <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ message('nif', 'backoffice.settings.nifInvalid') }}</div>
+                <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ message('nif', form.controls.nif.hasError('nif') ? 'common.nifCheckDigit' : 'backoffice.settings.nifInvalid') }}</div>
               } @else {
                 <div class="form-text">{{ 'backoffice.settings.nifHelp' | t }}</div>
               }
@@ -115,6 +116,9 @@ import { HasUnsavedChanges } from './unsaved-changes.guard';
       </form>
     }
 
+    <!-- Appearance (Release 3): saved on its own, so it is not part of the unsaved-changes guard. -->
+    <app-branding-editor #branding class="d-block mt-4" (versionChange)="adoptVersion($event)" />
+
     <dialog #leaveDialog class="modal" aria-labelledby="leave-title" (close)="resolveLeave(leaveDialog.returnValue === 'leave')">
       <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content" method="dialog">
@@ -136,6 +140,8 @@ export class Settings implements OnInit, HasUnsavedChanges {
   private readonly i18n = inject(I18nService);
   private readonly toasts = inject(Toasts);
   private readonly leaveDialog = viewChild.required<ElementRef<HTMLDialogElement>>('leaveDialog');
+  /** Settings and theme are one workshop row with one version: each form passes the new version to the other. */
+  private readonly branding = viewChild.required<BrandingEditor>('branding');
   private leaveResolver: ((leave: boolean) => void) | null = null;
 
   protected readonly form = settingsForm();
@@ -208,18 +214,37 @@ export class Settings implements OnInit, HasUnsavedChanges {
     }
     this.busy.set(true);
     this.error.set(null);
-    this.api.saveSettings(toSettings(this.form)).subscribe({
+    this.api.saveSettings(toSettings(this.form, this.saved()?.version ?? 0)).subscribe({
       next: (s) => {
         this.reset(s);
+        this.branding().useVersion(s.version);
         this.busy.set(false);
         this.toasts.show(this.i18n.t('backoffice.settings.saved'));
       },
       error: (e) => {
-        const marked = applyProblem(this.form, e, {}, FIELD_CONTROL);
+        if (isStale(e)) {
+          // Saved elsewhere since this page loaded: show the stored settings and say why.
+          this.busy.set(false);
+          this.error.set(this.i18n.error(e));
+          this.api.settings().subscribe({
+            next: (s) => {
+              this.reset(s);
+              this.branding().useVersion(s.version);
+            },
+            error: () => {},
+          });
+          return;
+        }
+        const marked = applyProblem(this.form, e, { 'invalid-nif': 'nif' }, FIELD_CONTROL);
         this.error.set(shownOnFields(e, marked) ? null : this.i18n.error(e));
         this.busy.set(false);
       },
     });
+  }
+
+  /** The theme was saved: the workshop row has a new version, which the next settings save must send. */
+  protected adoptVersion(version: number): void {
+    this.saved.update((s) => (s ? { ...s, version } : s));
   }
 
   private reset(s: WorkshopSettings): void {

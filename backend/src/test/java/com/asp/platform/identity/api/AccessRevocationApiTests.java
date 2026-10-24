@@ -22,10 +22,11 @@ class AccessRevocationApiTests extends ApiTestSupport {
         String owner = signup("Oficina Revoga");
         String email = uniqueEmail("mec");
         String mechanicId = invite(owner, "MECHANIC", email);
-        String mechanic = login(email, "password123");
+        String mechanic = login(email, PASSWORD);
         call(get("/api/v1/work-orders/board"), mechanic).andExpect(status().isOk());
 
-        call(put("/api/v1/users/" + mechanicId).content("{\"role\":\"MECHANIC\",\"active\":false}"), owner)
+        call(put("/api/v1/users/" + mechanicId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":false}",
+                userVersion(owner, mechanicId))), owner)
                 .andExpect(status().isOk());
 
         call(get("/api/v1/work-orders/board"), mechanic)
@@ -39,13 +40,15 @@ class AccessRevocationApiTests extends ApiTestSupport {
         String owner = signup("Oficina Volta");
         String email = uniqueEmail("desk");
         String deskId = invite(owner, "FRONT_DESK", email);
-        String desk = login(email, "password123");
+        String desk = login(email, PASSWORD);
 
-        call(put("/api/v1/users/" + deskId).content("{\"role\":\"FRONT_DESK\",\"active\":false}"), owner)
+        call(put("/api/v1/users/" + deskId).content(withVersion("{\"role\":\"FRONT_DESK\",\"active\":false}",
+                userVersion(owner, deskId))), owner)
                 .andExpect(status().isOk());
         call(get("/api/v1/customers"), desk).andExpect(status().isUnauthorized());
 
-        call(put("/api/v1/users/" + deskId).content("{\"role\":\"FRONT_DESK\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + deskId).content(withVersion("{\"role\":\"FRONT_DESK\",\"active\":true}",
+                userVersion(owner, deskId))), owner)
                 .andExpect(status().isOk());
         call(get("/api/v1/customers"), desk).andExpect(status().isOk());
     }
@@ -55,16 +58,18 @@ class AccessRevocationApiTests extends ApiTestSupport {
         String first = signup("Oficina Despromove");
         String secondEmail = uniqueEmail("owner2");
         String secondId = invite(first, "OWNER", secondEmail);
-        String second = login(secondEmail, "password123");
+        String second = login(secondEmail, PASSWORD);
         String desk = invite(first, "FRONT_DESK", uniqueEmail("desk"));
         call(get("/api/v1/dashboard"), second).andExpect(status().isOk());
 
-        call(put("/api/v1/users/" + secondId).content("{\"role\":\"MECHANIC\",\"active\":true}"), first)
+        call(put("/api/v1/users/" + secondId).content(withVersion("{\"role\":\"MECHANIC\",\"active\":true}",
+                userVersion(first, secondId))), first)
                 .andExpect(status().isOk());
 
         // The token still says OWNER, but the database role decides.
         call(get("/api/v1/dashboard"), second).andExpect(status().isForbidden());
-        call(put("/api/v1/users/" + desk).content("{\"role\":\"OWNER\",\"active\":true}"), second)
+        call(put("/api/v1/users/" + desk).content(withVersion("{\"role\":\"OWNER\",\"active\":true}",
+                userVersion(second, desk))), second)
                 .andExpect(status().isForbidden());
         // Requests their new role allows still work.
         call(get("/api/v1/work-orders/board"), second).andExpect(status().isOk());
@@ -75,10 +80,11 @@ class AccessRevocationApiTests extends ApiTestSupport {
         String owner = signup("Oficina Promove");
         String email = uniqueEmail("desk");
         String deskId = invite(owner, "FRONT_DESK", email);
-        String desk = login(email, "password123");
+        String desk = login(email, PASSWORD);
         call(get("/api/v1/dashboard"), desk).andExpect(status().isForbidden());
 
-        call(put("/api/v1/users/" + deskId).content("{\"role\":\"OWNER\",\"active\":true}"), owner)
+        call(put("/api/v1/users/" + deskId).content(withVersion("{\"role\":\"OWNER\",\"active\":true}",
+                userVersion(owner, deskId))), owner)
                 .andExpect(status().isOk());
 
         call(get("/api/v1/dashboard"), desk).andExpect(status().isOk());

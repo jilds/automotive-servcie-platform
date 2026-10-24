@@ -1,10 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../core/auth/auth.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Icon } from './icon';
 import { LanguageSelect } from './language-select';
+import { IdentityApi } from '../identity/identity-api.service';
+import { TenantThemeService } from './theme.service';
 import { ThemeToggle } from './theme-toggle';
 
 /**
@@ -22,9 +24,15 @@ import { ThemeToggle } from './theme-toggle';
           <app-icon name="menu" />
         </button>
         <a routerLink="/board" class="app-brand">
-          <span class="app-brand-mark"><app-icon name="wrench" [size]="18" /></span>
-          <span class="app-brand-name">ASP</span>
+          @if (brand()?.logoUrl; as logo) {
+            <img class="app-brand-logo" [src]="logo" alt="" />
+          } @else {
+            <span class="app-brand-mark"><app-icon name="wrench" [size]="18" /></span>
+          }
+          <span class="app-brand-name text-truncate">{{ brand()?.name ?? 'ASP' }}</span>
         </a>
+        <!-- Phones: the sidebar (with its language drop-down) is behind the menu, so the language stays one tap away. -->
+        <app-language-select class="ms-auto flex-shrink-0 pe-1" [compact]="true" />
       </header>
 
       @if (menuOpen()) {
@@ -36,8 +44,12 @@ import { ThemeToggle } from './theme-toggle';
           <div class="offcanvas-body d-flex flex-column gap-3 h-100 p-3">
             <div class="d-flex align-items-center justify-content-between gap-2">
               <a routerLink="/board" class="app-brand px-2 py-1" (click)="menuOpen.set(false)">
-                <span class="app-brand-mark"><app-icon name="wrench" [size]="20" /></span>
-                <span class="app-brand-name">ASP <small>{{ 'app.tagline' | t }}</small></span>
+                @if (brand()?.logoUrl; as logo) {
+                  <img class="app-brand-logo" [src]="logo" alt="" />
+                } @else {
+                  <span class="app-brand-mark"><app-icon name="wrench" [size]="20" /></span>
+                }
+                <span class="app-brand-name overflow-hidden"><span class="text-truncate">{{ brand()?.name ?? 'ASP' }}</span> <small>{{ 'app.tagline' | t }}</small></span>
               </a>
               <button type="button" class="btn-close" [attr.aria-label]="'nav.closeMenu' | t" (click)="menuOpen.set(false)"></button>
             </div>
@@ -49,6 +61,7 @@ import { ThemeToggle } from './theme-toggle';
               @if (!auth.hasRole('MECHANIC')) {
                 <a class="nav-link" routerLink="/check-in" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="check-in" />{{ 'nav.checkIn' | t }}</a>
                 <a class="nav-link" routerLink="/customers" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="users" />{{ 'nav.customers' | t }}</a>
+                <a class="nav-link" routerLink="/stock" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="inbox" />{{ 'nav.stock' | t }}</a>
               }
               @if (auth.hasRole('OWNER')) {
                 <a class="nav-link" routerLink="/backoffice" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="briefcase" />{{ 'nav.backoffice' | t }}</a>
@@ -83,8 +96,20 @@ import { ThemeToggle } from './theme-toggle';
     </div>
   `,
 })
-export class Shell {
+export class Shell implements OnInit {
   protected readonly auth = inject(AuthService);
+  private readonly identity = inject(IdentityApi);
+  private readonly theme = inject(TenantThemeService);
+  /** The workshop's name, logo and colours; null while loading or when the ASP default applies. */
+  protected readonly brand = this.theme.branding;
   /** Drawer state on phones; view-only. */
   protected readonly menuOpen = signal(false);
+
+  /** Applies the workshop theme for the signed-in user; the ASP default stays when it cannot be loaded. */
+  ngOnInit(): void {
+    this.identity.currentBranding().subscribe({
+      next: (b) => this.theme.apply(b),
+      error: () => this.theme.clear(),
+    });
+  }
 }
