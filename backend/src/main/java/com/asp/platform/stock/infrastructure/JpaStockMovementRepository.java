@@ -18,6 +18,7 @@ class JpaStockMovementRepository implements StockMovementRepository {
         this.jpa = jpa;
     }
 
+    /// Not [com.asp.platform.shared.persistence.Upserts]: the ledger only adds rows, so this is a plain insert.
     @Override
     public void add(StockMovement movement) {
         jpa.save(new StockMovementEntity(movement));

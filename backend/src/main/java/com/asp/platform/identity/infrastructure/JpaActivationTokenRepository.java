@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import com.asp.platform.identity.domain.ActivationToken;
 import com.asp.platform.identity.domain.ActivationTokenRepository;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaActivationTokenRepository implements ActivationTokenRepository {
@@ -27,13 +28,7 @@ class JpaActivationTokenRepository implements ActivationTokenRepository {
 
     @Override
     public ActivationToken save(ActivationToken token) {
-        ActivationTokenEntity entity = jpa.findById(token.id())
-                .map(existing -> {
-                    existing.apply(token);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new ActivationTokenEntity(token)));
-        return entity.toDomain();
+        return Upserts.upsertWithoutFlush(jpa, token.id(), token, ActivationTokenEntity::new);
     }
 
     @Override

@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
+import com.asp.platform.shared.persistence.Upserts;
 import com.asp.platform.workshop.domain.WorkOrder;
 import com.asp.platform.workshop.domain.WorkOrderRepository;
 import com.asp.platform.workshop.domain.WorkOrderStatus;
@@ -22,13 +23,7 @@ class JpaWorkOrderRepository implements WorkOrderRepository {
 
     @Override
     public WorkOrder save(WorkOrder order) {
-        WorkOrderEntity entity = jpa.findById(order.id())
-                .map(existing -> {
-                    existing.apply(order);
-                    return existing;
-                })
-                .orElseGet(() -> new WorkOrderEntity(order));
-        return jpa.saveAndFlush(entity).toDomain();
+        return Upserts.upsert(jpa, order.id(), order, WorkOrderEntity::new);
     }
 
     @Override

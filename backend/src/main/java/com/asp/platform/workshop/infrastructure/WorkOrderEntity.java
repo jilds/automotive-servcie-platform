@@ -22,6 +22,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.shared.persistence.DomainEntity;
 import com.asp.platform.workshop.domain.CheckInDetails;
 import com.asp.platform.workshop.domain.WorkOrder;
 import com.asp.platform.workshop.domain.WorkOrderLine;
@@ -30,7 +31,7 @@ import com.asp.platform.workshop.domain.WorkOrderStatus;
 /// `tenant_id` is filled by the database from the connection's workshop and checked by row-level security.
 @Entity
 @Table(name = "work_order")
-class WorkOrderEntity {
+class WorkOrderEntity implements DomainEntity<WorkOrder> {
 
     @Id
     private UUID id;
@@ -90,7 +91,8 @@ class WorkOrderEntity {
     }
 
     /// Copies the changeable state of the domain object, adding and removing lines to match.
-    void apply(WorkOrder order) {
+    @Override
+    public void apply(WorkOrder order) {
         CheckInDetails checkIn = order.checkIn();
         this.mileageIn = checkIn.mileageIn();
         this.fuelLevel = checkIn.fuelLevel();
@@ -107,7 +109,8 @@ class WorkOrderEntity {
                 .forEach(line -> lines.add(new WorkOrderLineEntity(this, line)));
     }
 
-    WorkOrder toDomain() {
+    @Override
+    public WorkOrder toDomain() {
         return new WorkOrder(id, number, vehicleId, new CheckInDetails(mileageIn, fuelLevel, complaint, damageNotes),
                 status, assignedMechanicId, statusChangedAt,
                 lines.stream().map(WorkOrderLineEntity::toDomain).toList());

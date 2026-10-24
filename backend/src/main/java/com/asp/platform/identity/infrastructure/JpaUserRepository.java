@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.asp.platform.identity.domain.User;
 import com.asp.platform.identity.domain.UserRepository;
 import com.asp.platform.shared.Role;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaUserRepository implements UserRepository {
@@ -21,14 +22,7 @@ class JpaUserRepository implements UserRepository {
 
     @Override
     public User save(User user) {
-        UserEntity entity = jpa.findById(user.id())
-                .map(existing -> {
-                    existing.apply(user);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new UserEntity(user)));
-        jpa.flush(); // so the returned version is the stored one
-        return entity.toDomain();
+        return Upserts.upsert(jpa, user.id(), user, UserEntity::new);
     }
 
     @Override

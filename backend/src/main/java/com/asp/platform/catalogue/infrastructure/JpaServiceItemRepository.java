@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.asp.platform.catalogue.domain.ServiceItem;
 import com.asp.platform.catalogue.domain.ServiceItemRepository;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaServiceItemRepository implements ServiceItemRepository {
@@ -22,14 +23,7 @@ class JpaServiceItemRepository implements ServiceItemRepository {
 
     @Override
     public ServiceItem save(ServiceItem item) {
-        ServiceItemEntity entity = jpa.findById(item.id())
-                .map(existing -> {
-                    existing.apply(item);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new ServiceItemEntity(item)));
-        jpa.flush(); // so the returned version is the stored one
-        return entity.toDomain();
+        return Upserts.upsert(jpa, item.id(), item, ServiceItemEntity::new);
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.asp.platform.identity.domain.Slug;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.TenantRepository;
 import com.asp.platform.identity.domain.WorkshopOverview;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaTenantRepository implements TenantRepository {
@@ -26,14 +27,7 @@ class JpaTenantRepository implements TenantRepository {
 
     @Override
     public Tenant save(Tenant tenant) {
-        TenantEntity entity = jpa.findById(tenant.id())
-                .map(existing -> {
-                    existing.apply(tenant);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new TenantEntity(tenant)));
-        jpa.flush(); // so the returned version is the stored one
-        return entity.toDomain();
+        return Upserts.upsert(jpa, tenant.id(), tenant, TenantEntity::new);
     }
 
     @Override

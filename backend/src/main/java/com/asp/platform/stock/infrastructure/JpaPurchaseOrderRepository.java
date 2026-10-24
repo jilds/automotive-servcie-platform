@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
 
+import com.asp.platform.shared.persistence.Upserts;
 import com.asp.platform.stock.domain.PurchaseOrder;
 import com.asp.platform.stock.domain.PurchaseOrderRepository;
 import com.asp.platform.stock.domain.PurchaseOrderStatus;
@@ -22,13 +23,7 @@ class JpaPurchaseOrderRepository implements PurchaseOrderRepository {
 
     @Override
     public PurchaseOrder save(PurchaseOrder order) {
-        PurchaseOrderEntity entity = jpa.findById(order.id())
-                .map(existing -> {
-                    existing.apply(order);
-                    return existing;
-                })
-                .orElseGet(() -> new PurchaseOrderEntity(order));
-        return jpa.saveAndFlush(entity).toDomain();
+        return Upserts.upsert(jpa, order.id(), order, PurchaseOrderEntity::new);
     }
 
     @Override

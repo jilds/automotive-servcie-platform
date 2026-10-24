@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.asp.platform.identity.domain.PlatformAdmin;
 import com.asp.platform.identity.domain.PlatformAdminRepository;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaPlatformAdminRepository implements PlatformAdminRepository {
@@ -20,13 +21,7 @@ class JpaPlatformAdminRepository implements PlatformAdminRepository {
 
     @Override
     public PlatformAdmin save(PlatformAdmin admin) {
-        PlatformAdminEntity entity = jpa.findById(admin.id())
-                .map(existing -> {
-                    existing.apply(admin);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new PlatformAdminEntity(admin)));
-        return entity.toDomain();
+        return Upserts.upsertWithoutFlush(jpa, admin.id(), admin, PlatformAdminEntity::new);
     }
 
     @Override

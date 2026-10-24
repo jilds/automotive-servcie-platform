@@ -1,20 +1,18 @@
 package com.asp.platform.customer.infrastructure;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.hibernate.exception.ConstraintViolationException;
-import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import com.asp.platform.customer.domain.DuplicatePlateException;
 import com.asp.platform.customer.domain.Vehicle;
 import com.asp.platform.customer.domain.VehicleRepository;
+import com.asp.platform.shared.persistence.Constraints;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaVehicleRepository implements VehicleRepository {
@@ -34,16 +32,9 @@ class JpaVehicleRepository implements VehicleRepository {
     @Override
     public Vehicle save(Vehicle vehicle) {
         try {
-            VehicleEntity entity = jpa.findById(vehicle.id())
-                    .map(existing -> {
-                        existing.apply(vehicle);
-                        return existing;
-                    })
-                    .orElseGet(() -> jpa.save(new VehicleEntity(vehicle)));
-            jpa.flush();
-            return entity.toDomain();
+            return Upserts.upsert(jpa, vehicle.id(), vehicle, VehicleEntity::new);
         } catch (DataIntegrityViolationException e) {
-            if (isUniquePlateViolation(e)) {
+            if (Constraints.violated(e, UNIQUE_PLATE_CONSTRAINT)) {
                 throw new DuplicatePlateException(vehicle.details().plate());
             }
             throw e;
@@ -78,19 +69,5 @@ class JpaVehicleRepository implements VehicleRepository {
     @Override
     public List<Vehicle> findByCustomer(UUID customerId) {
         return jpa.findByCustomerIdOrderByPlate(customerId).stream().map(VehicleEntity::toDomain).toList();
-    }
-
-    private static boolean isUniquePlateViolation(DataIntegrityViolationException e) {
-        for (@Nullable Throwable cause = e; cause != null; cause = cause.getCause()) {
-            if (cause instanceof ConstraintViolationException violation
-                    && UNIQUE_PLATE_CONSTRAINT.equalsIgnoreCase(violation.getConstraintName())) {
-                return true;
-            }
-            if (cause instanceof SQLException sql && sql.getMessage() != null
-                    && sql.getMessage().toLowerCase(Locale.ROOT).contains(UNIQUE_PLATE_CONSTRAINT)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

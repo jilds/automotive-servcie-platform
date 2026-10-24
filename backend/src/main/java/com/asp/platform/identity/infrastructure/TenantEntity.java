@@ -23,10 +23,11 @@ import com.asp.platform.identity.domain.Subscription;
 import com.asp.platform.identity.domain.SubscriptionStatus;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.WorkshopSettings;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 @Entity
 @Table(name = "tenant")
-class TenantEntity {
+class TenantEntity implements DomainEntity<Tenant> {
 
     @Id
     private UUID id;
@@ -90,7 +91,8 @@ class TenantEntity {
         apply(tenant);
     }
 
-    void apply(Tenant tenant) {
+    @Override
+    public void apply(Tenant tenant) {
         WorkshopSettings s = tenant.settings();
         this.name = s.name();
         this.nif = s.nif();
@@ -109,7 +111,8 @@ class TenantEntity {
         this.accentColor = hex(b.accentColor());
     }
 
-    Tenant toDomain() {
+    @Override
+    public Tenant toDomain() {
         return new Tenant(id,
                 new WorkshopSettings(name, nif, country, timezone, defaultVatRate, labourRateCents),
                 new Subscription(plan, status, subscriptionUntil),
