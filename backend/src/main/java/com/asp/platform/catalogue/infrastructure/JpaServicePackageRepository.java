@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.asp.platform.catalogue.domain.ServicePackage;
 import com.asp.platform.catalogue.domain.ServicePackageRepository;
+import com.asp.platform.shared.persistence.Upserts;
 
 @Repository
 class JpaServicePackageRepository implements ServicePackageRepository {
@@ -21,14 +22,7 @@ class JpaServicePackageRepository implements ServicePackageRepository {
 
     @Override
     public ServicePackage save(ServicePackage servicePackage) {
-        ServicePackageEntity entity = jpa.findById(servicePackage.id())
-                .map(existing -> {
-                    existing.apply(servicePackage);
-                    return existing;
-                })
-                .orElseGet(() -> jpa.save(new ServicePackageEntity(servicePackage)));
-        jpa.flush(); // so the returned version is the stored one
-        return entity.toDomain();
+        return Upserts.upsert(jpa, servicePackage.id(), servicePackage, ServicePackageEntity::new);
     }
 
     @Override

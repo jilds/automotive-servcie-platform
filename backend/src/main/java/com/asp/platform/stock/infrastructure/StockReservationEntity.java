@@ -15,6 +15,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.shared.persistence.DomainEntity;
 import com.asp.platform.stock.ReservationSource;
 import com.asp.platform.stock.domain.Reservation;
 import com.asp.platform.stock.domain.ReservationStatus;
@@ -22,7 +23,7 @@ import com.asp.platform.stock.domain.ReservationStatus;
 /// Only the status changes after the row is written.
 @Entity
 @Table(name = "stock_reservation")
-class StockReservationEntity {
+class StockReservationEntity implements DomainEntity<Reservation> {
 
     @Id
     private UUID id;
@@ -69,11 +70,13 @@ class StockReservationEntity {
         this.status = reservation.status();
     }
 
-    void apply(Reservation reservation) {
+    @Override
+    public void apply(Reservation reservation) {
         this.status = reservation.status();
     }
 
-    Reservation toDomain() {
+    @Override
+    public Reservation toDomain() {
         return new Reservation(id, productId, quantity, source, sourceId, sourceLineId, status);
     }
 }

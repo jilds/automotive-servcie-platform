@@ -15,10 +15,11 @@ import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.identity.domain.User;
 import com.asp.platform.shared.Role;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 @Entity
 @Table(name = "app_user")
-class UserEntity {
+class UserEntity implements DomainEntity<User> {
 
     @Id
     private UUID id;
@@ -63,7 +64,8 @@ class UserEntity {
         apply(user);
     }
 
-    void apply(User user) {
+    @Override
+    public void apply(User user) {
         this.name = user.name();
         this.email = user.email();
         this.passwordHash = user.passwordHash();
@@ -71,7 +73,8 @@ class UserEntity {
         this.active = user.active();
     }
 
-    User toDomain() {
+    @Override
+    public User toDomain() {
         return new User(id, tenantId, name, email, passwordHash, role, active, createdAt, version());
     }
 

@@ -64,6 +64,13 @@ class LayerRulesTests {
             .allowEmptyShould(true);
 
     @ArchTest
+    static final ArchRule persistence_helpers_serve_infrastructure_only = noClasses()
+            .that().resideOutsideOfPackages("com.asp.platform.*.infrastructure..",
+                    "com.asp.platform.shared.persistence..")
+            .should().dependOnClassesThat().resideInAPackage("com.asp.platform.shared.persistence..")
+            .because("the JPA helpers belong to the infrastructure layer (Package Structure LAYER)");
+
+    @ArchTest
     static final ArchRule features_do_not_import_config = noClasses()
             .that().resideOutsideOfPackage("com.asp.platform.config..")
             .should().dependOnClassesThat().resideInAPackage("com.asp.platform.config..")

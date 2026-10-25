@@ -11,10 +11,11 @@ import jakarta.persistence.Table;
 import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.identity.domain.ActivationToken;
+import com.asp.platform.shared.persistence.DomainEntity;
 
 @Entity
 @Table(name = "activation_token")
-class ActivationTokenEntity {
+class ActivationTokenEntity implements DomainEntity<ActivationToken> {
 
     @Id
     private UUID id;
@@ -47,11 +48,13 @@ class ActivationTokenEntity {
         this.usedAt = token.usedAt();
     }
 
-    void apply(ActivationToken token) {
+    @Override
+    public void apply(ActivationToken token) {
         this.usedAt = token.usedAt();
     }
 
-    ActivationToken toDomain() {
+    @Override
+    public ActivationToken toDomain() {
         return new ActivationToken(id, userId, tokenHash, expiresAt, usedAt, createdAt);
     }
 }

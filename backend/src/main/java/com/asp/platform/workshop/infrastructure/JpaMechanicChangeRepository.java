@@ -17,7 +17,7 @@ class JpaMechanicChangeRepository implements MechanicChangeRepository {
         this.jpa = jpa;
     }
 
-    /// New rows only: changes are never edited, so this is a plain persist.
+    /// New rows only: changes are never edited, so this is a plain persist (no `Upserts`).
     @Override
     public MechanicChange save(MechanicChange change) {
         return jpa.save(new MechanicChangeEntity(change)).toDomain();
