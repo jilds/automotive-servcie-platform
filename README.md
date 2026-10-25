@@ -16,7 +16,8 @@ On the board, cards move by drag and drop (mouse or touch, Angular CDK) or with 
   - **Service catalogue (Backoffice → Services):** standard services with a fixed price or priced by the hour (standard time × the workshop's labour rate, worked out when the price is needed), VAT, standard time and time in the workshop, and packages of services and stock parts sold for one price (with the saving shown; parts count at their sale price). Services are grouped by category; a service or package can be duplicated into a new one. On a work order, "From the catalogue" adds a service as a line at its price of that moment, or a package as one line per service and per part adding up to exactly the package price; the parts are reserved in stock like a part line from stock (nothing is added when one is short). Service lines carry a "Catálogo" badge. Mechanics see service names and times, never prices.
   - **Stock (sidebar → Stock, Owner and Front desk):** products (SKU unique per workshop, brand, unit, cost, sale price, VAT, minimum stock, bin) with what is on hand, reserved for open work orders and still available; a low-stock filter and a dashboard tile; adjustments with a reason; a movement ledger per product (rows only added); purchase orders (draft → ordered → received; receiving adds the parts to stock). On a work order, "Adicionar peça do stock" adds a part at its sale price and reserves it: removing the line or cancelling the order gives it back, delivering the car takes it out of stock. Stock never goes below zero and two people cannot take the last unit at once (the product row is locked). Mechanics may look parts up (name, SKU, bin, available) but never see cost or prices.
   - **Changing the mechanic:** on a work order, the owner or front desk can hand the car to another mechanic (or to nobody); replacing or removing one needs a reason, and every change is listed with who made it, when and why.
-  - **Add-ons and public workshop pages (foundation):** the platform admin switches **online booking** and the **online shop** on per workshop (admin console → workshop → Add-ons; badges in the list), independent of the plan. Public pages under `/api/v1/public/{slug}/…` need no sign-in: the slug picks the workshop and row-level security still applies; unknown, suspended or cancelled workshops and switched-off add-ons answer 404; each address may send 10 writes an hour and 120 reads a minute per workshop (429 with `Retry-After`). The booking and shop pages themselves come next. See [ADR 0004](docs/adr/0004-public-workshop-pages.md).
+  - **Add-ons and public workshop pages (foundation):** the platform admin switches **online booking** and the **online shop** on per workshop (admin console → workshop → Add-ons; badges in the list), independent of the plan. Public pages under `/api/v1/public/{slug}/…` need no sign-in: the slug picks the workshop and row-level security still applies; unknown, suspended or cancelled workshops and switched-off add-ons answer 404; each address may send 10 writes an hour and 120 reads a minute per workshop (429 with `Retry-After`). Online booking uses them (below); the shop comes next. See [ADR 0004](docs/adr/0004-public-workshop-pages.md).
+  - **Online booking (add-on `booking`, backend):** customers pick services listed online and a free **drop-off slot** on the workshop's public page and get a private status link (no e-mail or SMS yet), where they see the status and may cancel until the workshop's deadline. Slots come from the opening hours per weekday (several ranges, e.g. a lunch break) in the workshop's time zone, cut into 15, 30 or 60 minutes, with a number of cars per slot, closures, a lead time and a horizon; defaults until the owner saves them: 30 min, 1 car, 24 h, 30 days, cancel until 24 h, Monday–Friday 09:00–13:00 and 14:00–18:00. Two requests for the last place give one booking. The front desk confirms, declines (with a reason the customer sees), moves to another free slot or marks a no-show, and checks the car in from a confirmed booking: the booked services still offered become catalogue lines on the new work order, in one step. Mechanics never see bookings. Hidden-field spam is answered like a success and stored nowhere; the privacy notice must be accepted.
   - Compact language switcher (PT / EN / BR) in the phone top bar; full-height sidebar on long pages; "ASP - Automotive Service Platform" back as the sign-in title.
 
 Mechanics never get customer personal data (name, phone, e-mail, NIF) or prices.
@@ -69,6 +70,8 @@ backend/                Spring Boot 4.1, Java 26
     identity/           login, users, platform admin, ┐ each feature is a Spring Modulith module:
                         subscriptions, activation, branding
     catalogue/          services and packages         │
+    booking/            online booking: slots,        │
+                        bookings, check-in from one   │
     stock/              products, stock ledger,       │
                         reservations, purchase orders │
     customer/           customers and vehicles        │ public API in the module root,
@@ -149,7 +152,10 @@ Full contract: [`docs/api/release-2.md`](docs/api/release-2.md) and [`docs/api/r
 | POST | `/api/v1/users/{id}/activation-link` | Owner |
 | GET, POST | `/api/v1/admin/workshops`; GET `/api/v1/admin/workshops/{id}` | Platform admin |
 | PUT | `/api/v1/admin/workshops/{id}/subscription` (version), `/api/v1/admin/workshops/{id}/add-ons` (version), `/api/v1/admin/workshops/{id}/branding` (version), `…/branding/logo` | Platform admin |
-| any | `/api/v1/public/{slug}/…` (booking and shop, next steps) | anyone, rate-limited; 404 when the workshop is not open or the add-on is off |
+| any | `/api/v1/public/{slug}/…` | anyone, rate-limited; 404 when the workshop is not open or the add-on is off |
+| GET | `/api/v1/public/{slug}/booking/services`, `/api/v1/public/{slug}/booking/slots?from=&days=` (1–14) | anyone (add-on `booking`) |
+| POST | `/api/v1/public/{slug}/booking/bookings` (201 with number and status token; 409 `slot-unavailable`) | anyone (add-on `booking`) |
+| GET, POST | `/api/v1/public/{slug}/booking/bookings/{token}` (with the workshop's `timeZone`), `…/{token}/cancel` (409 `booking-cancel-too-late`) | anyone with the status link |
 | POST | `/api/v1/admin/workshops/{id}/owner-activation-link` | Platform admin |
 | GET, POST | `/api/v1/customers`, `/api/v1/customers/{id}`, `/api/v1/customers/{id}/vehicles` | Owner, Front desk |
 | PUT | `/api/v1/customers/{id}` (version) | Owner, Front desk |
@@ -157,7 +163,12 @@ Full contract: [`docs/api/release-2.md`](docs/api/release-2.md) and [`docs/api/r
 | PUT | `/api/v1/vehicles/{id}` (version), `/api/v1/vehicles/{id}/owner` (version) | Owner, Front desk |
 | GET | `/api/v1/vehicles?plate=`, `/api/v1/vehicles?vin=` (exact, 17 characters), `/api/v1/vehicles/{id}` | everyone |
 | GET | `/api/v1/vehicles/{id}/work-orders` | everyone (mechanics: all jobs of the vehicle, no prices) |
-| POST | `/api/v1/work-orders` (check in) | Owner, Front desk |
+| POST | `/api/v1/work-orders` (check in; optional `bookingId` of a CONFIRMED booking adds its services) | Owner, Front desk |
+| GET | `/api/v1/bookings?from=&to=&status=` (at most 124 days, else 400 `validation` on `to`), `/api/v1/bookings/{id}`, `/api/v1/bookings/pending-count` | Owner, Front desk |
+| GET | `/api/v1/bookings/slots?from=&days=` (free slots to move to: future, opening hours, closures, places; no lead time or horizon) | Owner, Front desk |
+| POST | `/api/v1/bookings/{id}/confirm`, `…/decline` (reason, 400 `decline-reason-required`), `…/move` (`slotStart` listed by `/bookings/slots`), `…/no-show` (all: version) | Owner, Front desk |
+| GET | `/api/v1/booking/settings` (also returns the workshop `timeZone`) | Owner, Front desk |
+| PUT | `/api/v1/booking/settings` (version; slot length, cars per slot, lead time, horizon, cancel deadline, opening hours, closures) | Owner |
 | PUT | `/api/v1/work-orders/{id}/check-in` | Owner, Front desk |
 | GET | `/api/v1/work-orders/board` | everyone (mechanics: own jobs) |
 | GET | `/api/v1/work-orders/{id}` | everyone (mechanics: other mechanics' jobs come back `readOnly`, no prices) |

@@ -131,6 +131,35 @@ class PublicWorkshopApiTests extends ApiTestSupport {
     }
 
     @Test
+    void should_move_the_public_pages_at_once_when_the_admin_changes_the_slug() throws Exception {
+        Workshop w = workshop("Oficina Publica Muda Slug");
+        String newSlug = "oficina-mudada-" + UUID.randomUUID().toString().substring(0, 8);
+        // Both lookups cached: the old slug as a hit, the new one as a miss.
+        probe(w.slug()).andExpect(status().isOk());
+        probe(newSlug).andExpect(status().isNotFound());
+
+        call(put("/api/v1/admin/workshops/" + w.id() + "/branding").content(withVersion(
+                "{\"slug\":\"%s\"}".formatted(newSlug), adminVersion(w))), platformAdmin())
+                .andExpect(status().isOk());
+
+        probe(w.slug()).andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("workshop-not-found"));
+        probe(newSlug).andExpect(status().isOk()).andExpect(jsonPath("$.tenantId").value(w.id()));
+    }
+
+    @Test
+    void should_show_a_new_workshop_name_at_once() throws Exception {
+        Workshop w = workshop("Oficina Publica Nome Antigo");
+        probe(w.slug()).andExpect(jsonPath("$.name").value("Oficina Publica Nome Antigo"));
+
+        call(put("/api/v1/workshop/settings").content(withVersion("""
+                {"name":"Oficina Publica Nome Novo","country":"PT","timezone":"Europe/Lisbon","defaultVatRate":23,
+                 "labourRateCents":4500}""", versionAt(w.owner(), "/api/v1/workshop/settings"))), w.owner())
+                .andExpect(status().isOk());
+
+        probe(w.slug()).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Oficina Publica Nome Novo"));
+    }
+
+    @Test
     void should_never_answer_401_and_ignore_any_bearer_token() throws Exception {
         Workshop a = workshop("Oficina Publica Token A");
         Workshop b = workshop("Oficina Publica Token B");

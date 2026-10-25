@@ -63,6 +63,9 @@ const NO_ADD_ONS: AddOns = { booking: false, shop: false };
               </a>
               @if (!auth.hasRole('MECHANIC')) {
                 <a class="nav-link" routerLink="/check-in" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="check-in" />{{ 'nav.checkIn' | t }}</a>
+                @if (addOns().booking) {
+                  <a class="nav-link" routerLink="/bookings" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="clock" />{{ 'nav.bookings' | t }}</a>
+                }
                 <a class="nav-link" routerLink="/customers" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="users" />{{ 'nav.customers' | t }}</a>
                 <a class="nav-link" routerLink="/stock" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="inbox" />{{ 'nav.stock' | t }}</a>
               }
@@ -107,7 +110,7 @@ export class Shell implements OnInit {
   protected readonly brand = this.theme.branding;
   /** Drawer state on phones; view-only. */
   protected readonly menuOpen = signal(false);
-  /** The add-ons switched on for the workshop; the Bookings and Shop menu items will show only when on. */
+  /** The add-ons switched on for the workshop; the Bookings menu item shows only when booking is on. */
   protected readonly addOns = signal<AddOns>(NO_ADD_ONS);
 
   /** Applies the workshop theme for the signed-in user; the ASP default stays when it cannot be loaded. */

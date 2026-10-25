@@ -26,8 +26,8 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 /// ADR 0004: every handler under `/api/v1/public/**` takes a [PublicWorkshopRef], so it works for the workshop of the
-/// slug and nothing else. Checked on the production classes (none yet: allowed to be empty until booking and shop
-/// add theirs), on the test-only probe controller, and on a deliberately bad fixture.
+/// slug and nothing else. Checked on the production classes (the booking pages; allowed to be empty so the rule
+/// never fails for lack of handlers), on the test-only probe controller, and on a deliberately bad fixture.
 class PublicApiRulesTests {
 
     static final String PUBLIC_PREFIX = "/api/v1/public";

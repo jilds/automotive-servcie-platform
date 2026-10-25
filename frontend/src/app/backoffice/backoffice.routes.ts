@@ -9,12 +9,17 @@ export const BACKOFFICE_ROUTES: Routes = [
   {
     path: '',
     component: BackofficeLayout,
-    // The catalogue page and the identity pieces (branding, activation links) are part of the backoffice.
-    resolve: { texts: textsFor('backoffice', 'catalogue', 'identity') },
+    // The catalogue page, the identity pieces (branding, activation links) and the booking settings and tile are part of the backoffice.
+    resolve: { texts: textsFor('backoffice', 'catalogue', 'identity', 'booking') },
     children: [
       { path: '', loadComponent: () => import('./dashboard').then((m) => m.Dashboard) },
       { path: 'team', loadComponent: () => import('./team').then((m) => m.Team) },
       { path: 'services', loadComponent: () => import('../catalogue/catalogue-page').then((m) => m.CataloguePage) },
+      {
+        path: 'booking',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () => import('../booking/booking-settings').then((m) => m.BookingSettingsPage),
+      },
       {
         path: 'settings',
         canDeactivate: [unsavedChangesGuard],

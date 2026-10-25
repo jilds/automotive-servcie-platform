@@ -1,10 +1,21 @@
 package com.asp.platform.catalogue;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-/// Public API of the catalogue module: the work order lines a service or a package becomes.
+/// Public API of the catalogue module: the work order lines a service or a package becomes, and the services the
+/// workshop offers online. Works for a signed-in user and inside a public page's
+/// [com.asp.platform.shared.TenantScope] alike: the labour rate is read for the connection's workshop.
 public interface CatalogueLookup {
+
+    /// Active services listed online, by name, at their effective price (hourly ones at the labour rate now).
+    List<ServiceOffer> onlineServices();
+
+    /// The services with these ids, active or not, listed online or not, keyed by id, in one query. Ids the
+    /// workshop does not have are left out; an empty collection gives an empty map.
+    Map<UUID, ServiceOffer> services(Collection<UUID> serviceIds);
 
     /// One LABOR line: the service at its price.
     ///

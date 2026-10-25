@@ -19,6 +19,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.booking.BookingCheckIns;
 import com.asp.platform.catalogue.CatalogueLine;
 import com.asp.platform.catalogue.CatalogueLineType;
 import com.asp.platform.catalogue.CatalogueLookup;
@@ -60,29 +61,47 @@ public class WorkOrderService {
     private final StockReservations stock;
     private final CustomerManagement customers;
     private final WorkshopDirectory directory;
+    private final BookingCheckIns bookings;
     private final Clock clock;
 
     WorkOrderService(WorkOrderRepository orders, MechanicChangeRepository mechanicChanges, CatalogueLookup catalogue,
-            StockReservations stock, CustomerManagement customers, WorkshopDirectory directory, Clock clock) {
+            StockReservations stock, CustomerManagement customers, WorkshopDirectory directory,
+            BookingCheckIns bookings, Clock clock) {
         this.orders = orders;
         this.mechanicChanges = mechanicChanges;
         this.catalogue = catalogue;
         this.stock = stock;
         this.customers = customers;
         this.directory = directory;
+        this.bookings = bookings;
         this.clock = clock;
     }
 
     /// Opens a work order when the car arrives and records the odometer reading on the vehicle. A mechanic given here
     /// is the first entry of the order's mechanic history.
     /// A mechanic, when given, must be an active mechanic of the workshop.
+    ///
+    /// From a booking (`bookingId` given), in the same transaction: the booking must be CONFIRMED (409
+    /// `booking-not-confirmed`), each booked service still active becomes a catalogue line at today's catalogue
+    /// price, and the booking becomes CHECKED_IN with this work order. Any failure undoes all of it.
     @Transactional
-    public WorkOrderView checkIn(CurrentUser user, UUID vehicleId, CheckInDetails details, @Nullable UUID mechanicId) {
+    public WorkOrderView checkIn(CurrentUser user, UUID vehicleId, CheckInDetails details, @Nullable UUID mechanicId,
+            @Nullable UUID bookingId) {
         requireMechanic(user.tenantId(), mechanicId, CHECK_IN_MECHANIC_FIELD);
         VehicleSummary vehicle = customers.findVehicle(vehicleId)
                 .orElseThrow(UnknownVehicleException::new);
-        WorkOrder order = orders.save(WorkOrder.open(UUID.randomUUID(), orders.nextNumber(), vehicle.id(), details,
-                mechanicId, clock.instant()));
+        List<UUID> bookedServices = bookingId == null ? List.of() : bookings.claim(bookingId, vehicle.id());
+        WorkOrder opened = WorkOrder.open(UUID.randomUUID(), orders.nextNumber(), vehicle.id(), details, mechanicId,
+                clock.instant());
+        List<CatalogueLine> lines = new ArrayList<>();
+        bookedServices.forEach(serviceId -> lines.addAll(catalogue.linesForService(serviceId)));
+        WorkOrder order = orders.save(opened);
+        if (!lines.isEmpty()) {
+            order = addLines(order, lines);
+        }
+        if (bookingId != null) {
+            bookings.markCheckedIn(bookingId, order.id());
+        }
         if (mechanicId != null) {
             // The first entry of the mechanic history: who was given the car at check-in.
             mechanicChanges.save(new MechanicChange(UUID.randomUUID(), order.id(), null, mechanicId, null,
@@ -121,6 +140,11 @@ public class WorkOrderService {
         List<CatalogueLine> lines = serviceId != null
                 ? catalogue.linesForService(serviceId)
                 : catalogue.linesForPackage(Objects.requireNonNull(packageId, "serviceId or packageId"));
+        return view(addLines(order, lines));
+    }
+
+    /// Puts catalogue lines on the order and reserves the parts among them, then saves the order.
+    private WorkOrder addLines(WorkOrder order, List<CatalogueLine> lines) {
         List<PartReservation> parts = new ArrayList<>();
         for (CatalogueLine line : lines) {
             UUID lineId = UUID.randomUUID();
@@ -137,7 +161,7 @@ public class WorkOrderService {
                 .sorted(Comparator.comparing(PartReservation::productId))
                 .forEach(part -> stock.reserve(part.productId(), part.quantity(), ReservationSource.WORK_ORDER,
                         order.id(), part.lineId()));
-        return view(orders.save(order));
+        return orders.save(order);
     }
 
     /// A part line of a package, to reserve once every line is on the order.

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.asp.platform.catalogue.CatalogueLine;
 import com.asp.platform.catalogue.CatalogueLookup;
+import com.asp.platform.catalogue.ServiceOffer;
 import com.asp.platform.catalogue.domain.LabourRate;
 import com.asp.platform.catalogue.domain.PackageDetails;
 import com.asp.platform.catalogue.domain.PackageItem;
@@ -113,6 +114,34 @@ public class CatalogueService implements CatalogueLookup {
         found.update(details);
         packages.save(found);
         return packageView(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ServiceOffer> onlineServices() {
+        List<ServiceItem> listed = services.search(null, true).stream()
+                .filter(item -> item.details().listedOnline())
+                .toList();
+        LongSupplier rate = rateFor(listed);
+        return listed.stream().map(item -> offer(item, rate)).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, ServiceOffer> services(Collection<UUID> serviceIds) {
+        if (serviceIds.isEmpty()) {
+            return Map.of();
+        }
+        List<ServiceItem> found = services.findAllById(serviceIds);
+        LongSupplier rate = rateFor(found);
+        return found.stream().collect(Collectors.toUnmodifiableMap(ServiceItem::id, item -> offer(item, rate),
+                (a, b) -> a));
+    }
+
+    private static ServiceOffer offer(ServiceItem item, LongSupplier rate) {
+        ServiceDetails d = item.details();
+        return new ServiceOffer(item.id(), d.name(), d.description(), d.category(), d.durationMinutes(),
+                d.effectivePriceCents(rate.getAsLong()), d.vatRate(), d.active(), d.listedOnline());
     }
 
     @Override

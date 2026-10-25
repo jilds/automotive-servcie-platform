@@ -26,7 +26,7 @@ const CUSTOMER_CODE_FIELDS = { 'invalid-nif': 'nif', 'invalid-postal-code': 'add
       <div class="modal-dialog">
         <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
           <div class="modal-header">
-            <h2 class="modal-title" id="customer-edit-title">{{ 'customers.edit' | t }}</h2>
+            <h2 class="modal-title" id="customer-edit-title">{{ (creating() ? 'customers.new' : 'customers.edit') | t }}</h2>
             <button type="button" class="btn-close" [attr.aria-label]="'common.close' | t" (click)="close()"></button>
           </div>
           <div class="modal-body">
@@ -133,6 +133,8 @@ export class CustomerEditDialog {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly workshopCountry = inject(WorkshopCountry);
   private customerId: string | null = null;
+  /** True when opened with `openNew`: the save creates the customer. */
+  protected readonly creating = signal(false);
   /** Version the form was opened with; the API refuses the save (409 `stale-data`) if the customer changed since. */
   private version = 0;
   protected readonly busy = signal(false);
@@ -166,8 +168,31 @@ export class CustomerEditDialog {
     this.dialog().nativeElement.showModal();
   }
 
+  /**
+   * Opens the dialog to create a customer (POST /customers), prefilled, for example from an online booking. The
+   * front desk checks the details and completes them (NIF, address) before saving.
+   */
+  openNew(prefill: { name?: string | null; phone?: string | null; email?: string | null; marketingConsent?: boolean } = {}): void {
+    this.workshopCountry.load();
+    this.error.set(null);
+    this.busy.set(false);
+    this.fill({
+      id: '',
+      name: prefill.name ?? '',
+      nif: null,
+      phone: prefill.phone ?? null,
+      email: prefill.email ?? null,
+      address: null,
+      marketingConsent: prefill.marketingConsent ?? false,
+      version: 0,
+    });
+    this.creating.set(true);
+    this.dialog().nativeElement.showModal();
+  }
+
   /** Puts the customer as stored into the form, with the version to send back. */
   private fill(customer: Customer): void {
+    this.creating.set(false);
     this.customerId = customer.id;
     this.version = customer.version;
     const a = customer.address;
@@ -206,7 +231,8 @@ export class CustomerEditDialog {
   }
 
   save(): void {
-    if (!this.customerId) return;
+    const creating = this.creating();
+    if (!this.customerId && !creating) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.form.controls.address.markAsDirty();
@@ -215,7 +241,9 @@ export class CustomerEditDialog {
     }
     this.busy.set(true);
     this.error.set(null);
-    this.api.updateCustomer(this.customerId, this.request()).subscribe({
+    const { version, ...body } = this.request();
+    const save = creating ? this.api.createCustomer(body) : this.api.updateCustomer(this.customerId!, { ...body, version });
+    save.subscribe({
       next: (customer) => {
         this.busy.set(false);
         this.saved.emit(customer);

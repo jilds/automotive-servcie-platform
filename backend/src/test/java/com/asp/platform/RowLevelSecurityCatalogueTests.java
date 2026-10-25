@@ -25,7 +25,7 @@ class RowLevelSecurityCatalogueTests extends ApiTestSupport {
             "tenant_logo", "read by the public branded login page before sign-in (ADR 0003)");
 
     private static final Set<String> KNOWN_WORKSHOP_TABLES = Set.of("customer", "vehicle", "work_order",
-            "work_order_line");
+            "work_order_line", "booking_settings", "opening_hours", "booking_closure", "booking", "booking_service");
 
     @Autowired
     JdbcClient jdbc;

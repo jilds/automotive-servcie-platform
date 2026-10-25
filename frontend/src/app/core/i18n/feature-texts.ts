@@ -26,6 +26,11 @@ export const FEATURE_TEXTS = {
     'pt-PT': () => import('../../backoffice/i18n/backoffice.pt-PT').then((m) => m.backofficePtPT),
     'pt-BR': () => import('../../backoffice/i18n/backoffice.pt-BR').then((m) => m.backofficePtBR),
   },
+  booking: {
+    en: () => import('../../booking/i18n/booking.en').then((m) => m.bookingEn),
+    'pt-PT': () => import('../../booking/i18n/booking.pt-PT').then((m) => m.bookingPtPT),
+    'pt-BR': () => import('../../booking/i18n/booking.pt-BR').then((m) => m.bookingPtBR),
+  },
   catalogue: {
     en: () => import('../../catalogue/i18n/catalogue.en').then((m) => m.catalogueEn),
     'pt-PT': () => import('../../catalogue/i18n/catalogue.pt-PT').then((m) => m.cataloguePtPT),

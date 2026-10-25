@@ -161,6 +161,22 @@ public class CustomerService implements CustomerManagement {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Map<String, VehicleSummary> findVehiclesByPlates(Collection<String> plates) {
+        if (plates.isEmpty()) {
+            return Map.of();
+        }
+        List<String> normalized = plates.stream().map(VehicleDetails::normalizePlate).distinct().toList();
+        return vehicles.findByPlates(normalized).stream()
+                .collect(Collectors.toUnmodifiableMap(v -> v.details().plate(), this::summary, (a, b) -> a));
+    }
+
+    @Override
+    public String normalizePlate(String plate) {
+        return VehicleDetails.normalizePlate(plate);
+    }
+
+    @Override
     @Transactional
     public void recordMileage(UUID vehicleId, int mileage) {
         vehicles.findById(vehicleId).ifPresent(vehicle -> {

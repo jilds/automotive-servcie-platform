@@ -31,14 +31,15 @@ class WorkOrderController {
         this.workOrders = workOrders;
     }
 
-    /// Opens a work order when the car arrives.
+    /// Opens a work order when the car arrives. With a `bookingId` the booked services become catalogue lines and
+    /// the booking is checked in (409 `booking-not-confirmed` unless it is CONFIRMED).
     @PostMapping("/work-orders")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     WorkOrderResponse checkIn(CurrentUser user, @Valid @RequestBody CheckInRequest request) {
         return WorkOrderResponse.of(
                 workOrders.checkIn(user, request.vehicleId(), request.toDetails(),
-                        request.assignedMechanicId()), user);
+                        request.assignedMechanicId(), request.bookingId()), user);
     }
 
     @GetMapping("/work-orders/board")

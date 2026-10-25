@@ -20,6 +20,9 @@ public interface VehicleRepository {
 
     Optional<Vehicle> findByPlate(String normalizedPlate);
 
+    /// One query; plates no vehicle has are left out.
+    List<Vehicle> findByPlates(Collection<String> normalizedPlates);
+
     /// @param normalizedVin 17 characters, upper case
     /// @return the vehicle with this VIN; the most recently changed one if older records share it
     Optional<Vehicle> findByVin(String normalizedVin);

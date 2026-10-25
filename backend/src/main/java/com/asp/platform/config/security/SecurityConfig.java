@@ -13,6 +13,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import com.asp.platform.identity.AccessDirectory;
 import com.asp.platform.identity.TokenClaims;
@@ -43,8 +45,15 @@ class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
+                .headers(SecurityConfig::referrerPolicy)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
+    }
+
+    /// Public status links carry their token in the path (`/w/{slug}/booking/{token}`): a link followed from the page
+    /// must not send that URL to another site, so the referrer stays on this origin.
+    private static void referrerPolicy(HeadersConfigurer<HttpSecurity> headers) {
+        headers.referrerPolicy(policy -> policy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN));
     }
 
     @Bean
@@ -53,6 +62,7 @@ class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(SecurityConfig::referrerPolicy)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/activate").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/activation", "/api/v1/platform/contact",

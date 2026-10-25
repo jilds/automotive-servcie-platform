@@ -17,7 +17,8 @@ record CheckInRequest(
         @Nullable @Min(0) @Max(8) Integer fuelLevel,
         @Nullable String complaint,
         @Nullable String damageNotes,
-        @Nullable UUID assignedMechanicId) {
+        @Nullable UUID assignedMechanicId,
+        @Nullable UUID bookingId) {
 
     CheckInDetails toDetails() {
         return new CheckInDetails(mileageIn, fuelLevel, complaint, damageNotes);

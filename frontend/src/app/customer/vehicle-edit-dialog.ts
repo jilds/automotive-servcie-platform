@@ -28,7 +28,7 @@ export const VEHICLE_CODE_FIELDS = { 'duplicate-plate': 'plate', 'invalid-plate'
       <div class="modal-dialog">
         <form class="modal-content" [formGroup]="form" (ngSubmit)="save()" novalidate>
           <div class="modal-header">
-            <h2 class="modal-title" id="vehicle-edit-title">{{ 'vehicles.edit' | t }}</h2>
+            <h2 class="modal-title" id="vehicle-edit-title">{{ (newFor() ? 'vehicles.add' : 'vehicles.edit') | t }}</h2>
             <button type="button" class="btn-close" [attr.aria-label]="'common.close' | t" (click)="close()"></button>
           </div>
           <div class="modal-body">
@@ -73,7 +73,7 @@ export const VEHICLE_CODE_FIELDS = { 'duplicate-plate': 'plate', 'invalid-plate'
                 <input id="ve-mileage" class="form-control" formControlName="mileage" type="number" min="0" [class.is-invalid]="!!message('mileage')" [attr.aria-invalid]="!!message('mileage')" />
                 @if (message('mileage'); as m) {
                   <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ m | t: { km: ((recordedMileage() ?? 0) | km: lang()) } }}</div>
-                } @else {
+                } @else if (!newFor()) {
                   <div class="form-text">{{ 'vehicles.mileageKeep' | t }}</div>
                 }
               </div>
@@ -101,6 +101,8 @@ export class VehicleEditDialog {
   protected readonly lang = this.i18n.lang;
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private vehicleId: string | null = null;
+  /** The customer a new vehicle is added to, when opened with `openNew`; null when editing. */
+  protected readonly newFor = signal<string | null>(null);
   /** Version the form was opened with; the API refuses the save (409 `stale-data`) if the vehicle changed since. */
   private version = 0;
   /** The registration as opened: an unchanged plate is not re-checked (the API does the same). */
@@ -130,8 +132,25 @@ export class VehicleEditDialog {
     this.dialog().nativeElement.showModal();
   }
 
+  /** Opens the dialog to add a vehicle to a customer (POST /vehicles), prefilled with a plate, e.g. from a booking. */
+  openNew(customerId: string, plate: string, country = 'PT'): void {
+    this.error.set(null);
+    this.busy.set(false);
+    this.fill({
+      id: '', customerId, plate, plateDisplay: plate, plateEra: null, registrationCountry: country, registrationDate: null,
+      vin: null, make: null, model: null, year: null, fuelType: null, mileage: null, version: 0,
+    });
+    // A new plate is always checked.
+    this.stored = null;
+    this.newFor.set(customerId);
+    this.form.controls.plate.markAsTouched();
+    this.form.controls.plate.updateValueAndValidity();
+    this.dialog().nativeElement.showModal();
+  }
+
   /** Puts the vehicle as stored into the form, with the version to send back. */
   private fill(vehicle: Vehicle): void {
+    this.newFor.set(null);
     this.vehicleId = vehicle.id;
     this.version = vehicle.version;
     const country = vehicle.registrationCountry ?? 'PT';
@@ -175,14 +194,17 @@ export class VehicleEditDialog {
 
   save(): void {
     const id = this.vehicleId;
-    if (!id) return;
+    const customerId = this.newFor();
+    if (!id && !customerId) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     this.busy.set(true);
     this.error.set(null);
-    this.api.updateVehicle(id, this.request()).subscribe({
+    const { version, ...body } = this.request();
+    const save = customerId ? this.api.createVehicle({ ...body, customerId }) : this.api.updateVehicle(id!, { ...body, version });
+    save.subscribe({
       next: (vehicle) => {
         this.busy.set(false);
         this.saved.emit(vehicle);
@@ -193,7 +215,7 @@ export class VehicleEditDialog {
         if (isStale(e)) {
           // Someone else saved it (or a check-in raised the mileage): show the stored values and say why.
           this.error.set(this.i18n.error(e));
-          this.api.vehicle(id).subscribe({ next: (v) => this.fill(v), error: () => {} });
+          if (id) this.api.vehicle(id).subscribe({ next: (v) => this.fill(v), error: () => {} });
           return;
         }
         const marked = applyProblem(this.form, e, VEHICLE_CODE_FIELDS);
