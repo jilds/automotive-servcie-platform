@@ -44,9 +44,9 @@ final class PublicRateLimiter extends OncePerRequestFilter {
         String slug = PublicPaths.slug(request).orElse("");
         String key = ClientAddresses.key(request.getRemoteAddr()) + '|' + slug;
         FixedWindowLimit limit = READS.contains(request.getMethod()) ? reads : writes;
-        long retryAfterSeconds = limit.acquire(key);
-        if (retryAfterSeconds > 0) {
-            problems.tooManyRequests(request, response, slug, retryAfterSeconds);
+        FixedWindowLimit.Outcome outcome = limit.acquire(key);
+        if (outcome.refused()) {
+            problems.tooManyRequests(request, response, slug, outcome);
             return;
         }
         chain.doFilter(request, response);

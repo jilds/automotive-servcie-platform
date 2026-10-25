@@ -33,9 +33,9 @@ final class PublicLookupLimiter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        long retryAfterSeconds = lookups.acquire(ClientAddresses.key(request.getRemoteAddr()));
-        if (retryAfterSeconds > 0) {
-            problems.tooManyRequests(request, response, PublicPaths.slug(request).orElse(""), retryAfterSeconds);
+        FixedWindowLimit.Outcome outcome = lookups.acquire(ClientAddresses.key(request.getRemoteAddr()));
+        if (outcome.refused()) {
+            problems.tooManyRequests(request, response, PublicPaths.slug(request).orElse(""), outcome);
             return;
         }
         chain.doFilter(request, response);

@@ -30,17 +30,32 @@ final class FixedWindowLimit {
                 .build();
     }
 
-    /// Counts one request: 0 when it is allowed, else the whole seconds until the window ends, rounded up (at
-    /// least 1).
-    long acquire(String key) {
+    /// Counts one request.
+    Outcome acquire(String key) {
         long now = ticker.read();
         Window window = windows.get(key, _ -> new Window(now, new AtomicInteger()));
-        if (window.count().incrementAndGet() <= max) {
-            return 0;
+        int count = window.count().incrementAndGet();
+        if (count <= max) {
+            return Outcome.ALLOWED;
         }
         long remainingNanos = Math.max(0, window.startNanos() + windowNanos - now);
         long seconds = TimeUnit.NANOSECONDS.toSeconds(remainingNanos + TimeUnit.SECONDS.toNanos(1) - 1);
-        return Math.max(1, seconds);
+        return new Outcome(Math.max(1, seconds), count == max + 1);
+    }
+
+    /// What [#acquire] decided.
+    ///
+    /// @param retryAfterSeconds 0 when the request is allowed, else the whole seconds until the window ends,
+    ///                          rounded up (at least 1)
+    /// @param firstRefusal      true only for the request that crossed the limit: the one refusal of the key and
+    ///                          window worth logging, so a flood writes one log line, not one per request
+    record Outcome(long retryAfterSeconds, boolean firstRefusal) {
+
+        static final Outcome ALLOWED = new Outcome(0, false);
+
+        boolean refused() {
+            return retryAfterSeconds > 0;
+        }
     }
 
     private record Window(long startNanos, AtomicInteger count) {

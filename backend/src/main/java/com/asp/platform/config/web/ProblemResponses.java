@@ -31,12 +31,15 @@ final class ProblemResponses {
         this.json = json;
     }
 
-    /// 429 `too-many-requests` with `Retry-After` in seconds. Logged with the slug and method only, never the
-    /// client's address.
+    /// 429 `too-many-requests` with `Retry-After` in seconds. Only the first refusal of a key and window is logged
+    /// (a flood writes one line), with the slug and method only, never the client's address.
     void tooManyRequests(HttpServletRequest request, HttpServletResponse response, String slug,
-            long retryAfterSeconds) throws IOException {
-        log.info("Public request refused: too many requests slug={} method={}", loggable(slug), request.getMethod());
-        response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(retryAfterSeconds));
+            FixedWindowLimit.Outcome outcome) throws IOException {
+        if (outcome.firstRefusal()) {
+            log.info("Public request refused: too many requests slug={} method={}", loggable(slug),
+                    request.getMethod());
+        }
+        response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(outcome.retryAfterSeconds()));
         write(request, response, HttpStatus.TOO_MANY_REQUESTS, TOO_MANY_REQUESTS,
                 "Too many requests; try again later");
     }
