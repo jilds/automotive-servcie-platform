@@ -3,6 +3,7 @@ package com.asp.platform.identity;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /// Public API of the identity module for other modules: who works in a workshop, where and in which time zone.
@@ -26,4 +27,13 @@ public interface WorkshopDirectory {
 
     /// True when the user belongs to the workshop, is active and is a mechanic, so work may be assigned to them.
     boolean isActiveMechanic(UUID tenantId, UUID userId);
+
+    /// The workshop whose public pages live at `/w/{slug}`, when the slug is well-formed, the workshop exists and its
+    /// subscription lets it sign in (trial or active). Empty otherwise, so a closed workshop reads like an unknown one.
+    /// Cached briefly, misses too; a change to the workshop evicts it on this instance at once.
+    Optional<PublicWorkshop> publicWorkshop(String slug);
+
+    /// The ids of every workshop whose subscription lets it sign in, oldest first. For jobs that run per workshop
+    /// inside a [com.asp.platform.shared.TenantScope].
+    List<UUID> openWorkshops();
 }

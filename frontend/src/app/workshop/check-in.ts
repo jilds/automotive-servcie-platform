@@ -15,6 +15,8 @@ import { Plate } from '../shared/plate';
 import { formatPlate, plateMessage, registrationControls } from '../shared/plate-format';
 import { countryOptions } from '../shared/registration-fields';
 import { WorkshopCountry } from '../shared/workshop-country';
+import { BookingApi } from '../booking/booking-api.service';
+import { Booking } from '../booking/booking.models';
 
 /** A search term that is a VIN rather than a plate: 17 letters or digits once spaces are removed. */
 export function looksLikeVin(term: string): boolean {
@@ -57,6 +59,24 @@ export const CHECK_IN_CODE_FIELDS = { 'invalid-mechanic': 'assignedMechanicId' }
         <div class="invalid-feedback d-block w-100 mt-0" id="ci-plate-help"><app-icon name="alert-circle" [size]="14" /> {{ m | t }}</div>
       }
     </form>
+    @if (fromBooking(); as b) {
+      <section class="card shadow-sm border-primary-subtle mb-4" aria-labelledby="ci-booking-title">
+        <div class="card-body">
+          <h2 class="card-title mb-2" id="ci-booking-title">{{ 'booking.checkIn.from' | t: { number: b.number, name: b.name } }}</h2>
+          @if (b.status !== 'CONFIRMED') {
+            <app-alert tone="warning">{{ 'error.booking-not-confirmed' | t }}</app-alert>
+          }
+          <p class="small text-body-secondary mb-2">{{ 'booking.checkIn.services' | t }}</p>
+          <ul class="list-unstyled vstack gap-1 mb-0">
+            @for (s of b.services; track s.serviceId) {
+              <li class="d-flex align-items-center gap-2"><app-icon name="wrench" [size]="14" /><span class="text-break">{{ s.name }}</span></li>
+            } @empty {
+              <li class="text-body-secondary">{{ 'booking.checkIn.none' | t }}</li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
     @if (error()) {
       <app-alert>{{ error() }}</app-alert>
     }
@@ -133,6 +153,11 @@ export const CHECK_IN_CODE_FIELDS = { 'invalid-mechanic': 'assignedMechanicId' }
 export class CheckIn implements OnInit {
   /** Optional ?plate= query parameter, set when coming from a customer's page. */
   readonly plate = input<string>();
+  /** Optional ?booking= query parameter: check in a confirmed online booking (plate, complaint and services). */
+  readonly booking = input<string>();
+  private readonly bookings = inject(BookingApi);
+  /** The booking this check-in comes from; its services are added to the work order by the server. */
+  protected readonly fromBooking = signal<Booking | null>(null);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly i18n = inject(I18nService);
@@ -168,6 +193,8 @@ export class CheckIn implements OnInit {
   }
 
   ngOnInit(): void {
+    const bookingId = this.booking();
+    if (bookingId) this.loadBooking(bookingId);
     const plate = this.plate();
     if (plate) {
       this.search.plate.setValue(formatPlate(plate, this.search.registrationCountry.value));
@@ -175,6 +202,19 @@ export class CheckIn implements OnInit {
     }
     // Only owners can list users; the front desk simply sees no mechanic list.
     this.api.users().subscribe({ next: (u) => this.mechanics.set(u.filter((x) => x.role === 'MECHANIC')), error: () => {} });
+  }
+
+  /** Prefills the plate search and the complaint from the booking, then looks the vehicle up. */
+  private loadBooking(id: string): void {
+    this.bookings.booking(id).subscribe({
+      next: (b) => {
+        this.fromBooking.set(b);
+        if (b.note && !this.form.controls.complaint.value) this.form.controls.complaint.setValue(b.note);
+        this.search.plate.setValue(formatPlate(b.plate, this.search.registrationCountry.value));
+        this.find(b.plate);
+      },
+      error: (e) => this.error.set(this.i18n.error(e)),
+    });
   }
 
   /** On blur: a Portuguese plate becomes `XX-XX-XX` upper case; a VIN is left as typed. */
@@ -217,7 +257,8 @@ export class CheckIn implements OnInit {
   submit(v: Vehicle): void {
     this.busy.set(true);
     const f = this.form.getRawValue();
-    this.api.checkIn({ vehicleId: v.id, ...f, complaint: f.complaint || null, damageNotes: f.damageNotes || null }).subscribe({
+    const bookingId = this.fromBooking()?.id ?? null;
+    this.api.checkIn({ vehicleId: v.id, ...f, complaint: f.complaint || null, damageNotes: f.damageNotes || null, ...(bookingId ? { bookingId } : {}) }).subscribe({
       next: (wo) => this.router.navigate(['/work-orders', wo.id]),
       error: (e) => {
         const marked = applyProblem(this.form, e, CHECK_IN_CODE_FIELDS);

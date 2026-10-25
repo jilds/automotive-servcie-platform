@@ -77,6 +77,8 @@ export class ApiService {
     complaint?: string | null;
     damageNotes?: string | null;
     assignedMechanicId?: string | null;
+    /** Check-in from a CONFIRMED online booking: its services become catalogue lines (409 `booking-not-confirmed`). */
+    bookingId?: string | null;
   }) {
     return this.http.post<WorkOrder>(`${API}/work-orders`, body);
   }

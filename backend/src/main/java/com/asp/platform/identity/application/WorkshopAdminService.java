@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.identity.domain.AddOns;
 import com.asp.platform.identity.domain.Slug;
 import com.asp.platform.identity.domain.SlugTakenException;
 import com.asp.platform.identity.domain.Subscription;
@@ -35,10 +36,12 @@ public class WorkshopAdminService {
     private final IdentityService identity;
     private final ActivationLinks links;
     private final AccessDirectoryService access;
+    private final PublicWorkshopCache publicWorkshops;
     private final Clock clock;
 
     WorkshopAdminService(TenantRepository tenants, UserRepository users, IdentityService identity,
-            ActivationLinks links, AccessDirectoryService access, Clock clock) {
+            ActivationLinks links, AccessDirectoryService access, PublicWorkshopCache publicWorkshops, Clock clock) {
+        this.publicWorkshops = publicWorkshops;
         this.tenants = tenants;
         this.users = users;
         this.identity = identity;
@@ -68,6 +71,7 @@ public class WorkshopAdminService {
                 WorkshopSettings.initial(command.name(), command.nif(), command.country(), command.timezone())
                         .checkNif(),
                 command.subscription(), slug, clock.instant()));
+        publicWorkshops.evictSlug(slug.value());
         User owner = users.save(User.invite(UUID.randomUUID(), tenant.id(), command.ownerName(), command.ownerEmail(),
                 Role.OWNER, clock.instant()));
         ActivationLink link = links.issue(owner);
@@ -87,8 +91,25 @@ public class WorkshopAdminService {
         tenant.requireVersion(expectedVersion);
         Tenant saved = tenants.save(tenant.withSubscription(subscription));
         access.evictWorkshop(tenantId);
+        publicWorkshops.evictWorkshop(tenantId, tenant.slug().value());
         log.info("Subscription changed: tenantId={} plan={} status={}", tenantId, subscription.plan(),
                 subscription.status());
+        return overview(saved);
+    }
+
+    /// Switches the online booking and online shop add-ons on or off, independent of the plan. Their public pages
+    /// answer 404 while off.
+    ///
+    /// @param expectedVersion the workshop version the admin read
+    /// @throws com.asp.platform.shared.StaleDataException when someone else saved the workshop since
+    @Transactional
+    public WorkshopOverview changeAddOns(UUID tenantId, AddOns addOns, long expectedVersion) {
+        Tenant tenant = tenant(tenantId);
+        tenant.requireVersion(expectedVersion);
+        Tenant saved = tenants.save(tenant.withAddOns(addOns));
+        access.evictWorkshop(tenantId);
+        publicWorkshops.evictWorkshop(tenantId, tenant.slug().value());
+        log.info("Add-ons changed: tenantId={} booking={} shop={}", tenantId, addOns.booking(), addOns.shop());
         return overview(saved);
     }
 

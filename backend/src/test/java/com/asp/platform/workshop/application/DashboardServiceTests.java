@@ -9,10 +9,12 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import com.asp.platform.identity.PublicWorkshop;
 import com.asp.platform.identity.TeamMember;
 import com.asp.platform.identity.WorkshopDirectory;
 import com.asp.platform.workshop.domain.WorkOrderStatus;
@@ -90,6 +92,16 @@ class DashboardServiceTests {
             @Override
             public boolean isActiveMechanic(UUID tenantId, UUID userId) {
                 return userId.equals(RUI) || userId.equals(ZE);
+            }
+
+            @Override
+            public Optional<PublicWorkshop> publicWorkshop(String slug) {
+                return Optional.empty();
+            }
+
+            @Override
+            public List<UUID> openWorkshops() {
+                return List.of();
             }
         };
         return new DashboardService(queries, directory, Clock.fixed(now, ZoneOffset.UTC));

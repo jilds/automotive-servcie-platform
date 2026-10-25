@@ -8,6 +8,17 @@ import { Shell } from './shared/shell';
 export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'w/:slug', component: Login },
+  // Public booking pages of a workshop (add-on `booking`, ADR 0004): no sign-in, lazy.
+  {
+    path: 'w/:slug/book',
+    resolve: { texts: textsFor('booking') },
+    loadComponent: () => import('./booking/public-booking').then((m) => m.PublicBooking),
+  },
+  {
+    path: 'w/:slug/booking/:token',
+    resolve: { texts: textsFor('booking') },
+    loadComponent: () => import('./booking/booking-status').then((m) => m.BookingStatusPage),
+  },
   {
     path: 'activate',
     resolve: { texts: textsFor('identity') },
@@ -28,6 +39,8 @@ export const routes: Routes = [
       {
         path: 'check-in',
         canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
+        // ?booking=<id> shows the booking's number and services.
+        resolve: { texts: textsFor('booking') },
         loadComponent: () => import('./workshop/check-in').then((m) => m.CheckIn),
       },
       {
@@ -51,6 +64,12 @@ export const routes: Routes = [
         canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
         resolve: { texts: textsFor('stock') },
         loadChildren: () => import('./stock/stock.routes').then((m) => m.STOCK_ROUTES),
+      },
+      {
+        path: 'bookings',
+        canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
+        resolve: { texts: textsFor('booking') },
+        loadComponent: () => import('./booking/bookings-page').then((m) => m.BookingsPage),
       },
       {
         path: 'backoffice',

@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Icon } from '../shared/icon';
+import { TenantThemeService } from '../shared/theme.service';
 import { Toasts } from './toasts';
 
 /** Owner backoffice frame: section tabs, the active section and a toast region shared by the sections. */
@@ -22,6 +23,11 @@ import { Toasts } from './toasts';
       <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/services" routerLinkActive="active" ariaCurrentWhenActive="page">
         <app-icon name="inbox" [size]="16" />{{ 'catalogue.tab' | t }}
       </a>
+      @if (bookingOn()) {
+        <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/booking" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <app-icon name="clock" [size]="16" />{{ 'booking.settings.tab' | t }}
+        </a>
+      }
       <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/settings" routerLinkActive="active" ariaCurrentWhenActive="page">
         <app-icon name="wrench" [size]="16" />{{ 'backoffice.tab.settings' | t }}
       </a>
@@ -46,4 +52,7 @@ import { Toasts } from './toasts';
 })
 export class BackofficeLayout {
   protected readonly toasts = inject(Toasts);
+  /** The online booking add-on is on (from `GET /branding`, loaded by the shell). */
+  private readonly theme = inject(TenantThemeService);
+  protected readonly bookingOn = computed(() => !!this.theme.branding()?.addOns?.booking);
 }

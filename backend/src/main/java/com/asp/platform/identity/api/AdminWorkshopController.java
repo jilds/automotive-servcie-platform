@@ -62,6 +62,12 @@ class AdminWorkshopController {
         return AdminWorkshopResponse.of(admin.changeSubscription(id, request.toSubscription(), request.version()));
     }
 
+    /// Online booking and online shop on or off, independent of the plan. Off answers 404 on their public pages.
+    @PutMapping("/{id}/add-ons")
+    AdminWorkshopResponse addOns(@PathVariable UUID id, @Valid @RequestBody AddOnsRequest request) {
+        return AdminWorkshopResponse.of(admin.changeAddOns(id, request.toAddOns(), request.version()));
+    }
+
     /// A new activation link for the workshop's first owner; the previous unused link stops working.
     @PostMapping("/{id}/owner-activation-link")
     ActivationLinkResponse ownerLink(@PathVariable UUID id) {

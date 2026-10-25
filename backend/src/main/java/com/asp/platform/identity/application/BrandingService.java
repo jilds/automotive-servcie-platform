@@ -25,10 +25,13 @@ public class BrandingService {
 
     private final TenantRepository tenants;
     private final TenantLogoRepository logos;
+    private final PublicWorkshopCache publicWorkshops;
     private final Clock clock;
 
-    BrandingService(TenantRepository tenants, TenantLogoRepository logos, Clock clock) {
+    BrandingService(TenantRepository tenants, TenantLogoRepository logos, PublicWorkshopCache publicWorkshops,
+            Clock clock) {
         this.tenants = tenants;
+        this.publicWorkshops = publicWorkshops;
         this.logos = logos;
         this.clock = clock;
     }
@@ -70,6 +73,9 @@ public class BrandingService {
             throw new SlugTakenException();
         }
         Tenant saved = tenants.save(tenant.withBranding(newSlug, branding));
+        // The public pages show the display name and are found by the slug.
+        publicWorkshops.evictWorkshop(tenantId, tenant.slug().value());
+        publicWorkshops.evictSlug(newSlug.value());
         return BrandingView.of(saved, logos.hashOf(tenantId).orElse(null));
     }
 

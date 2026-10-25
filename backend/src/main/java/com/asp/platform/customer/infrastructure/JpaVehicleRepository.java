@@ -57,6 +57,11 @@ class JpaVehicleRepository implements VehicleRepository {
     }
 
     @Override
+    public List<Vehicle> findByPlates(Collection<String> normalizedPlates) {
+        return jpa.findByPlateIn(normalizedPlates).stream().map(VehicleEntity::toDomain).toList();
+    }
+
+    @Override
     public Optional<Vehicle> findByVin(String normalizedVin) {
         return jpa.findFirstByVinOrderByUpdatedAtDesc(normalizedVin).map(VehicleEntity::toDomain);
     }

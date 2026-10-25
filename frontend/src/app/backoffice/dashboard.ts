@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of, Subject, switchMap, tap } from 'rxjs';
@@ -8,6 +8,8 @@ import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { MoneyPipe } from '../shared/money.pipe';
+import { BookingApi } from '../booking/booking-api.service';
+import { TenantThemeService } from '../shared/theme.service';
 import { StockApi } from '../stock/stock-api.service';
 import { BackofficeApi } from './backoffice-api.service';
 import { Dashboard as DashboardData } from './backoffice.models';
@@ -91,6 +93,19 @@ import { monthDate, statusBars, workloadBars } from './dashboard.model';
           </a>
         }
 
+        @if (pendingBookings(); as pending) {
+          <a class="card shadow-sm border-warning-subtle text-decoration-none d-block mb-4" routerLink="/bookings">
+            <div class="card-body d-flex flex-wrap align-items-center gap-3 py-3">
+              <span class="text-warning-emphasis d-inline-flex"><app-icon name="clock" /></span>
+              <span class="d-flex flex-column me-auto">
+                <span class="fw-semibold text-body">{{ 'booking.dashboard.pending' | t }}: {{ pending }}</span>
+                <span class="small text-body-secondary">{{ 'booking.dashboard.pendingHint' | t }}</span>
+              </span>
+              <span class="small fw-semibold d-inline-flex align-items-center gap-1">{{ 'booking.dashboard.open' | t }}<app-icon name="arrow-right" [size]="14" /></span>
+            </div>
+          </a>
+        }
+
         <div class="row g-3">
           <div class="col-lg-6">
             <section class="card shadow-sm h-100">
@@ -167,6 +182,13 @@ export class Dashboard implements OnInit {
   private readonly stock = inject(StockApi);
   /** How many active products are below their minimum stock; null until known. */
   protected readonly lowStock = signal<number | null>(null);
+  private readonly bookings = inject(BookingApi);
+  private readonly theme = inject(TenantThemeService);
+  /** Online bookings waiting for the front desk; null when the add-on is off or nothing waits. */
+  protected readonly pendingBookings = signal<number | null>(null);
+  /** The shell loads the add-ons with the branding; the tile follows when they arrive after this page. */
+  private readonly bookingOn = computed(() => !!this.theme.branding()?.addOns?.booking);
+  private readonly refreshes = signal(0);
 
   protected readonly byStatus = computed(() => statusBars(this.data()?.openByStatus ?? {}));
   protected readonly workload = computed(() => workloadBars(this.data() ?? { mechanicWorkload: [] }));
@@ -179,6 +201,10 @@ export class Dashboard implements OnInit {
   private readonly reloads = new Subject<void>();
 
   constructor() {
+    effect(() => {
+      this.refreshes();
+      if (this.bookingOn()) untracked(() => this.loadPendingBookings());
+    });
     this.reloads
       .pipe(
         tap(() => {
@@ -209,5 +235,11 @@ export class Dashboard implements OnInit {
     this.reloads.next();
     // Low-stock tile: hidden when nothing is low or the list cannot be read.
     this.stock.lowStock().subscribe({ next: (list) => this.lowStock.set(list.length), error: () => this.lowStock.set(null) });
+    this.refreshes.update((n) => n + 1);
+  }
+
+  /** Bookings tile: only with the booking add-on; hidden when nothing waits or the count cannot be read. */
+  private loadPendingBookings(): void {
+    this.bookings.pendingCount().subscribe({ next: (r) => this.pendingBookings.set(r.count || null), error: () => this.pendingBookings.set(null) });
   }
 }

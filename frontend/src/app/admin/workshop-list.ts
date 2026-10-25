@@ -58,6 +58,16 @@ import { toCreateRequest, workshopForm } from './workshop-form';
                 <td class="cell-title">
                   <a [routerLink]="['/admin/workshops', w.id]">{{ w.name }}</a>
                   <div class="small text-body-secondary font-monospace">/w/{{ w.slug }}</div>
+                  @if (w.addOns.booking || w.addOns.shop) {
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                      @if (w.addOns.booking) {
+                        <span class="badge bg-primary-subtle text-primary-emphasis">{{ 'admin.addOns.bookingBadge' | t }}</span>
+                      }
+                      @if (w.addOns.shop) {
+                        <span class="badge bg-primary-subtle text-primary-emphasis">{{ 'admin.addOns.shopBadge' | t }}</span>
+                      }
+                    </div>
+                  }
                 </td>
                 <td [attr.data-label]="'common.nif' | t">{{ w.nif ?? '—' }}</td>
                 <td [attr.data-label]="'admin.workshops.country' | t">{{ w.country }}</td>

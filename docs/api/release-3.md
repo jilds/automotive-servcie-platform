@@ -587,3 +587,149 @@ the parts. The package list marks parts with a "Peça" badge.
 `(package_id, product_id)`; partial index on `product_id`. Existing rows all hold a service. RLS and grants unchanged.
 Rollback: delete items with a `product_id`, drop the check, the unique constraint, the index and the column, set
 `service_item_id` not null, delete version `'13'` from `flyway_schema_history`.
+
+---
+
+## Public workshop pages and add-ons
+
+Plan: `Catalogue → Stock → Booking → Shop` (foundation for steps 3 and 4). ADR 0004. Tests that pin this contract:
+`PublicWorkshopApiTests`, `AddOnsApiTests`, `RowLevelSecurityCatalogueTests`, `SpaForwardingTests`.
+
+### Add-ons
+
+Online booking and the online shop are add-ons the platform admin switches on per workshop, independent of the plan.
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| PUT | `/admin/workshops/{id}/add-ons` | PLATFORM_ADMIN | `{ "booking": true, "shop": false, "version": 3 }` → `AdminWorkshopResponse`; 409 `stale-data` |
+| GET | `/branding` | every workshop role | now also `"addOns": { "booking": true, "shop": false }` (the shell shows the menus) |
+
+`AdminWorkshopResponse` gains `"addOns": { "booking": …, "shop": … }`. Changing add-ons raises the tenant `version`
+(shared with settings, theme and subscription).
+
+### Public scope
+
+Every public workshop endpoint lives under `/api/v1/public/{slug}/…`, needs no token and never answers 401.
+The server finds the workshop by its slug and serves the request inside that workshop (row-level security still
+applies). An unknown slug, a workshop that is suspended or cancelled, and an add-on that is off all answer 404, so
+nothing about the workshop leaks:
+
+| Status | `code` | When |
+|---|---|---|
+| 404 | `workshop-not-found` | Unknown slug, or the workshop is not open |
+| 404 | `add-on-not-available` | The add-on of that endpoint is off |
+| 429 | `too-many-requests` | More than 10 POSTs an hour or 120 GETs a minute from one address for one workshop; header `Retry-After` (seconds) |
+| 400 | `privacy-consent-required` | A public form sent without `"privacyAccepted": true` |
+
+Public forms also send `"website": ""` (a hidden field). A request with a value there is answered as if it
+succeeded and stored nowhere.
+
+**Status links.** A public booking or order returns a private `statusToken` (43 characters, base64url). The server
+stores only its SHA-256. `GET …/{token}` shows the status; the token is the only key, so the response holds no other
+customer's data and no internal ids.
+
+### Migration V14
+
+`tenant.booking_enabled`, `tenant.shop_enabled` (boolean not null default false). Rollback: drop both columns and
+delete version `'14'` from `flyway_schema_history`.
+
+---
+
+## Online booking
+
+Plan step 3 of 4. Module `booking`. Tests that pin this contract: `BookingApiTests`, `PublicBookingApiTests`,
+`SlotCalendarTests`, `BookingCheckInApiTests`, `RowLevelSecurityCatalogueTests`, `SpaForwardingTests`.
+
+The customer picks services listed online and a free **drop-off slot** on the workshop's public page. The front
+desk confirms, declines or moves it. On arrival the front desk checks in from the booking: the booked services
+become catalogue lines on the new work order.
+
+### Slots
+
+- Slots come from the workshop's **opening hours** (per weekday, several ranges, e.g. 08:30–12:30 and 14:00–18:30)
+  in its time zone (`WorkshopSettings.timeZone`), cut into `slotMinutes` (15, 30 or 60). A slot starts inside a range
+  and ends at or before its end.
+- A slot is free while fewer than `carsPerSlot` bookings in REQUESTED or CONFIRMED status start at that time.
+- Not offered: closures (whole days), slots earlier than now + `leadTimeHours`, days after today + `horizonDays`.
+- Booking a slot that is not free answers 409 `slot-unavailable` (also when two requests race for the last place).
+
+### Public endpoints (`/api/v1/public/{slug}/booking`, add-on `booking`)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/services` | Active services with `listedOnline`: `[ { "id", "name", "description", "category", "durationMinutes", "priceCents", "vatRate", "priceWithVatCents" } ]` |
+| GET | `/slots?from=2026-11-02&days=7` | `days` default 7, brought into 1–14: `[ { "date": "2026-11-02", "slots": [ { "start": "2026-11-02T09:00:00Z", "time": "09:00", "free": 2 } ] } ]` (only slots with `free` ≥ 1; days without them have an empty array) |
+| POST | `/bookings` | → `201` `{ "number": 12, "statusToken": "…", "slotStart": "…" }` |
+| GET | `/bookings/{token}` | → `PublicBookingResponse` |
+| POST | `/bookings/{token}/cancel` | → `PublicBookingResponse`; 409 `booking-cancel-too-late` after the deadline |
+
+```json
+// POST /bookings
+{ "serviceIds": ["…"], "slotStart": "2026-11-02T09:00:00Z",
+  "name": "Ana Silva", "phone": "912345678", "email": "ana@example.pt", "plate": "AA-00-AA", "note": "Barulho ao travar",
+  "privacyAccepted": true, "marketingConsent": false, "website": "" }
+// 1–10 services offered online (else 404 service-not-found), name ≤ 120, plate required (with at least one letter or
+// digit) and normalised like vehicles, at least one of phone/email (else 400 validation with errors.phone and errors.email), note ≤ 500.
+// privacyAccepted false → 400 privacy-consent-required. A filled "website" (honeypot) gets a normal-looking 201
+// and nothing is stored.
+
+// PublicBookingResponse (slotStart is shown in timeZone, the workshop's IANA zone)
+{ "number": 12, "status": "REQUESTED", "slotStart": "…", "timeZone": "Europe/Lisbon", "workshopName": "Oficina Azul",
+  "services": [ { "name": "Mudança de óleo", "durationMinutes": 60, "priceWithVatCents": 4920 } ],
+  "canCancel": true, "declineReason": null }
+```
+
+### Workshop endpoints (OWNER, FRONT_DESK; mechanics 403)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/bookings?from=&to=&status=` | List ordered by `slotStart`; `from`/`to` are dates, both inclusive; default today → today + 7; at most 124 days (else 400 `validation`, `errors.to`) |
+| GET | `/bookings/slots?from=&days=` | Same shape as the public slots, for moving a booking: future slots of the opening hours with a free place; lead time and horizon do not apply, no public rate limit |
+| GET | `/bookings/{id}` | `BookingResponse` |
+| POST | `/bookings/{id}/confirm` | `{ "version" }`; REQUESTED → CONFIRMED |
+| POST | `/bookings/{id}/decline` | `{ "reason", "version" }`; reason required (400 `decline-reason-required`, `errors.reason`) |
+| POST | `/bookings/{id}/move` | `{ "slotStart", "version" }`; to a slot listed by `/bookings/slots` (else 409 `slot-unavailable`), becomes CONFIRMED |
+| POST | `/bookings/{id}/no-show` | `{ "version" }`; CONFIRMED and the slot is in the past |
+| GET | `/bookings/pending-count` | `{ "count": 3 }` (dashboard tile) |
+| GET, PUT | `/booking/settings` | OWNER writes. `{ "slotMinutes": 30, "carsPerSlot": 2, "leadTimeHours": 24, "horizonDays": 30, "cancelUntilHours": 24, "openingHours": [ { "weekday": 1, "opens": "08:30", "closes": "12:30" } ], "closures": [ { "day": "2026-12-25", "reason": "Natal" } ], "version": 0 }`; the response also has `timeZone` (read-only, the workshop's IANA zone; staff screens show times and cut days in it) |
+
+```json
+// BookingResponse
+{ "id": "…", "number": 12, "status": "CONFIRMED", "slotStart": "…", "name": "Ana Silva", "phone": "…", "email": "…",
+  "plate": "AA00AA", "note": "…", "marketingConsent": false, "createdAt": "…",
+  "services": [ { "serviceId": "…", "name": "…", "durationMinutes": 60, "priceCents": 4000, "vatRate": 23 } ],
+  "vehicleId": "…", "workOrderId": null, "decidedByName": "Rita", "decidedAt": "…", "declineReason": null, "version": 1 }
+// vehicleId: once checked in, the vehicle chosen at check-in; before that, the workshop's vehicle with this plate,
+// when there is one (looked up when read)
+```
+
+Status moves: REQUESTED → CONFIRMED | DECLINED | CANCELLED; CONFIRMED → CHECKED_IN | CANCELLED | NO_SHOW.
+Moving keeps CONFIRMED. The customer may cancel REQUESTED or CONFIRMED until `cancelUntilHours` before the slot.
+Settings before the owner saves them: 30 min, 1 car, 24 h lead time, 30 days, cancel until 24 h, Monday–Friday
+09:00–13:00 and 14:00–18:00. Opening ranges need `opens < closes` and must not overlap on a day (400
+`invalid-opening-hours`). Limits: `carsPerSlot` 1–50, `leadTimeHours` and `cancelUntilHours` 0–720, `horizonDays`
+1–365; a closure day listed twice is kept once. Before the first save `GET` returns the defaults with `version` 0,
+and a `PUT` with `version` 0 creates the settings.
+
+### Check-in from a booking
+
+`POST /work-orders` accepts `"bookingId"`. The booking must be CONFIRMED (409 `booking-not-confirmed`); the vehicle is
+the one chosen at check-in. In one transaction the work order opens, each booked service still active becomes a
+catalogue LABOR line (inactive ones are skipped), and the booking becomes CHECKED_IN with `workOrderId`.
+
+| Status | `code` | When |
+|---|---|---|
+| 404 | `booking-not-found` | Not in the workshop, or unknown status token |
+| 409 | `slot-unavailable` | Slot not free or not offered |
+| 409 | `booking-not-confirmed` | Check-in from a booking that is not CONFIRMED |
+| 409 | `booking-cancel-too-late` | Customer cancel after the deadline |
+| 409 | `booking-status` | Move not allowed from the current status |
+| 400 | `invalid-opening-hours` | Overlapping or empty ranges |
+| 400 | `decline-reason-required` | Decline without a reason |
+| 404 | `service-not-found` | A booked service is not active or not listed online |
+
+### Migration V15
+
+Tables `booking_settings`, `opening_hours`, `booking_closure`, `booking`, `booking_service` (tenant_id with the V2
+default, RLS ENABLE + FORCE with `tenant_isolation`); unique `(tenant_id, number)` and `status_token_hash`; index
+`(tenant_id, slot_start)` where status in REQUESTED/CONFIRMED. Rollback: drop the five tables and delete version `'15'`.

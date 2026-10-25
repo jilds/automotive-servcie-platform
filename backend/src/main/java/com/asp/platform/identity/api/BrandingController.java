@@ -43,7 +43,7 @@ class BrandingController {
 
     @GetMapping("/api/v1/branding/{slug}")
     BrandingResponse bySlug(@PathVariable String slug) {
-        return BrandingResponse.of(branding.bySlug(slug));
+        return BrandingResponse.ofPublic(branding.bySlug(slug));
     }
 
     @GetMapping("/api/v1/branding/{slug}/logo")

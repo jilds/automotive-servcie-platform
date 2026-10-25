@@ -1,5 +1,6 @@
 package com.asp.platform.identity.infrastructure;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 import com.asp.platform.identity.domain.Slug;
+import com.asp.platform.identity.domain.SubscriptionStatus;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.TenantRepository;
 import com.asp.platform.identity.domain.WorkshopOverview;
@@ -43,6 +45,13 @@ class JpaTenantRepository implements TenantRepository {
     @Override
     public boolean existsBySlug(Slug slug) {
         return jpa.existsBySlug(slug.value());
+    }
+
+    @Override
+    public List<UUID> idsAllowingSignIn() {
+        return jpa.findIdsByStatusIn(Arrays.stream(SubscriptionStatus.values())
+                .filter(SubscriptionStatus::allowsSignIn)
+                .toList());
     }
 
     /// Three queries whatever the number of workshops: tenants, user counts per tenant, owners by creation time.

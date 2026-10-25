@@ -3,14 +3,17 @@ package com.asp.platform.identity.application;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.identity.PublicWorkshop;
 import com.asp.platform.identity.TeamMember;
 import com.asp.platform.identity.WorkshopDirectory;
+import com.asp.platform.identity.domain.Slug;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.TenantNotFoundException;
 import com.asp.platform.identity.domain.TenantRepository;
@@ -26,10 +29,12 @@ class WorkshopDirectoryService implements WorkshopDirectory {
 
     private final TenantRepository tenants;
     private final UserRepository users;
+    private final PublicWorkshopCache publicWorkshops;
 
-    WorkshopDirectoryService(TenantRepository tenants, UserRepository users) {
+    WorkshopDirectoryService(TenantRepository tenants, UserRepository users, PublicWorkshopCache publicWorkshops) {
         this.tenants = tenants;
         this.users = users;
+        this.publicWorkshops = publicWorkshops;
     }
 
     @Override
@@ -72,6 +77,33 @@ class WorkshopDirectoryService implements WorkshopDirectory {
                 .filter(user -> user.tenantId().equals(tenantId))
                 .filter(WorkshopDirectoryService::isActiveMechanic)
                 .isPresent();
+    }
+
+    /// Called on every public page request, so the answer is cached ([PublicWorkshopCache], misses too) and a hit
+    /// opens no transaction and takes no connection. A miss reads the tenant once by its unique slug.
+    @Override
+    public Optional<PublicWorkshop> publicWorkshop(String slug) {
+        if (!Slug.isValid(slug)) {
+            return Optional.empty();
+        }
+        return publicWorkshops.get(slug, this::loadPublicWorkshop);
+    }
+
+    private Optional<PublicWorkshop> loadPublicWorkshop(String slug) {
+        return tenants.findBySlug(new Slug(slug))
+                .filter(Tenant::allowsSignIn)
+                .map(WorkshopDirectoryService::publicWorkshop);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> openWorkshops() {
+        return tenants.idsAllowingSignIn();
+    }
+
+    private static PublicWorkshop publicWorkshop(Tenant tenant) {
+        return new PublicWorkshop(tenant.id(), tenant.shownName(), tenant.settings().zone(),
+                tenant.settings().country(), tenant.addOns().booking(), tenant.addOns().shop());
     }
 
     private Tenant tenant(UUID tenantId) {
