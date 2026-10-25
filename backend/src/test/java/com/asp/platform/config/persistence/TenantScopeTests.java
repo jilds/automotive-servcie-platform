@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.asp.platform.identity.TokenClaims;
@@ -119,6 +120,21 @@ class TenantScopeTests {
         });
         TenantScope.runAs(SCOPE_TENANT, () -> transaction.executeWithoutResult(
                 _ -> assertThat(TenantScope.current()).contains(SCOPE_TENANT)));
+    }
+
+    @Test
+    void should_refuse_inside_a_synchronized_scope_without_a_transaction() {
+        // SUPPORTS without an outer transaction opens none, but the connection taken in it is held until the scope
+        // ends: a workshop scope opened inside would reuse that connection, bound to the outer workshop.
+        TransactionTemplate supports = new TransactionTemplate(new NoOpTransactionManager());
+        supports.setPropagationBehavior(TransactionDefinition.PROPAGATION_SUPPORTS);
+
+        supports.executeWithoutResult(_ -> {
+            assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+            assertThat(TransactionSynchronizationManager.isSynchronizationActive()).isTrue();
+            assertThatIllegalStateException().isThrownBy(() -> TenantScope.runAs(SCOPE_TENANT, () -> { }));
+            assertThatIllegalStateException().isThrownBy(() -> TenantScope.callAs(SCOPE_TENANT, () -> 1));
+        });
     }
 
     private static void signIn(Jwt jwt) {

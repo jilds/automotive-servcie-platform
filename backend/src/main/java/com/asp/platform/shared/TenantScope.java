@@ -48,8 +48,11 @@ public final class TenantScope {
         return TENANT.isBound() ? Optional.of(TENANT.get()) : Optional.empty();
     }
 
+    /// Also refuses while transaction synchronization is active: inside a `SUPPORTS` or `NOT_SUPPORTED` scope no
+    /// transaction is open, but a connection taken there is held and reused until the scope ends.
     private static void requireNoTransaction() {
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()
+                || TransactionSynchronizationManager.isSynchronizationActive()) {
             throw new IllegalStateException("TenantScope must be opened outside a transaction: the transaction's "
                     + "connection is already bound to another workshop (or none)");
         }
