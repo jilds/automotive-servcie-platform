@@ -125,7 +125,9 @@ class BrandingApiTests extends ApiTestSupport {
         Map<String, Object> fields = JsonPath.read(body, "$");
         // `version` is the optimistic-locking counter the theme form sends back; it reveals nothing.
         assertThat(fields).containsOnlyKeys("slug", "name", "displayName", "primaryColor", "primaryTextColor",
-                "accentColor", "logoUrl", "version");
+                "accentColor", "logoUrl", "privacyUrl", "version");
+        // The platform's privacy policy (app.site.privacy-url), the same for every workshop.
+        assertThat((String) JsonPath.read(body, "$.privacyUrl")).isEqualTo("https://asp.test/privacidade");
         assertThat(body).doesNotContain("tenant").doesNotContain("@");
 
         mvc.perform(get("/api/v1/branding/no-such-workshop"))

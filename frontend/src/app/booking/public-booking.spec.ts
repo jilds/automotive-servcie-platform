@@ -33,11 +33,11 @@ describe('PublicBooking', () => {
     document.documentElement.removeAttribute('data-tenant-theme');
   });
 
-  function open() {
+  function open(privacyUrl: string | null = null) {
     const fixture = TestBed.createComponent(PublicBooking);
     fixture.componentRef.setInput('slug', 'oficina-azul');
     fixture.detectChanges();
-    http.expectOne('/api/v1/branding/oficina-azul').flush({ slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: null, primaryTextColor: null, accentColor: null, logoUrl: null, version: 1 });
+    http.expectOne('/api/v1/branding/oficina-azul').flush({ slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: null, primaryTextColor: null, accentColor: null, logoUrl: null, privacyUrl, version: 1 });
     http.expectOne(`${BASE}/services`).flush(SERVICES);
     fixture.detectChanges();
     return fixture;
@@ -128,6 +128,20 @@ describe('PublicBooking', () => {
     expect(trap.getAttribute('name')).toBe('bk-hp-x9');
     expect(trap.closest('[aria-hidden="true"]')).not.toBeNull();
     expect(f.nativeElement.querySelector('[name="website"], #bk-website')).toBeNull();
+  });
+
+  it('links the platform privacy policy in a new tab only when it is configured', () => {
+    const f = open('https://asp.example/privacidade');
+    toContactStep(f);
+    const link = f.nativeElement.querySelector('#bk-platform-privacy') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('https://asp.example/privacidade');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+    expect(link.textContent!.trim()).toBe('Platform privacy policy');
+
+    const without = open();
+    toContactStep(without);
+    expect(without.nativeElement.querySelector('#bk-platform-privacy')).toBeNull();
   });
 
   it('marks the privacy checkbox when the server asks for consent', () => {

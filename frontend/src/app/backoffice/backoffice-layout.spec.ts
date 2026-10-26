@@ -8,7 +8,7 @@ import { BackofficeLayout } from './backoffice-layout';
 
 const branding = (booking: boolean): Branding => ({
   slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: null, primaryTextColor: null, accentColor: null,
-  logoUrl: null, addOns: { booking, shop: false }, version: 1,
+  logoUrl: null, privacyUrl: null, addOns: { booking, shop: false }, version: 1,
 });
 
 describe('BackofficeLayout', () => {

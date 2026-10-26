@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -15,7 +16,7 @@ import com.github.benmanes.caffeine.cache.Ticker;
 import tools.jackson.databind.json.JsonMapper;
 
 /// Wiring of `/api/v1/public-site/**`, the landing site's API (step 2c): the per-address limit on demo requests and
-/// the CORS rule that lets only `app.public-site.origin` post from the browser.
+/// the CORS rule that lets only `app.public-site.origin` post from the browser and read `Retry-After`.
 @Configuration(proxyBeanMethods = false)
 public class PublicSiteWebConfig {
 
@@ -38,6 +39,8 @@ public class PublicSiteWebConfig {
             cors.setAllowedOrigins(List.of(origin));
             cors.setAllowedMethods(List.of("POST"));
             cors.setAllowedHeaders(List.of("Content-Type"));
+            // The site reads Retry-After on a 429 to say when to try again.
+            cors.setExposedHeaders(List.of(HttpHeaders.RETRY_AFTER));
             cors.setAllowCredentials(false);
             cors.setMaxAge(Duration.ofHours(1));
             source.registerCorsConfiguration("/api/v1/public-site/**", cors);

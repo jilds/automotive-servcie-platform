@@ -10,7 +10,7 @@ const BRANDING: Branding = {
   primaryColor: '#0b3d91',
   primaryTextColor: '#ffffff',
   accentColor: '#ffcc00',
-  logoUrl: null,
+  logoUrl: null, privacyUrl: null,
   version: 0,
 };
 

@@ -67,6 +67,10 @@ app:
     leads-total:
       limit: ${ASP_SITE_LEADS_PER_HOUR:50}
       window: 1h
+  # The landing site's privacy policy (https://<domain>/privacidade), linked from the public booking page; unset,
+  # no link. Absolute https only (http only for localhost); anything else stops the start (identity SiteProperties).
+  site:
+    privacy-url: ${ASP_SITE_PRIVACY_URL:}
   # After subscription_until a workshop keeps working for these days, then it is locked out like a suspended one.
   subscription:
     grace-days: ${ASP_SUBSCRIPTION_GRACE_DAYS:7}

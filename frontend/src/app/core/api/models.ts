@@ -62,6 +62,8 @@ export interface Branding {
   primaryTextColor: string | null;
   accentColor: string | null;
   logoUrl: string | null;
+  /** The platform's privacy policy on the landing site (`app.site.privacy-url`), linked from the public booking page; null when unset. */
+  privacyUrl: string | null;
   /** The add-ons switched on; only for the signed-in workshop and the platform admin, not on the public `/branding/{slug}`. */
   addOns?: AddOns;
   /** Workshop version (optimistic locking); sent back with the next theme change. */

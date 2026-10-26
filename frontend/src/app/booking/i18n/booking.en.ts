@@ -48,6 +48,7 @@ export const bookingEn = {
   'booking.contact.privacy': 'I have read the privacy notice and agree that the workshop uses these details to handle my booking.',
   'booking.contact.privacyRequired': 'Accept the privacy notice to send the booking.',
   'booking.contact.privacyShow': 'Read the privacy notice',
+  'booking.contact.platformPrivacy': 'Platform privacy policy',
   'booking.contact.privacyNotice':
     'The workshop {workshop} uses your name, contact details, plate and note only to handle this booking and the service of your car. They are not passed on to third parties for marketing. You can ask the workshop at any time to see, correct or delete them.',
   'booking.contact.marketing': 'I would like news and offers from the workshop (optional).',

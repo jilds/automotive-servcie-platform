@@ -24,6 +24,9 @@ app:
     leads-total:
       limit: 1000
       window: 1h
+  # Returned by the public branding (BrandingApiTests).
+  site:
+    privacy-url: https://asp.test/privacidade
   # Small limits so PublicWorkshopApiTests reaches them quickly; every test uses its own workshops (own slugs) and
   # its own client address.
   public:

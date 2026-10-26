@@ -49,6 +49,7 @@ export const bookingPtBR: PortugueseDictionary<BookingKey> = {
   'booking.contact.privacy': 'Li o aviso de privacidade e concordo que a oficina use estes dados para tratar o meu agendamento.',
   'booking.contact.privacyRequired': 'Aceite o aviso de privacidade para enviar o agendamento.',
   'booking.contact.privacyShow': 'Ler o aviso de privacidade',
+  'booking.contact.platformPrivacy': 'Política de privacidade da plataforma',
   'booking.contact.privacyNotice':
     'A oficina {workshop} usa seu nome, contatos, placa e observação apenas para tratar este agendamento e o serviço do seu veículo. Os dados não são repassados a terceiros para marketing. Você pode pedir à oficina, a qualquer momento, para consultá-los, corrigi-los ou apagá-los.',
   'booking.contact.marketing': 'Quero receber novidades e promoções da oficina (opcional).',

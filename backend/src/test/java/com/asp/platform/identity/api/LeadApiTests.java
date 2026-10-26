@@ -147,6 +147,24 @@ class LeadApiTests extends ApiTestSupport {
     }
 
     @Test
+    void should_let_the_landing_site_read_retry_after_on_a_refused_request() throws Exception {
+        String address = randomAddress();
+        for (int i = 0; i < 3; i++) {
+            submit(address, lead("Oficina Espera " + i, "\"912345678\"", "null", ""), null, "https://asp.test")
+                    .andExpect(status().isCreated())
+                    .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS,
+                            containsString(HttpHeaders.RETRY_AFTER)));
+        }
+
+        submit(address, lead("Oficina Espera 4", "\"912345678\"", "null", ""), null, "https://asp.test")
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists(HttpHeaders.RETRY_AFTER))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://asp.test"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS,
+                        containsString(HttpHeaders.RETRY_AFTER)));
+    }
+
+    @Test
     void should_not_count_a_browser_s_preflights() throws Exception {
         String address = randomAddress();
         for (int i = 0; i < 5; i++) {
