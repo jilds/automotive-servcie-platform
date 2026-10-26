@@ -143,6 +143,7 @@ cd frontend && npm start            # hot reload on :4200 (proxy to :8080)
 - `init.sql` runs only on a new volume. After changing it, `docker compose down -v`.
 - The compose file uses `POSTGRES_DB: asp`, so `init.sql` must use `alter database`, not `create database`.
 - First start: set `ASP_BOOTSTRAP_ADMIN_EMAIL` / `ASP_BOOTSTRAP_ADMIN_PASSWORD` to create the first platform admin, then register a workshop in `/admin` (see README) **(updated 2026-10-22)**.
+- **(updated 2026-10-26)** Release: `docker build -t asp .` (no tests inside; CI runs `verify` first), `deploy/smoke.sh` for the production setup on a workstation (ports 18080/18443/18025, throwaway secrets), `docs/release/runbook.md` for the server. Shell scripts and `mvnw` stay LF (`.gitattributes`); the `deploy/.env` template is `deploy/env.example`.
 
 ## 10. Definition of done for a feature
 
@@ -174,7 +175,7 @@ Every feature must meet all of these before it is reported as done:
 ## 12. Open items and known gaps
 
 - Server validation messages (`validation`, `bad-request`) are translated generically; field-level messages from the server are not, so the form shows its own translated hints for the address.
-- Mechanic offline mode, CI pipeline and hosting are not started.
+- Mechanic offline mode is not started. **(updated 2026-10-26)** CI (`.github/workflows/ci.yml`: verify, Trivy scans, GHCR push on `v*` tags), the image (`Dockerfile`) and the one-server kit (`deploy/`: Caddy + app + PostgreSQL, backups to S3-compatible storage, `smoke.sh`) exist; no server is chosen yet (`docs/release/checklist.md`).
 - Brazilian fiscal features (NFe, NFS-e, Pix) are not started.
 - **(updated 2026-10-23)** Review leftovers (L9, bundle budget back to 500 kB, is done): tenant-scoped composite foreign keys (review L5); OnPush on the remaining older components (L8, partly done); ArchUnit support for class file 71 (I1, upstream).
 - **(updated 2026-10-26)** Billing is not built (ADR 0003); activation links are mailed when mail is on (module `notification`); `subscription_until` is enforced (see §4).

@@ -1,0 +1,18 @@
+# Only what the build needs goes into the build context.
+**/target/
+**/node_modules/
+**/dist/
+**/.angular/
+.git/
+.github/
+.idea/
+*.iml
+**/.env*
+**/*.pem
+**/*.key
+deploy/
+docs/
+compose/
+compose.yaml
+Dockerfile
+.dockerignore

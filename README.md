@@ -150,6 +150,14 @@ Tokens last 12 h (`app.identity.token.ttl`); role, active state and the workshop
 
 In development, `/actuator/health` (with `/liveness` and `/readiness`) and `/actuator/info` (version, build time, git commit) are open on the app port; OpenAPI docs are at `/swagger-ui.html`.
 
+## Deployment
+
+- **Image:** `Dockerfile` builds one image (Angular app inside the Spring Boot jar, Spring Boot layers) on `eclipse-temurin:26-jre-noble`, running as a non-root user with the `prod` profile and a healthcheck on the management port. `docker build -t asp .` (tests are not run in the image build; CI runs them first).
+- **CI** (`.github/workflows/ci.yml`): `./mvnw clean verify` on every push and pull request, a Trivy scan of the dependencies and of the image (HIGH/CRITICAL with a fix fail), and for a `v*` tag a push to `ghcr.io/jilds/asp:<version>`. Dependabot (`.github/dependabot.yml`) updates Maven, npm, the actions and the base images weekly.
+- **Server:** `deploy/compose.prod.yaml` runs Caddy (HTTPS from Let's Encrypt, the only published ports), the app and PostgreSQL 18.6; settings in `deploy/.env` from `deploy/env.example`. `deploy/backup.sh` makes the nightly dump and copies it to S3-compatible storage.
+- **Smoke run:** `deploy/smoke.sh` starts the production setup locally with throwaway secrets (`https://app.localhost:18443`) and checks it end to end.
+- How to deploy, upgrade, back up, restore and rotate secrets: [docs/release/runbook.md](docs/release/runbook.md). What is still open before real customers: [docs/release/checklist.md](docs/release/checklist.md).
+
 ## API
 
 Errors are RFC 9457 problem details with a stable `type` and `code` (for example `duplicate-plate`), which the UI translates; validation errors list the failing fields under `errors` (nested fields as `address.postalCode`).

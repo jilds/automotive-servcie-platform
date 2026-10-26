@@ -1,6 +1,7 @@
 # 02: Release readiness
 
-Status: **in progress**. 2a done (`b36bd7e`), 2b done (`f246cff`), 2c done (2026-10-26). Four commits: 2a–2d.
+Status: **in progress**. 2a done (`b36bd7e`), 2b done (`f246cff`), 2c done (`f313192`), 2d built (2026-10-26).
+Four commits: 2a–2d.
 Migration V16 (lead).
 Branch `feature/release-readiness`.
 
@@ -158,17 +159,61 @@ As built (2026-10-26):
 
 ## 2d `ci: add the pipeline, container image and deployment kit`
 
-- `Dockerfile`: a multi-stage build (`./mvnw -B clean verify`), then a JRE 26 runtime image running as a non-root user,
-  with a healthcheck.
+Decisions (2026-10-26):
+- Registry: GitHub Container Registry (`ghcr.io/jilds/…`), pushed by CI with its own token, only on `v*` tags.
+- Off-site backups: any S3-compatible storage (AWS S3, Backblaze B2, Hetzner, Cloudflare R2), uploaded after each
+  nightly dump. Bucket, endpoint and keys come from `.env`.
+- The Dockerfile builds with `-DskipTests`: the tests need Docker (Testcontainers), which a `docker build` does not
+  have. CI runs `./mvnw clean verify` first and builds the image only after it passes.
+- Base images: `eclipse-temurin:26-jdk-noble` to build, `eclipse-temurin:26-jre-noble` to run. The runtime image has
+  no `curl`, so the healthcheck uses bash's `/dev/tcp` against the management port.
+- CVE scan with Trivy: the repository (npm lock file and Maven poms) and the built image (which includes the jar's
+  libraries, so `micrometer-registry-prometheus` is covered). HIGH and CRITICAL with a fix fail the job.
+- GitHub Actions pinned by commit SHA; Dependabot keeps them, Maven, npm and the base images current.
+- The landing site (step 03) does not exist yet: Caddy serves `deploy/site/` (a placeholder page) on the main domain,
+  and the CI site build comes with step 03.
+- The smoke run uses `deploy/compose.smoke.yaml` on top of the production file: Caddy with its internal CA on
+  `localhost`, Mailpit for mail, a throwaway volume.
+
+As built (2026-10-26):
+- `deploy/smoke.sh` passes 14 checks: HTTPS through Caddy, HSTS and CSP, the app healthy, app and database publish no
+  ports, Caddy cannot reach the database (and the app can), API docs off, the bootstrap admin signs in, a demo
+  request from the site's origin and its mail, the 6th request refused although `X-Forwarded-For` was forged on each,
+  and a readable backup. Ports 18080/18443/18025 (Windows refused 8080).
+- `.gitattributes` keeps `mvnw` and the shell scripts LF: with `core.autocrlf` the wrapper had CRLF and did not run
+  in Linux. The Dockerfile also strips CR from `mvnw`.
+- The app is on three networks: `proxy` (from Caddy) and `data` (to the database), both internal, and `outbound`
+  (SMTP). The env template is `deploy/env.example` (`.env*` is git-ignored).
+- Review fixes (security-reviewer, 2026-10-26, APPROVE with 5 WARN):
+  - Dumps go to `/var/backups/asp` (outside the checkout), and `.gitignore` ignores `*.dump` and `deploy/backups/`.
+  - A records only until the edge network has IPv6, or every IPv6 visitor would share one rate-limit bucket.
+  - Images pinned by digest (Trivy 0.67.2 is from 2025-10-10). The S3 upload is a compose service under the
+    `backup` profile, so Dependabot updates its image and the keys never appear in arguments.
+  - `init.sh` reads the passwords with `\getenv` (not in argv), does not log a failed `create role`, and allows
+    `connect` only to the two roles.
+  - Runbook: upgrade by checking out the release tag, rotate passwords with `\password`, take a dump before a restore.
+  - Hardening: `no-new-privileges` everywhere; the app and Caddy without capabilities (Caddy keeps
+    `NET_BIND_SERVICE`), the app on a read-only file system; app files owned by root in the image; log rotation;
+    Caddy's fixed address outside Docker's allocation range; Caddy and the database on separate networks.
+  - CI: the push moved to its own `release` job (environment `release`, after build, dependency scan and image scan),
+    a tag is never re-pushed, and a weekly run re-scans `main`.
+  - The rest is in `docs/release/checklist.md` (provenance, encrypted backups, egress limit, Caddy limits, Docker
+    secrets).
+
+As planned:
+- `Dockerfile`: a multi-stage build, then a JRE 26 runtime image with the Spring Boot layers, running as a non-root
+  user, with a healthcheck.
 - `deploy/compose.prod.yaml`:
   - app + PostgreSQL 18.6 + Caddy (TLS for `app.<domain>`, the static site on `<domain>`)
   - `.env.example` with no secrets
-- `deploy/backup.sh`: nightly `pg_dump` with retention; restore steps documented.
+  - the database roles `asp_owner` and `asp_app` created on the first start with passwords from `.env`
+    (`deploy/postgres/init.sh`)
+- `deploy/backup.sh`: nightly `pg_dump` (host cron) with retention, then an upload to S3-compatible storage; restore
+  steps documented.
 - `.github/workflows/ci.yml`:
   - build and tests (Testcontainers on the runner)
-  - site build
   - dependency and CVE scan
-  - image build, pushed only on tags to a registry the user picks
+  - image build and scan on every run, pushed to GHCR only on `v*` tags
 - `.github/dependabot.yml`.
 - `docs/release/runbook.md`: first deploy, bootstrap admin, migrations, backup and restore, JWT secret rotation.
 - `docs/release/checklist.md`: every placeholder (domain, company name, NIF, address, hosting, registry, SMTP,
