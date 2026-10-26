@@ -1,4 +1,4 @@
-package com.asp.platform.booking.api;
+package com.asp.platform.shared;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -13,13 +13,14 @@ import jakarta.validation.Payload;
 
 import org.jspecify.annotations.Nullable;
 
-/// Class-level check that a request gives a phone or an e-mail (or both), so the workshop can reach the customer.
+/// Class-level check that a request gives a phone or an e-mail (or both), so the person can be reached (public
+/// booking, demo requests).
 /// Reported on both fields, `errors.phone` and `errors.email`, so the form can mark either.
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = PhoneOrEmail.Validator.class)
-@interface PhoneOrEmail {
+public @interface PhoneOrEmail {
 
     String message() default "Give a phone or an e-mail";
 
@@ -35,7 +36,7 @@ import org.jspecify.annotations.Nullable;
         @Nullable String email();
     }
 
-    class Validator implements ConstraintValidator<PhoneOrEmail, Subject> {
+    final class Validator implements ConstraintValidator<PhoneOrEmail, Subject> {
 
         @Override
         public boolean isValid(@Nullable Subject value, ConstraintValidatorContext context) {

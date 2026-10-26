@@ -1,0 +1,16 @@
+[(#{lead-received.body})]
+
+[(#{lead-received.name})]: [(${name})]
+[(#{lead-received.workshop})]: [(${workshop})]
+[# th:if="${phone != ''}"][(#{lead-received.phone})]: [(${phone})]
+[/][# th:if="${email != ''}"][(#{lead-received.email})]: [(${email})]
+[/][# th:if="${district != ''}"][(#{lead-received.district})]: [(${district})]
+[/][(#{lead-received.vehicleType})]: [(#{${'lead.type.' + vehicleType}})]
+[# th:if="${hasMessage}"]
+[(#{lead-received.message})]
+[/]
+[(#{lead-received.action})]:
+[(${link})]
+
+--
+[(#{mail.automatic})]

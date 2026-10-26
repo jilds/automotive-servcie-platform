@@ -15,6 +15,7 @@ export const identityCorePtPT: Record<IdentityCoreKey, string> = {
   'error.activation-expired': 'Esta ligação de ativação expirou. Peça uma nova.',
   'error.already-activated': 'Este utilizador já ativou a conta.',
   'error.slug-taken': 'Outra oficina já usa este endereço.',
+  'error.lead-not-found': 'Este pedido de proposta já não existe.',
   'error.logo-too-large': 'O logótipo pode ter no máximo 512 KB.',
   'error.logo-unsupported': 'O logótipo tem de ser uma imagem PNG, SVG ou WEBP.',
   'error.logo-unsafe': 'Este SVG tem scripts, ligações ou outro conteúdo ativo. Exporte-o como desenho simples ou use PNG.',

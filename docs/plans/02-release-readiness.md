@@ -1,6 +1,7 @@
 # 02: Release readiness
 
-Status: **in progress**. 2a done (`b36bd7e`), 2b built (2026-10-26). Four commits: 2a–2d. Migration V16 (lead).
+Status: **in progress**. 2a done (`b36bd7e`), 2b done (`f246cff`), 2c done (2026-10-26). Four commits: 2a–2d.
+Migration V16 (lead).
 Branch `feature/release-readiness`.
 
 ## Decisions (2026-10-26)
@@ -103,8 +104,45 @@ As built (2026-10-26):
 
 ## 2c `feat(identity): add demo requests from the landing page`
 
-- V16 `lead`, a platform-level table filtered in code (no tenant). Add it to the RLS catalogue exceptions with the
-  reason. Fields:
+As built (2026-10-26):
+- `lead` has no `tenant_id`, so `RowLevelSecurityCatalogueTests` needs no exception: it only checks tables with
+  that column. Like `platform_admin`, it is filtered in code.
+- Its own security chain `/api/v1/public-site/**` (`@Order(0)`): anonymous, no token read, CORS only for
+  `ASP_SITE_ORIGIN`, so the preflight answers 403 for any other origin.
+- `PublicSiteLeadLimiter` allows 5 an hour per address (`app.public-site.leads`). Only `POST` counts, so the CORS
+  preflight does not use the budget.
+- No links in the name or workshop name, as in 2b. `shared.PhoneOrEmail` moved from `booking.api` so leads can
+  use it too.
+- The lead mail goes to every active platform admin (`identity.PlatformTeam`), in pt-PT, with a link to
+  `/admin/leads`.
+- `/admin/leads`: a status filter (default "new"), a status select per row (with the version; on a stale version
+  the list reloads and says why), and encoded tel/mailto links. The console has a nav: Workshops, Demo requests.
+- District is optional free text (≤ 60). The landing site (step 03) offers the Portuguese districts and the
+  autonomous regions.
+- Review fixes (security-reviewer and dba, 2026-10-26):
+  - A total cap of 50 an hour from all addresses (`app.public-site.leads-total`, `ASP_SITE_LEADS_PER_HOUR`), so
+    many addresses cannot fill the table or flood the admins with mails. A request refused for its address does not
+    count towards it.
+  - `app.public-site.origin` must be scheme, host and port: `*` or a path stops the start.
+  - The public-site chain opens only `POST /leads` and preflights; anything else under the prefix answers 403.
+  - Names and district: one line, no links, no control characters or `<` `>` (the workshop name is in the mail
+    subject). The message stays out of the mail, which only says there is one.
+  - The privacy check runs before the honeypot, so a bot cannot tell which field is the trap.
+  - V16: blank names, phones and e-mails fail the checks too, `status_changed_at >= created_at`, and `asp_app` may
+    update only `status`, `status_changed_at` and `version`.
+- Browser check (2026-10-26, fresh database, mail to Mailpit): requests sent to the API (the landing site is step
+  03), the admin mail without the message, `/admin/leads` in pt-PT and en (filter, status change, plain-text
+  message). It found the status filter showing "All" while it listed only new requests (`[value]` on a select whose
+  options did not exist yet); fixed with `[selected]` and a unit test. **Still owed:** the 390 px walk, because the
+  browser window could not be resized; do it with 2d's smoke run.
+- Backlog from the reviews:
+  - Retention for lead personal data (for example delete CLOSED leads after 12 months), with the GDPR tools.
+  - Do not send the bearer token to `/api/v1/public-site/` (`auth.interceptor`), if the app's own pages ever post
+    the form.
+  - `id` as a tie-breaker in the list order, together with paging.
+
+- V16 `lead`, a platform-level table filtered in code (no tenant), so no RLS catalogue exception (see above).
+  Fields:
   - name, workshop name
   - phone and/or e-mail (at least one)
   - district

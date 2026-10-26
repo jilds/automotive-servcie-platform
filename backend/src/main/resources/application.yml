@@ -56,6 +56,17 @@ app:
   mail:
     enabled: ${ASP_MAIL_ENABLED:false}
     from: ${ASP_MAIL_FROM:}
+  # The landing site on the main domain (step 03): its origin may post demo requests to /api/v1/public-site/leads
+  # (CORS); unset, only this app's own pages can. Each client address may send 5 requests an hour, all addresses
+  # together 50.
+  public-site:
+    origin: ${ASP_SITE_ORIGIN:}
+    leads:
+      limit: 5
+      window: 1h
+    leads-total:
+      limit: ${ASP_SITE_LEADS_PER_HOUR:50}
+      window: 1h
   # After subscription_until a workshop keeps working for these days, then it is locked out like a suspended one.
   subscription:
     grace-days: ${ASP_SUBSCRIPTION_GRACE_DAYS:7}

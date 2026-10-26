@@ -15,7 +15,10 @@ public enum MailTemplate {
     /// Model: `name`, `workshop`, `number`, `when` (the new slot).
     BOOKING_MOVED("booking-moved", "workshop", "number"),
     /// Model: `name`, `workshop`, `number`, `when`, `reason`.
-    BOOKING_DECLINED("booking-declined", "workshop", "number");
+    BOOKING_DECLINED("booking-declined", "workshop", "number"),
+    /// To each platform admin: a demo request from the landing site. Model: `name`, `workshop`, `phone`, `email`,
+    /// `district`, `vehicleType` (`CAR`, `MOTORCYCLE`, `BOTH`), `message` (empty strings when not given), `link`.
+    LEAD_RECEIVED("lead-received", "workshop");
 
     private final String file;
     private final List<String> subjectArguments;

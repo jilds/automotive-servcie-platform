@@ -15,6 +15,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.asp.platform.booking.application.BookingRequestCommand;
 import com.asp.platform.booking.domain.BookingContact;
+import com.asp.platform.shared.PhoneOrEmail;
 
 /// `POST /public/{slug}/booking/bookings`: 1 to 10 services, a slot, the contact (at least a phone or an e-mail),
 /// the plate (normalised like vehicles), an optional note of up to 500 characters, the consents and the hidden

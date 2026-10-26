@@ -19,6 +19,7 @@ On the board, cards move by drag and drop (mouse or touch, Angular CDK) or with 
   - **Add-ons and public workshop pages (foundation):** the platform admin switches **online booking** and the **online shop** on per workshop (admin console → workshop → Add-ons; badges in the list), independent of the plan. Public pages under `/api/v1/public/{slug}/…` need no sign-in: the slug picks the workshop and row-level security still applies; unknown, suspended or cancelled workshops and switched-off add-ons answer 404; each address may send 10 writes an hour and 120 reads a minute per workshop (429 with `Retry-After`). Online booking uses them (below); the shop comes next. See [ADR 0004](docs/adr/0004-public-workshop-pages.md).
   - **Online booking (add-on `booking`, backend):** customers pick services listed online and a free **drop-off slot** on the workshop's public page and get a private status link (also by e-mail when they leave an address), where they see the status and may cancel until the workshop's deadline. Slots come from the opening hours per weekday (several ranges, e.g. a lunch break) in the workshop's time zone, cut into 15, 30 or 60 minutes, with a number of cars per slot, closures, a lead time and a horizon; defaults until the owner saves them: 30 min, 1 car, 24 h, 30 days, cancel until 24 h, Monday–Friday 09:00–13:00 and 14:00–18:00. Two requests for the last place give one booking. The front desk confirms, declines (with a reason the customer sees), moves to another free slot or marks a no-show, and checks the car in from a confirmed booking: the booked services still offered become catalogue lines on the new work order, in one step. Mechanics never see bookings. Hidden-field spam is answered like a success and stored nowhere; the privacy notice must be accepted.
   - **E-mail (module `notification`):** when `ASP_MAIL_ENABLED=true`, ASP mails activation links (a new workshop's first owner, invited team members, links sent again) and tells a customer who left an e-mail address that their booking was received (with the status link), confirmed, moved or declined (with the reason). Mails are plain text with an HTML version, in Portuguese (Portugal), English or Portuguese (Brazil): the booking page's language for the first booking mail, else the workshop country's. They go out after the change is saved, off the request; a mail that fails is logged (template only) and never undoes the change. Off by default: then the links stay on screen as before. In development, Mailpit from `compose.yaml` catches every mail on http://localhost:8025.
+  - **Demo requests (step 2c):** the landing site's "Pedir proposta" form posts to `/api/v1/public-site/leads` (anonymous; name, workshop, phone and/or e-mail, district, cars / motorcycles / both, message, consents; hidden-field spam stored nowhere; 5 an hour per address, 50 an hour in all; CORS only from `ASP_SITE_ORIGIN`). The platform admins get a mail (when mail is on; the message itself stays in the console) and work through them in the console under **Demo requests** (`/admin/leads`): new, contacted, closed.
   - Compact language switcher (PT / EN / BR) in the phone top bar; full-height sidebar on long pages; "ASP - Automotive Service Platform" back as the sign-in title.
 
 Mechanics never get customer personal data (name, phone, e-mail, NIF) or prices.
@@ -129,6 +130,8 @@ The UI is in Portuguese (Portugal) by default, with English and Portuguese (Braz
 | `ASP_MAIL_HOST` / `ASP_MAIL_PORT` | `localhost` / `1025` (Mailpit) in dev, port `587` in prod; any SMTP server |
 | `ASP_MAIL_USERNAME` / `ASP_MAIL_PASSWORD` | unset; SMTP login (prod) |
 | `ASP_MAIL_SMTP_AUTH` / `ASP_MAIL_STARTTLS_REQUIRED` | `true` / `true` (prod) |
+| `ASP_SITE_ORIGIN` | unset; the landing site's origin (`https://asp.example`), the only one allowed to post demo requests from the browser (CORS); scheme, host and port only (`*` or a path stops the start) |
+| `ASP_SITE_LEADS_PER_HOUR` | `50`; demo requests accepted per hour from all addresses together (each address: 5) |
 
 ### Production profile
 
@@ -176,6 +179,8 @@ Full contract: [`docs/api/release-2.md`](docs/api/release-2.md) and [`docs/api/r
 | POST | `/api/v1/public/{slug}/booking/bookings` (201 with number and status token; 409 `slot-unavailable`) | anyone (add-on `booking`) |
 | GET, POST | `/api/v1/public/{slug}/booking/bookings/{token}` (with the workshop's `timeZone`), `…/{token}/cancel` (409 `booking-cancel-too-late`) | anyone with the status link |
 | POST | `/api/v1/admin/workshops/{id}/owner-activation-link` | Platform admin |
+| POST | `/api/v1/public-site/leads` (demo request from the landing site; CORS from `ASP_SITE_ORIGIN` only, 5 an hour per address, 50 in all) | anyone |
+| GET | `/api/v1/admin/leads` (optional `status`: NEW, CONTACTED or CLOSED); PUT `/api/v1/admin/leads/{id}/status` (version) | Platform admin |
 | GET, POST | `/api/v1/customers`, `/api/v1/customers/{id}`, `/api/v1/customers/{id}/vehicles` | Owner, Front desk |
 | PUT | `/api/v1/customers/{id}` (version) | Owner, Front desk |
 | POST | `/api/v1/vehicles` | Owner, Front desk |

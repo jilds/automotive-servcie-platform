@@ -13,7 +13,7 @@ import com.asp.platform.ApiTestSupport;
 class SpaForwardingTests extends ApiTestSupport {
 
     @ParameterizedTest
-    @ValueSource(strings = {"/login", "/activate", "/w/oficina-azul", "/admin", "/admin/workshops/1", "/board",
+    @ValueSource(strings = {"/login", "/activate", "/w/oficina-azul", "/admin", "/admin/workshops/1", "/admin/leads", "/board",
             "/check-in", "/customers", "/customers/1", "/vehicles/1", "/work-orders/1", "/backoffice",
             "/backoffice/team", "/stock", "/stock/purchase-orders", "/backoffice/services", "/backoffice/settings",
             "/w/oficina-azul/book", "/w/oficina-azul/booking/abc_DEF-123", "/bookings", "/backoffice/booking"})

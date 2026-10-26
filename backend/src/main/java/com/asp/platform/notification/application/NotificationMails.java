@@ -18,6 +18,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import com.asp.platform.booking.BookingRequested;
 import com.asp.platform.booking.BookingStatusChanged;
 import com.asp.platform.identity.ActivationLinkIssued;
+import com.asp.platform.identity.LeadReceived;
+import com.asp.platform.identity.PlatformTeam;
 import com.asp.platform.identity.WorkshopDirectory;
 import com.asp.platform.identity.WorkshopProfile;
 import com.asp.platform.notification.MailMessage;
@@ -38,16 +40,42 @@ class NotificationMails {
 
     private final Mailer mailer;
     private final WorkshopDirectory directory;
+    private final PlatformTeam team;
     private final LinkProperties links;
 
-    NotificationMails(Mailer mailer, WorkshopDirectory directory, LinkProperties links) {
+    NotificationMails(Mailer mailer, WorkshopDirectory directory, PlatformTeam team, LinkProperties links) {
         if (mailer.enabled() && links.publicUrl() == null) {
             throw new IllegalStateException("app.public-url (ASP_PUBLIC_URL) is required while app.mail.enabled is "
                     + "true: mails carry absolute links");
         }
         this.mailer = mailer;
         this.directory = directory;
+        this.team = team;
         this.links = links;
+    }
+
+    /// The ASP team works in Portuguese (Portugal), so the lead mail is in pt-PT.
+    @Async
+    @TransactionalEventListener
+    void on(LeadReceived event) {
+        if (!mailer.enabled()) {
+            return;
+        }
+        safely(MailTemplate.LEAD_RECEIVED, () -> {
+            Map<String, Object> model = new HashMap<>();
+            model.put("name", event.name());
+            model.put("workshop", event.workshopName());
+            model.put("phone", nonNull(event.phone()));
+            model.put("email", nonNull(event.email()));
+            model.put("district", nonNull(event.district()));
+            model.put("vehicleType", event.vehicleType());
+            model.put("hasMessage", event.hasMessage());
+            model.put("link", links.link("/admin/leads"));
+            Locale locale = Locale.forLanguageTag("pt-PT");
+            for (String admin : team.activeAdminEmails()) {
+                mailer.send(new MailMessage(admin, MailTemplate.LEAD_RECEIVED, locale, model));
+            }
+        });
     }
 
     @Async

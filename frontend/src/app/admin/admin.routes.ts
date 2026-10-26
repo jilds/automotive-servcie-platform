@@ -13,6 +13,7 @@ export const ADMIN_ROUTES: Routes = [
     children: [
       { path: '', loadComponent: () => import('./workshop-list').then((m) => m.WorkshopList) },
       { path: 'workshops/:id', loadComponent: () => import('./workshop-detail').then((m) => m.WorkshopDetail) },
+      { path: 'leads', loadComponent: () => import('./lead-list').then((m) => m.LeadList) },
     ],
   },
 ];

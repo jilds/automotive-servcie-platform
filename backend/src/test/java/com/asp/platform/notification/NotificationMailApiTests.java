@@ -179,6 +179,29 @@ class NotificationMailApiTests extends BookingTestSupport {
         assertThat(mailsTo(email)).isEmpty();
     }
 
+    @Test
+    void should_tell_the_platform_admins_about_a_demo_request() throws Exception {
+        String workshop = "Oficina Lead " + UUID.randomUUID().toString().substring(0, 6);
+
+        mvc.perform(post("/api/v1/public-site/leads").contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name":"Ana Silva","workshopName":"%s","email":"ana@oficina.example","district":"Porto",
+                         "vehicleType":"MOTORCYCLE","message":"Queremos uma demonstração","privacyAccepted":true,
+                         "marketingConsent":true,"website":""}""".formatted(workshop))
+                .with(r -> {
+                    r.setRemoteAddr("10.77.0.1");
+                    return r;
+                }))
+                .andExpect(status().isCreated());
+
+        MimeMessage mail = mailsTo(PLATFORM_ADMIN_EMAIL).stream()
+                .filter(m -> subject(m).equals("Novo pedido de proposta: " + workshop)).findFirst().orElseThrow();
+        // The free-text message stays out of the mail (it could carry a link); the mail says there is one.
+        assertThat(decodedText(mail)).contains("Ana Silva", "ana@oficina.example", "Porto", "Motociclos",
+                "O pedido tem uma mensagem", "https://app.asp.test/admin/leads")
+                .doesNotContain("Queremos uma demonstração");
+    }
+
     private static String subject(MimeMessage message) {
         try {
             return String.valueOf(message.getSubject());

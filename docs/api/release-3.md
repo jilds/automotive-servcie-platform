@@ -752,3 +752,57 @@ catalogue LABOR line (inactive ones are skipped), and the booking becomes CHECKE
 Tables `booking_settings`, `opening_hours`, `booking_closure`, `booking`, `booking_service` (tenant_id with the V2
 default, RLS ENABLE + FORCE with `tenant_isolation`); unique `(tenant_id, number)` and `status_token_hash`; index
 `(tenant_id, slot_start)` where status in REQUESTED/CONFIRMED. Rollback: drop the five tables and delete version `'15'`.
+
+## Demo requests from the landing site (step 2c, updated 2026-10-26)
+
+The landing site on the main domain (step 03) posts its "Pedir proposta" form to the app. The table `lead` is
+platform-level (no `tenant_id`, no row-level security), written only by the form and read only by platform admins.
+
+### Public endpoint (no token): `POST /api/v1/public-site/leads`
+
+Own security chain: anonymous, the `Authorization` header is not read, CORS only for `ASP_SITE_ORIGIN`
+(`app.public-site.origin`; methods `POST`, header `Content-Type`; unset: same origin only; scheme, host and port only,
+`*` or a path stops the start). Each client address may send 5 requests an hour (`app.public-site.leads`, IPv6 by its
+/64), and all addresses together 50 (`app.public-site.leads-total`, `ASP_SITE_LEADS_PER_HOUR`); more answer
+`429 too-many-requests` with `Retry-After`. Only this `POST` (and CORS preflights) is open on the chain; any other
+method or path under `/api/v1/public-site/` answers 403.
+
+```json
+{ "name": "Ana Silva", "workshopName": "Oficina Azul", "phone": "912345678", "email": "ana@oficina.pt",
+  "district": "Lisboa", "vehicleType": "BOTH", "message": "Duas oficinas em Lisboa",
+  "privacyAccepted": true, "marketingConsent": false, "website": "" }
+// → 201, no body.
+// name and workshopName 1–120, district ≤ 60: one line, without "://", "www.", "<", ">" or control characters;
+// phone ≤ 30 (digits, spaces, + ( ) -), email ≤ 254; at least one of phone/email (else 400 validation with
+// errors.phone and errors.email); vehicleType CAR | MOTORCYCLE | BOTH; message ≤ 2000.
+// privacyAccepted false → 400 privacy-consent-required (checked before the honeypot).
+// A filled "website" (honeypot) gets the same 201 and nothing is stored.
+```
+
+With mail on, every active platform admin gets "Novo pedido de proposta: {workshop}" (pt-PT) with the contact
+details and a link to `/admin/leads`. The message is not in the mail (it could carry a link); the mail only says
+there is one.
+
+### Platform admin endpoints
+
+| Method | Path | Body / answer |
+|---|---|---|
+| GET | `/admin/leads` | `Lead[]`, newest first, at most 500; `?status=NEW\|CONTACTED\|CLOSED` filters |
+| PUT | `/admin/leads/{id}/status` | `{ "status", "version" }` → `Lead`; `404 lead-not-found`, `409 stale-data` |
+
+```json
+// Lead
+{ "id": "…", "name": "Ana Silva", "workshopName": "Oficina Azul", "phone": "912345678", "email": null,
+  "district": "Lisboa", "vehicleType": "BOTH", "message": "…", "marketingConsent": false, "status": "NEW",
+  "createdAt": "2026-10-26T10:00:00Z", "statusChangedAt": null, "version": 0 }
+```
+
+Any status may follow any other (a closed request can be reopened). Error code added: `lead-not-found` (404).
+
+### Migration V16
+
+`lead` (id, name, workshop_name, phone, email, district, vehicle_type, message, privacy_accepted_at,
+marketing_consent, status, created_at, status_changed_at, version) with checks on lengths, non-blank names, the enums,
+"phone or e-mail" (blank counts as missing) and `status_changed_at >= created_at`; indexes `(status, created_at desc)`
+and `(created_at desc)`. `asp_app` may select, insert and delete, and update only `status`, `status_changed_at` and
+`version`. New table only: no lock on existing ones.

@@ -25,6 +25,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
+import com.asp.platform.config.web.PublicSiteProperties;
+import com.asp.platform.config.web.PublicSiteWebConfig;
 import com.asp.platform.identity.AccessDirectory;
 import com.asp.platform.identity.TokenClaims;
 import com.asp.platform.shared.Role;
@@ -47,6 +49,26 @@ class SecurityConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .headers(SecurityConfig::securityHeaders)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    /// The landing site's API (`/api/v1/public-site/**`, step 2c): anonymous like the public pages, no token read,
+    /// and CORS for `app.public-site.origin` only, so the site on the main domain can post its demo request form.
+    @Bean
+    @Order(0)
+    SecurityFilterChain publicSiteFilterChain(HttpSecurity http, PublicSiteProperties site) throws Exception {
+        http
+                .securityMatcher("/api/v1/public-site/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(PublicSiteWebConfig.corsFor(site)))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requestCache(AbstractHttpConfigurer::disable)
+                .headers(SecurityConfig::securityHeaders)
+                // Only the form is open; anything added under the prefix later is denied until it is listed here.
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public-site/leads").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/v1/public-site/**").permitAll()
+                        .anyRequest().denyAll());
         return http.build();
     }
 

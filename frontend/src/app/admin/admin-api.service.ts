@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { ActivationLink, AddOnsRequest, AdminWorkshop,CreateWorkshopRequest, ProvisionedWorkshop, SubscriptionRequest } from './admin.models';
+import { ActivationLink, AddOnsRequest, AdminWorkshop, CreateWorkshopRequest, Lead, LeadStatus, ProvisionedWorkshop, SubscriptionRequest } from './admin.models';
 
 const API = '/api/v1/admin/workshops';
 
@@ -27,5 +27,13 @@ export class AdminApi {
   }
   reissueOwnerLink(id: string) {
     return this.http.post<ActivationLink>(`${API}/${id}/owner-activation-link`, null);
+  }
+
+  /** Demo requests from the landing site, newest first; `status` filters. */
+  leads(status: LeadStatus | null) {
+    return this.http.get<Lead[]>('/api/v1/admin/leads', status ? { params: { status } } : {});
+  }
+  changeLeadStatus(id: string, status: LeadStatus, version: number) {
+    return this.http.put<Lead>(`/api/v1/admin/leads/${id}/status`, { status, version });
   }
 }
