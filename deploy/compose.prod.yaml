@@ -113,7 +113,7 @@ services:
 
   # Off-site copy of a dump, run by deploy/backup.sh only (profile "backup"); the keys come from .env, never argv.
   backup-upload:
-    image: amazon/aws-cli:2.31.20@sha256:75b6502a9b1192cb9ea97d04bc1a93eda62a38f95235694d53a3f40307c27197
+    image: amazon/aws-cli:2.38.5@sha256:c8156a0e74e13929a42d7e60f0d4e14e7d28d980cd21822505d4bff80e5460c1
     profiles: [backup]
     environment:
       AWS_ACCESS_KEY_ID: ${ASP_BACKUP_S3_ACCESS_KEY_ID:-}
