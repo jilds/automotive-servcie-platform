@@ -23,6 +23,8 @@ export const adminPtBR: PortugueseDictionary<AdminKey> = {
   'admin.status.ACTIVE': 'Ativa',
   'admin.status.SUSPENDED': 'Suspensa',
   'admin.status.CANCELLED': 'Cancelada',
+  'admin.status.expired': 'Expirada',
+  'admin.status.expiredHelp': 'A data de término da assinatura e os dias de tolerância já passaram: os usuários da oficina estão bloqueados como numa suspensão. Altere a data de término para que voltem a entrar.',
 
   'admin.create.title': 'Cadastrar uma oficina',
   'admin.create.timezone': 'Fuso horário',

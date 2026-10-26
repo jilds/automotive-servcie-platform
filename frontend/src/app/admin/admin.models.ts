@@ -21,6 +21,8 @@ export interface AdminWorkshop {
   status: SubscriptionStatus;
   /** `YYYY-MM-DD`, or null. */
   subscriptionUntil: string | null;
+  /** True once `subscriptionUntil` plus the grace days has passed: locked out like a suspended workshop. */
+  expired: boolean;
   createdAt: string;
   ownerEmail: string | null;
   users: number;

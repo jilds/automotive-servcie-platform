@@ -67,6 +67,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- /actuator/prometheus, exposed only on the management port of the prod profile -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
@@ -158,6 +163,10 @@
                 <configuration>
                     <!-- run from the repository root, like the IDE, so compose.yaml is found -->
                     <workingDirectory>${project.basedir}/..</workingDirectory>
+                    <!-- spring-boot:run and spring-boot:test-run are development runs (application-dev.yml) -->
+                    <profiles>
+                        <profile>dev</profile>
+                    </profiles>
                 </configuration>
                 <executions>
                     <execution>

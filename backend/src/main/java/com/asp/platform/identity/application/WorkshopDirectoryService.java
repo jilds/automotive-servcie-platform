@@ -30,8 +30,11 @@ class WorkshopDirectoryService implements WorkshopDirectory {
     private final TenantRepository tenants;
     private final UserRepository users;
     private final PublicWorkshopCache publicWorkshops;
+    private final SubscriptionPolicy subscriptions;
 
-    WorkshopDirectoryService(TenantRepository tenants, UserRepository users, PublicWorkshopCache publicWorkshops) {
+    WorkshopDirectoryService(TenantRepository tenants, UserRepository users, PublicWorkshopCache publicWorkshops,
+            SubscriptionPolicy subscriptions) {
+        this.subscriptions = subscriptions;
         this.tenants = tenants;
         this.users = users;
         this.publicWorkshops = publicWorkshops;
@@ -91,14 +94,17 @@ class WorkshopDirectoryService implements WorkshopDirectory {
 
     private Optional<PublicWorkshop> loadPublicWorkshop(String slug) {
         return tenants.findBySlug(new Slug(slug))
-                .filter(Tenant::allowsSignIn)
+                .filter(subscriptions::allowsSignIn)
                 .map(WorkshopDirectoryService::publicWorkshop);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UUID> openWorkshops() {
-        return tenants.idsAllowingSignIn();
+        return tenants.withStatusAllowingSignIn().stream()
+                .filter(subscriptions::allowsSignIn)
+                .map(Tenant::id)
+                .toList();
     }
 
     private static PublicWorkshop publicWorkshop(Tenant tenant) {

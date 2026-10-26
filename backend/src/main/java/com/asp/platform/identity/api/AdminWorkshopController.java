@@ -22,7 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.asp.platform.identity.application.BrandingService;
+import com.asp.platform.identity.application.ProvisionedWorkshop;
+import com.asp.platform.identity.application.SubscriptionPolicy;
 import com.asp.platform.identity.application.WorkshopAdminService;
+import com.asp.platform.identity.domain.WorkshopOverview;
 
 /// The platform admin's console. `SecurityConfig` already limits `/api/v1/admin/**` to platform admins; the
 /// annotation repeats it so the rule stays with the endpoints.
@@ -33,39 +36,46 @@ class AdminWorkshopController {
 
     private final WorkshopAdminService admin;
     private final BrandingService branding;
+    private final SubscriptionPolicy subscriptions;
 
-    AdminWorkshopController(WorkshopAdminService admin, BrandingService branding) {
+    AdminWorkshopController(WorkshopAdminService admin, BrandingService branding, SubscriptionPolicy subscriptions) {
         this.admin = admin;
         this.branding = branding;
+        this.subscriptions = subscriptions;
+    }
+
+    private AdminWorkshopResponse response(WorkshopOverview overview) {
+        return AdminWorkshopResponse.of(overview, subscriptions.expired(overview.tenant()));
     }
 
     @GetMapping
     List<AdminWorkshopResponse> list() {
-        return admin.workshops().stream().map(AdminWorkshopResponse::of).toList();
+        return admin.workshops().stream().map(this::response).toList();
     }
 
     @GetMapping("/{id}")
     AdminWorkshopResponse get(@PathVariable UUID id) {
-        return AdminWorkshopResponse.of(admin.workshop(id));
+        return response(admin.workshop(id));
     }
 
     /// Registers a workshop and its first owner; the response carries the owner's one-time activation link.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     ProvisionedWorkshopResponse create(@Valid @RequestBody CreateWorkshopRequest request) {
-        return ProvisionedWorkshopResponse.of(admin.provision(request.toCommand()));
+        ProvisionedWorkshop provisioned = admin.provision(request.toCommand());
+        return ProvisionedWorkshopResponse.of(provisioned, subscriptions.expired(provisioned.workshop().tenant()));
     }
 
     /// Plan, status and end date. SUSPENDED or CANCELLED locks the workshop's users out at their next request.
     @PutMapping("/{id}/subscription")
     AdminWorkshopResponse subscription(@PathVariable UUID id, @Valid @RequestBody SubscriptionRequest request) {
-        return AdminWorkshopResponse.of(admin.changeSubscription(id, request.toSubscription(), request.version()));
+        return response(admin.changeSubscription(id, request.toSubscription(), request.version()));
     }
 
     /// Online booking and online shop on or off, independent of the plan. Off answers 404 on their public pages.
     @PutMapping("/{id}/add-ons")
     AdminWorkshopResponse addOns(@PathVariable UUID id, @Valid @RequestBody AddOnsRequest request) {
-        return AdminWorkshopResponse.of(admin.changeAddOns(id, request.toAddOns(), request.version()));
+        return response(admin.changeAddOns(id, request.toAddOns(), request.version()));
     }
 
     /// A new activation link for the workshop's first owner; the previous unused link stops working.

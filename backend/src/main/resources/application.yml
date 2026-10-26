@@ -1,6 +1,6 @@
 spring:
   application:
-    name: Automotive Software Platform
+    name: ASP - Automotive Service Platform
   threads:
     virtual:
       enabled: true
@@ -23,7 +23,9 @@ spring:
 
 app:
   security:
-    jwt-secret: ${ASP_JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes!!}
+    # No fallback here: a run without the dev profile (application-dev.yml) and without ASP_JWT_SECRET stops at
+    # startup instead of signing tokens with a secret anyone can read in this repository.
+    jwt-secret: ${ASP_JWT_SECRET:}
   identity:
     token:
       issuer: asp
@@ -38,9 +40,12 @@ app:
     bootstrap-admin-email: ${ASP_BOOTSTRAP_ADMIN_EMAIL:}
     bootstrap-admin-password: ${ASP_BOOTSTRAP_ADMIN_PASSWORD:}
     bootstrap-admin-name: ${ASP_BOOTSTRAP_ADMIN_NAME:}
+  # After subscription_until a workshop keeps working for these days, then it is locked out like a suspended one.
+  subscription:
+    grace-days: ${ASP_SUBSCRIPTION_GRACE_DAYS:7}
   # Public workshop pages /api/v1/public/{slug}/... (ADR 0004): lookups per client address across all slugs
   # (checked before the slug is looked up), then reads and writes per client address and workshop.
-  # Behind a reverse proxy, set server.forward-headers-strategy so the client's address is used, not the proxy's.
+  # The prod profile reads the client's address from X-Forwarded-For sent by a trusted proxy (application-prod.yml).
   public:
     rate-limit:
       lookups:
@@ -58,6 +63,11 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      # /actuator/health/liveness and /actuator/health/readiness for the container platform
+      probes:
+        enabled: true
   info:
     git:
       mode: simple

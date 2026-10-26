@@ -28,9 +28,11 @@ public class ActivationService {
     private final PasswordEncoder passwordEncoder;
     private final TokenIssuer tokenIssuer;
     private final Clock clock;
+    private final SubscriptionPolicy subscriptions;
 
     ActivationService(ActivationTokenRepository tokens, UserRepository users, TenantRepository tenants,
-            PasswordEncoder passwordEncoder, TokenIssuer tokenIssuer, Clock clock) {
+            PasswordEncoder passwordEncoder, TokenIssuer tokenIssuer, Clock clock, SubscriptionPolicy subscriptions) {
+        this.subscriptions = subscriptions;
         this.tokens = tokens;
         this.users = users;
         this.tenants = tenants;
@@ -41,13 +43,19 @@ public class ActivationService {
 
     /// @throws ActivationInvalidException                               unknown or used link, or inactive user
     /// @throws com.asp.platform.identity.domain.ActivationExpiredException link older than 72 hours
+    /// @throws WorkshopSuspendedException                               the workshop is suspended, cancelled or expired
     @Transactional(readOnly = true)
     public ActivationPreview preview(String rawToken) {
         ActivationToken token = tokens.findByHash(ActivationToken.hash(rawToken))
                 .orElseThrow(ActivationInvalidException::new);
         token.requireUsable(clock.instant());
         User user = activeUser(token);
-        return new ActivationPreview(user.email(), user.name(), workshop(user).shownName(), token.expiresAt());
+        Tenant workshop = workshop(user);
+        // Said before the form, not after the user typed a password that activation would then refuse.
+        if (!subscriptions.allowsSignIn(workshop)) {
+            throw new WorkshopSuspendedException();
+        }
+        return new ActivationPreview(user.email(), user.name(), workshop.shownName(), token.expiresAt());
     }
 
     /// Sets the user's name and password, uses up the link and signs the user in. The link's row is locked, so two
@@ -60,7 +68,7 @@ public class ActivationService {
                 .orElseThrow(ActivationInvalidException::new);
         token.requireUsable(now);
         User user = activeUser(token);
-        if (!workshop(user).allowsSignIn()) {
+        if (!subscriptions.allowsSignIn(workshop(user))) {
             throw new WorkshopSuspendedException();
         }
         User activated = users.save(user.activated(name, passwordEncoder.encode(password)));

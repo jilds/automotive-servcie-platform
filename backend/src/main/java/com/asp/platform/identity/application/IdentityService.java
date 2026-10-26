@@ -37,10 +37,12 @@ public class IdentityService {
     private final AccessDirectoryService access;
     private final ActivationLinks links;
     private final Clock clock;
+    private final SubscriptionPolicy subscriptions;
 
     IdentityService(TenantRepository tenants, UserRepository users, PlatformAdminRepository admins,
             PasswordEncoder passwordEncoder, TokenIssuer tokenIssuer, AccessDirectoryService access,
-            ActivationLinks links, Clock clock) {
+            ActivationLinks links, Clock clock, SubscriptionPolicy subscriptions) {
+        this.subscriptions = subscriptions;
         this.tenants = tenants;
         this.users = users;
         this.admins = admins;
@@ -64,7 +66,7 @@ public class IdentityService {
                 .filter(User::active)
                 .filter(candidate -> matches(password, candidate.passwordHash()));
         if (user.isPresent()) {
-            if (!tenants.findById(user.get().tenantId()).map(Tenant::allowsSignIn).orElse(false)) {
+            if (!tenants.findById(user.get().tenantId()).map(subscriptions::allowsSignIn).orElse(false)) {
                 throw new WorkshopSuspendedException();
             }
             return new Session(tokenIssuer.issue(user.get()), Account.of(user.get()));

@@ -1,0 +1,48 @@
+# Production: SPRING_PROFILES_ACTIVE=prod. Every secret and connection setting comes from the environment and has
+# no fallback, so a missing one stops the start instead of running on a development value. See
+# docs/release/runbook.md for the full list.
+spring:
+  datasource:
+    url: ${ASP_DB_URL}
+    username: ${ASP_DB_APP_USER}
+    password: ${ASP_DB_APP_PASSWORD}
+  flyway:
+    user: ${ASP_DB_OWNER_USER}
+    password: ${ASP_DB_OWNER_PASSWORD}
+    clean-disabled: true
+  docker:
+    compose:
+      enabled: false
+
+app:
+  security:
+    jwt-secret: ${ASP_JWT_SECRET}
+
+server:
+  # Behind the reverse proxy (Caddy): the client's address, scheme and host come from X-Forwarded-*, but only when the
+  # request arrives from a trusted proxy (a regular expression of addresses; private and loopback ranges by default).
+  # The public rate limits count by that address.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: '${ASP_TRUSTED_PROXIES:127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}}'
+
+management:
+  # Health, info and metrics on their own port, which the proxy does not publish.
+  server:
+    port: ${ASP_MANAGEMENT_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

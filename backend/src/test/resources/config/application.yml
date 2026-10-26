@@ -7,6 +7,9 @@ spring:
   datasource:
     url: jdbc:postgresql://testcontainers-not-started.invalid:5432/asp
 app:
+  security:
+    # The main application.yml has no fallback secret (the dev one is in application-dev.yml).
+    jwt-secret: test-only-jwt-secret-for-the-test-contexts-0123456789
   platform:
     bootstrap-admin-email: platform-admin@asp.test
     bootstrap-admin-password: platform-admin-test-password

@@ -5,7 +5,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,6 +34,8 @@ class AccessDirectoryServiceTests {
 
     private static final UUID TENANT = UUID.randomUUID();
     private static final UUID USER = UUID.randomUUID();
+    private static final SubscriptionPolicy POLICY = new SubscriptionPolicy(
+            Clock.fixed(Instant.parse("2026-10-26T12:00:00Z"), ZoneOffset.UTC), new SubscriptionProperties(7));
 
     @Mock
     private UserRepository users;
@@ -45,7 +49,7 @@ class AccessDirectoryServiceTests {
     @Test
     void should_read_the_database_once_when_access_is_asked_again_within_the_ttl() {
         when(users.findById(USER)).thenReturn(Optional.of(user(Role.OWNER, true)));
-        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins);
+        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins, POLICY);
 
         assertThat(directory.access(USER)).contains(new UserAccess(TENANT, Role.OWNER, true));
         assertThat(directory.access(USER)).contains(new UserAccess(TENANT, Role.OWNER, true));
@@ -57,7 +61,7 @@ class AccessDirectoryServiceTests {
     void should_read_the_new_access_when_the_entry_is_evicted() {
         when(users.findById(USER)).thenReturn(Optional.of(user(Role.OWNER, true)),
                 Optional.of(user(Role.MECHANIC, false)));
-        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins);
+        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins, POLICY);
         directory.access(USER);
 
         directory.evict(USER);
@@ -69,7 +73,7 @@ class AccessDirectoryServiceTests {
     @Test
     void should_not_remember_unknown_users_when_they_are_not_found() {
         when(users.findById(USER)).thenReturn(Optional.empty(), Optional.of(user(Role.FRONT_DESK, true)));
-        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins);
+        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins, POLICY);
 
         assertThat(directory.access(USER)).isEmpty();
         assertThat(directory.access(USER)).contains(new UserAccess(TENANT, Role.FRONT_DESK, true));
@@ -79,7 +83,7 @@ class AccessDirectoryServiceTests {
     void should_cache_the_workshop_status_until_it_is_evicted() {
         when(tenants.findById(TENANT)).thenReturn(Optional.of(tenant(SubscriptionStatus.ACTIVE)),
                 Optional.of(tenant(SubscriptionStatus.SUSPENDED)));
-        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins);
+        AccessDirectoryService directory = new AccessDirectoryService(users, tenants, admins, POLICY);
 
         assertThat(directory.workshopOpen(TENANT)).isTrue();
         assertThat(directory.workshopOpen(TENANT)).isTrue();

@@ -2,7 +2,7 @@
 <html lang="pt-PT" data-bs-theme="light">
   <head>
     <meta charset="utf-8" />
-    <title>ASP Workshop</title>
+    <title>ASP - Automotive Service Platform</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1c1f23" media="(prefers-color-scheme: light)" />
@@ -12,19 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" />
-    <script>
-      // Apply the saved theme before the first paint as Bootstrap's data-bs-theme (see shared/theme.service.ts).
-      (function () {
-        var mode = null;
-        try {
-          mode = localStorage.getItem('asp.theme');
-        } catch (e) {}
-        if (mode !== 'light' && mode !== 'dark') {
-          mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        document.documentElement.setAttribute('data-bs-theme', mode);
-      })();
-    </script>
+    <script src="theme-init.js"></script>
   </head>
   <body>
     <app-root></app-root>

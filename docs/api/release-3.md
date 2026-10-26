@@ -30,7 +30,9 @@ Decision record: [ADR 0003](../adr/0003-subscription-onboarding-and-tenant-brand
 
 ### Subscription status on every request
 
-`SUSPENDED` and `CANCELLED` workshops are locked out:
+`SUSPENDED` and `CANCELLED` workshops are locked out, and so (updated 2026-10-26) is a workshop whose
+`subscriptionUntil` plus `app.subscription.grace-days` (default 7) lies before today in the workshop's time zone. An
+expired workshop gets the same answers as a suspended one; moving the date forward lets it back in.
 
 | When | Answer |
 |---|---|
@@ -51,6 +53,8 @@ Who the link is for, so the page can greet them.
 ```json
 { "email": "ana@oficina.pt", "name": "Ana", "workshopName": "Oficina Azul", "expiresAt": "2026-10-24T10:00:00Z" }
 ```
+**(updated 2026-10-26)** A suspended, cancelled or expired workshop answers `403 workshop-suspended` here already, so
+the page says so before the form.
 
 #### `POST /auth/activate`
 ```json
@@ -78,7 +82,8 @@ Theme of the branded login page `/w/{slug}`. Presentation only: nothing else abo
 }
 ```
 `name` is the display name or, when unset, the workshop name. Unset colours and logo are `null` (use the ASP theme).
-Unknown or malformed slug: `404 workshop-not-found`.
+Unknown or malformed slug: `404 workshop-not-found`. **(updated 2026-10-26)** So is a suspended, cancelled or expired
+workshop, here and on `/branding/{slug}/logo` (ADR 0004): `/w/{slug}` then shows the plain ASP sign-in.
 
 #### `GET /branding/{slug}/logo`
 The image (`image/png`, `image/webp` or `image/svg+xml`) with `ETag` (its SHA-256), `Cache-Control: public,
@@ -126,10 +131,12 @@ such as `script`, `style`, `foreignObject`, `image`, `a`, `animate`, `set`, `on*
 {
   "id": "…", "name": "Oficina Azul Lda", "nif": "509999999", "country": "PT", "timezone": "Europe/Lisbon",
   "slug": "oficina-azul-lda", "displayName": null, "plan": "PRO", "status": "TRIAL",
-  "subscriptionUntil": "2026-12-31", "createdAt": "2026-10-21T18:10:00Z",
+  "subscriptionUntil": "2026-12-31", "expired": false, "createdAt": "2026-10-21T18:10:00Z",
   "ownerEmail": "ana@oficina.pt", "users": 3
 }
 ```
+**(updated 2026-10-26)** `expired` is true once `subscriptionUntil` plus the grace days has passed, whatever the
+status; the console shows an "Expired" badge.
 
 `POST /admin/workshops`:
 ```json

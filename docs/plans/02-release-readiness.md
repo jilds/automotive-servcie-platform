@@ -1,6 +1,24 @@
 # 02: Release readiness
 
-Status: **planned**. Four commits: 2a–2d. Migration V16 (lead).
+Status: **in progress** (2a built, 2026-10-26). Four commits: 2a–2d. Migration V16 (lead). Branch
+`feature/release-readiness`.
+
+## Decisions (2026-10-26)
+
+- Product name everywhere: "ASP - Automotive Service Platform" (the login title's spelling), in
+  `spring.application.name`, `<title>` and the manifest `name`; `short_name` stays "ASP". This replaces the
+  `7a2f0a8` rename to "Automotive Software Platform".
+- Grace days after `subscription_until`: 7, configurable (`app.subscription.grace-days`, `ASP_SUBSCRIPTION_GRACE_DAYS`).
+- 2a, as built, differs from the plan below in three places:
+  - Referrer-Policy stays `same-origin`. It is stricter than `strict-origin-when-cross-origin`, and the booking status
+    links need it.
+  - The dev JWT secret moved to `application-dev.yml` (`spring-boot:run` activates `dev`; the IDE must set it), and
+    `application.yml` has no secret fallback, so a run without a profile does not start. The tests use their own
+    secret (`src/test/resources/config/application.yml`). A first version made `dev` the default profile; the
+    security review showed that a jar started without a profile would then sign tokens with the public secret.
+  - The DB variables keep their names (`ASP_DB_OWNER_*` for Flyway, no `ASP_FLYWAY_*`).
+- CSP `script-src 'self'` needed two frontend changes: the theme script moved to `public/theme-init.js`, and
+  the production build no longer inlines critical CSS (its `onload` handler is an inline script).
 
 ## Gaps found (read-only scan, 2026-10-25)
 
@@ -88,6 +106,18 @@ Status: **planned**. Four commits: 2a–2d. Migration V16 (lead).
 - `docs/release/runbook.md`: first deploy, bootstrap admin, migrations, backup and restore, JWT secret rotation.
 - `docs/release/checklist.md`: every placeholder (domain, company name, NIF, address, hosting, registry, SMTP,
   invoicing and payment providers) and every decision the user still owes.
+- From the 2a security review (2026-10-26):
+  - The Dockerfile sets `ENV SPRING_PROFILES_ACTIVE=prod`.
+  - Give Caddy a fixed IP on an internal network, and set `ASP_TRUSTED_PROXIES` to exactly that address.
+  - Do not publish 8080 or the management port 8081. Otherwise any private peer could fake `X-Forwarded-For` and
+    get past the rate limits.
+  - Runbook: HSTS uses `includeSubDomains`, so every subdomain of the app host must serve HTTPS.
+  - The CI scan covers the new `micrometer-registry-prometheus`.
+- Backlog from the 2a reviews:
+  - Host the Archivo font ourselves and drop Google Fonts from `index.html` and the CSP, because Google Fonts sends
+    visitors' addresses to Google (GDPR).
+  - Have `WorkshopAdminService` return `expired`, so the admin controller does not need `SubscriptionPolicy`.
+  - A test that the default proxy regex trusts 172.20.x and not 172.32.x.
 
 ## Gate
 

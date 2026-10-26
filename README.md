@@ -34,7 +34,7 @@ You need **JDK 26 or newer** (the build targets Java 26; on the Windows workstat
 
 # Packaged: database + one jar serving API and UI on http://localhost:8080
 docker compose up -d
-java -jar backend/target/backend-0.1.0-SNAPSHOT.jar
+java -jar backend/target/backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
 Hot reload while developing:
@@ -44,7 +44,7 @@ Hot reload while developing:
 cd frontend && npm install && npm start # UI on http://localhost:4200, proxies /api and /actuator to :8080
 ```
 
-Or run `TestAspApplication` (backend test sources) from the IDE: it starts the app against a throw-away PostgreSQL, no compose needed.
+Or run `TestAspApplication` (backend test sources) from the IDE: it starts the app against a throw-away PostgreSQL, no compose needed. Run `AspApplication` from the IDE with the active profile `dev`.
 
 First start: there is no signup. Set `ASP_BOOTSTRAP_ADMIN_EMAIL` and `ASP_BOOTSTRAP_ADMIN_PASSWORD` (12+ characters) in the environment; on startup, while no platform admin exists, the app creates one and logs its e-mail (never the password). Sign in with it, you land in the admin console (`/admin`): register a workshop with its first owner, copy the activation link it shows and open it to set the owner's password. Remove the two variables afterwards; they are ignored once a platform admin exists.
 
@@ -98,7 +98,7 @@ Rules the build enforces: `ModularityTests` (no module reaches into another modu
 
 Every domain table has a `tenant_id`. The app connects as `asp_app`, which cannot bypass row-level security, and sets `app.tenant_id` from the signed-in user's token on every connection (`config/persistence`). PostgreSQL then only returns that workshop's rows, even if a query forgets to filter, and fills `tenant_id` on insert. Migrations run as `asp_owner`. `tenant` and `app_user` are read before login, so they are filtered in code instead. `RowLevelSecurityCatalogueTests` reads the migrated schema and fails the build when any table with a `tenant_id` column (also ones added later) lacks ENABLE + FORCE row-level security and the `tenant_isolation` policy, unless it is a named, documented exception (`app_user`, `tenant_logo`). See [ADR 0002](docs/adr/0002-tenant-isolation-with-row-level-security.md).
 
-Platform admins are stored apart (`platform_admin`), belong to no workshop and get no `tenant_id` in their token, so their connections see no workshop rows; the security config also answers them 403 on every API outside `/api/v1/admin/**`. A suspended or cancelled workshop cannot sign in, and tokens issued before stop working at their next request. See [ADR 0003](docs/adr/0003-subscription-onboarding-and-tenant-branding.md).
+Platform admins are stored apart (`platform_admin`), belong to no workshop and get no `tenant_id` in their token, so their connections see no workshop rows; the security config also answers them 403 on every API outside `/api/v1/admin/**`. A suspended or cancelled workshop cannot sign in, and tokens issued before stop working at their next request. So does a workshop whose subscription end date plus the grace days has passed; the admin console marks it "Expired". See [ADR 0003](docs/adr/0003-subscription-onboarding-and-tenant-branding.md).
 
 Public workshop pages (`/api/v1/public/{slug}/…`) have no token: a filter finds the workshop by its slug and runs the request inside `shared.TenantScope` (a `ScopedValue`), which the data source binds as `app.tenant_id` when there is no token. A token always wins and is not even read on public paths, so the two never mix. See [ADR 0004](docs/adr/0004-public-workshop-pages.md).
 
@@ -121,12 +121,24 @@ The UI is in Portuguese (Portugal) by default, with English and Portuguese (Braz
 | `ASP_BOOTSTRAP_ADMIN_EMAIL` / `ASP_BOOTSTRAP_ADMIN_PASSWORD` | unset; creates the first platform admin at startup while none exists (password 12–72 characters) |
 | `ASP_BOOTSTRAP_ADMIN_NAME` | unset ("Platform admin") |
 | `ASP_CONTACT_EMAIL` / `ASP_CONTACT_PHONE` | unset; shown on the login page under "Want ASP for your workshop?" (block hidden when both are unset) |
+| `ASP_SUBSCRIPTION_GRACE_DAYS` | `7`; days after a workshop's subscription end date before it is locked out like a suspended one |
 
-Public workshop pages are rate-limited per client address (IPv6 by its /64): first `app.public.rate-limit.lookups.limit` / `.window` (default 120 per `1m`, every public request across all slugs, checked before the slug is looked up), then per workshop `app.public.rate-limit.writes.limit` / `.window` (default 10 per `1h`, POST/PUT/PATCH/DELETE) and `app.public.rate-limit.reads.limit` / `.window` (default 120 per `1m`, GET/HEAD/OPTIONS). The counters are kept in memory per instance. Behind a reverse proxy set `server.forward-headers-strategy` so the client's address is used, not the proxy's.
+### Production profile
+
+Run with `SPRING_PROFILES_ACTIVE=prod` (`application-prod.yml`). Local runs use the `dev` profile (`application-dev.yml`, which holds the development JWT secret): `spring-boot:run` turns it on; in the IDE set the active profile to `dev`. A run without a profile and without `ASP_JWT_SECRET` does not start.
+
+- `ASP_DB_URL`, `ASP_DB_APP_USER`, `ASP_DB_APP_PASSWORD`, `ASP_DB_OWNER_USER`, `ASP_DB_OWNER_PASSWORD` and `ASP_JWT_SECRET` have no fallback: a missing one stops the start. The development JWT secret is refused outside the `dev` and `test` profiles.
+- Behind the reverse proxy, `X-Forwarded-For` / `-Proto` / `-Host` are used only from trusted proxies: `ASP_TRUSTED_PROXIES`, a regular expression of addresses (default: loopback and private ranges). The rate limits then count the client's address, and HSTS is sent on HTTPS.
+- Actuator moves to the management port `ASP_MANAGEMENT_PORT` (default `8081`, do not publish it): `/actuator/health/liveness`, `/actuator/health/readiness`, `/actuator/info` and `/actuator/prometheus`.
+- Logs are JSON (ECS) on the console. API docs and Swagger UI are off, and Flyway `clean` is disabled.
+
+Every response carries a Content-Security-Policy (scripts, styles, fonts and images from the app itself, plus Google Fonts), `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and a Permissions-Policy, in every profile.
+
+Public workshop pages are rate-limited per client address (IPv6 by its /64): first `app.public.rate-limit.lookups.limit` / `.window` (default 120 per `1m`, every public request across all slugs, checked before the slug is looked up), then per workshop `app.public.rate-limit.writes.limit` / `.window` (default 10 per `1h`, POST/PUT/PATCH/DELETE) and `app.public.rate-limit.reads.limit` / `.window` (default 120 per `1m`, GET/HEAD/OPTIONS). The counters are kept in memory per instance. The prod profile takes the client's address from `X-Forwarded-For` sent by a trusted proxy (see Production profile).
 
 Tokens last 12 h (`app.identity.token.ttl`); role, active state and the workshop's subscription status are re-read from the database at most every 30 s, so a deactivation, demotion or suspension applies within that time.
 
-`/actuator/health` and `/actuator/info` (version, build time, git commit) are open; OpenAPI docs are at `/swagger-ui.html`.
+In development, `/actuator/health` (with `/liveness` and `/readiness`) and `/actuator/info` (version, build time, git commit) are open on the app port; OpenAPI docs are at `/swagger-ui.html`.
 
 ## API
 

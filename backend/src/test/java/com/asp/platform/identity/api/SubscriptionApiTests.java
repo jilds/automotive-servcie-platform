@@ -8,8 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultActions;
 
 import com.asp.platform.ApiTestSupport;
 import com.jayway.jsonpath.JsonPath;
@@ -65,6 +69,10 @@ class SubscriptionApiTests extends ApiTestSupport {
 
         changeStatus(id, "CANCELLED");
 
+        // The link says so when it is opened, before the owner fills in the form.
+        mvc.perform(get("/api/v1/auth/activation").param("token", tokenOf(JsonPath.read(body, "$.activationPath"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("workshop-suspended"));
         mvc.perform(post("/api/v1/auth/activate").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"token\":\"%s\",\"name\":\"Dono\",\"password\":\"%s\"}"
                         .formatted(tokenOf(JsonPath.read(body, "$.activationPath")), PASSWORD)))
@@ -82,6 +90,61 @@ class SubscriptionApiTests extends ApiTestSupport {
         changeStatus(JsonPath.read(body, "$.workshop.id"), "SUSPENDED");
 
         call(get("/api/v1/customers"), other).andExpect(status().isOk());
+    }
+
+    @Test
+    void should_lock_out_a_workshop_whose_subscription_ended_more_than_the_grace_days_ago() throws Exception {
+        String ownerEmail = uniqueEmail("dono");
+        String body = provisionWorkshop("Oficina Expirada", ownerEmail).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(body, "$.workshop.id");
+        String slug = JsonPath.read(body, "$.workshop.slug");
+        String owner = activate(JsonPath.read(body, "$.activationPath"), "Dono");
+        LocalDate today = LocalDate.now(ZoneId.of("Europe/Lisbon"));
+        call(get("/api/v1/customers"), owner).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/branding/" + slug)).andExpect(status().isOk());
+
+        // Dates well away from the 7-day boundary (exact days: SubscriptionPolicyTests), so a run crossing midnight
+        // cannot flake.
+        changeSubscription(id, "ACTIVE", today.minusDays(3)).andExpect(jsonPath("$.expired").value(false));
+        call(get("/api/v1/customers"), owner).andExpect(status().isOk());
+
+        changeSubscription(id, "ACTIVE", today.minusDays(30)).andExpect(jsonPath("$.expired").value(true));
+
+        call(get("/api/v1/customers"), owner)
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("workshop-suspended"));
+        mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(ownerEmail, PASSWORD)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("workshop-suspended"));
+        // The branded sign-in page no longer reveals the workshop (ADR 0004).
+        mvc.perform(get("/api/v1/branding/" + slug)).andExpect(status().isNotFound());
+        call(get("/api/v1/admin/workshops"), platformAdmin())
+                .andExpect(jsonPath("$[?(@.id == '%s')].expired".formatted(id)).value(true));
+
+        changeSubscription(id, "ACTIVE", today.plusYears(1)).andExpect(jsonPath("$.expired").value(false));
+
+        call(get("/api/v1/customers"), owner).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/branding/" + slug)).andExpect(status().isOk());
+    }
+
+    @Test
+    void should_hide_the_branded_sign_in_page_of_a_suspended_workshop() throws Exception {
+        String body = provisionWorkshop("Oficina Escondida", uniqueEmail("dono"))
+                .andReturn().getResponse().getContentAsString();
+        String slug = JsonPath.read(body, "$.workshop.slug");
+
+        changeStatus(JsonPath.read(body, "$.workshop.id"), "SUSPENDED");
+
+        mvc.perform(get("/api/v1/branding/" + slug)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/branding/" + slug + "/logo")).andExpect(status().isNotFound());
+    }
+
+    private ResultActions changeSubscription(String id, String status, LocalDate until) throws Exception {
+        return call(put("/api/v1/admin/workshops/" + id + "/subscription").content(withVersion("""
+                {"plan":"PRO","status":"%s","subscriptionUntil":"%s"}""".formatted(status, until),
+                versionAt(platformAdmin(), "/api/v1/admin/workshops/" + id))), platformAdmin())
+                .andExpect(status().isOk());
     }
 
     private void changeStatus(String id, String status) throws Exception {

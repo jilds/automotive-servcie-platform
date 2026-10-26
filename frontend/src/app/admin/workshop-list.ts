@@ -72,7 +72,11 @@ import { toCreateRequest, workshopForm } from './workshop-form';
                 <td [attr.data-label]="'common.nif' | t">{{ w.nif ?? '—' }}</td>
                 <td [attr.data-label]="'admin.workshops.country' | t">{{ w.country }}</td>
                 <td [attr.data-label]="'admin.workshops.plan' | t">{{ planKey(w.plan) | t }}</td>
-                <td [attr.data-label]="'admin.workshops.status' | t"><span [class]="statusBadge[w.status]">{{ statusKey(w.status) | t }}</span></td>
+                <td [attr.data-label]="'admin.workshops.status' | t"><span [class]="statusBadge[w.status]">{{ statusKey(w.status) | t }}</span>
+                  @if (w.expired) {
+                    <span class="badge bg-danger-subtle text-danger-emphasis ms-1">{{ 'admin.status.expired' | t }}</span>
+                  }
+                </td>
                 <td [attr.data-label]="'admin.workshops.created' | t">{{ w.createdAt | date: 'dd/MM/yyyy' }}</td>
                 <td class="text-break" [attr.data-label]="'admin.workshops.owner' | t">{{ w.ownerEmail ?? '—' }}</td>
                 <td class="text-end" [attr.data-label]="'admin.workshops.users' | t">{{ w.users }}</td>

@@ -34,11 +34,14 @@ public class AccessDirectoryService implements AccessDirectory {
     private final UserRepository users;
     private final TenantRepository tenants;
     private final PlatformAdminRepository admins;
+    private final SubscriptionPolicy subscriptions;
     private final Cache<UUID, UserAccess> userCache = cache();
     private final Cache<UUID, Boolean> workshopCache = cache();
     private final Cache<UUID, Boolean> adminCache = cache();
 
-    AccessDirectoryService(UserRepository users, TenantRepository tenants, PlatformAdminRepository admins) {
+    AccessDirectoryService(UserRepository users, TenantRepository tenants, PlatformAdminRepository admins,
+            SubscriptionPolicy subscriptions) {
+        this.subscriptions = subscriptions;
         this.users = users;
         this.tenants = tenants;
         this.admins = admins;
@@ -54,7 +57,8 @@ public class AccessDirectoryService implements AccessDirectory {
 
     @Override
     public boolean workshopOpen(UUID tenantId) {
-        Boolean open = workshopCache.get(tenantId, id -> tenants.findById(id).map(Tenant::allowsSignIn).orElse(null));
+        Boolean open = workshopCache.get(tenantId,
+                id -> tenants.findById(id).map(subscriptions::allowsSignIn).orElse(null));
         return Boolean.TRUE.equals(open);
     }
 

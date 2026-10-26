@@ -20,6 +20,8 @@ export const adminEn = {
   'admin.status.ACTIVE': 'Active',
   'admin.status.SUSPENDED': 'Suspended',
   'admin.status.CANCELLED': 'Cancelled',
+  'admin.status.expired': 'Expired',
+  'admin.status.expiredHelp': 'The subscription end date and the grace days have passed: the workshop’s users are locked out as if it were suspended. Move the end date to let them back in.',
 
   'admin.create.title': 'Register a workshop',
   'admin.create.timezone': 'Time zone',

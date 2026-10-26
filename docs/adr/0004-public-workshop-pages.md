@@ -54,7 +54,11 @@ chain runs without a workshop scope. Paths are read from the decoded, normalised
 and the filter mapping use, so an encoded spelling such as `/api/v1/%70ublic/…` gets the same scope and limits.
 
 A closed workshop reads exactly like an unknown one on the public API. An add-on that is off has its own code so the
-page can explain it; that, like the public branding of the sign-in page, shows the workshop exists.
+page can explain it, which shows the workshop exists.
+
+**Decided 2026-10-26:** the public branding of the sign-in page follows the same rule. `GET /branding/{slug}` and its
+logo answer 404 for a suspended, cancelled or expired workshop (`subscription_until` plus the grace days passed), and
+`/w/{slug}` shows the plain ASP sign-in, so the page does not reveal that a closed workshop exists.
 
 ### 4. Rate limits per address, before and after the slug lookup
 

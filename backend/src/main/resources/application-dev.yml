@@ -1,0 +1,6 @@
+# Local development: SPRING_PROFILES_ACTIVE=dev. `./mvnw -pl backend spring-boot:run` turns it on (backend/pom.xml);
+# in the IDE, set the active profile to dev. Production uses the prod profile (application-prod.yml).
+app:
+  security:
+    # Public, so config/security/DevSecretGuard refuses it outside the dev and test profiles.
+    jwt-secret: ${ASP_JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes!!}

@@ -16,8 +16,9 @@ public interface TenantRepository {
 
     boolean existsBySlug(Slug slug);
 
-    /// The ids of the workshops whose subscription lets them sign in, oldest first.
-    List<UUID> idsAllowingSignIn();
+    /// The workshops whose subscription status lets them sign in (trial or active), oldest first. The end date is
+    /// not checked here: see [Tenant#allowsSignIn].
+    List<Tenant> withStatusAllowingSignIn();
 
     /// Every workshop with its owner and user count, newest first. For the platform admin only.
     List<WorkshopOverview> overview();
