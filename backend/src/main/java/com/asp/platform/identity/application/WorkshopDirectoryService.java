@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.asp.platform.identity.PublicWorkshop;
 import com.asp.platform.identity.TeamMember;
 import com.asp.platform.identity.WorkshopDirectory;
+import com.asp.platform.identity.WorkshopProfile;
 import com.asp.platform.identity.domain.Slug;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.TenantNotFoundException;
@@ -50,6 +51,13 @@ class WorkshopDirectoryService implements WorkshopDirectory {
     @Transactional(readOnly = true)
     public String country(UUID tenantId) {
         return tenant(tenantId).settings().country();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<WorkshopProfile> profile(UUID tenantId) {
+        return tenants.findById(tenantId).map(t -> new WorkshopProfile(t.shownName(), t.slug().value(),
+                t.settings().country(), t.settings().zone()));
     }
 
     @Override

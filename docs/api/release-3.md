@@ -674,7 +674,10 @@ become catalogue lines on the new work order.
 // POST /bookings
 { "serviceIds": ["…"], "slotStart": "2026-11-02T09:00:00Z",
   "name": "Ana Silva", "phone": "912345678", "email": "ana@example.pt", "plate": "AA-00-AA", "note": "Barulho ao travar",
-  "privacyAccepted": true, "marketingConsent": false, "website": "" }
+  "privacyAccepted": true, "marketingConsent": false, "website": "", "language": "pt-PT" }
+// (updated 2026-10-26) language: optional, pt-PT | en | pt-BR (else 400 validation): the page language, used for the
+// e-mail with the status link when an e-mail address is given and mail is on (ASP_MAIL_ENABLED). A name containing
+// "://", "www.", "<" or ">" answers 400 validation (errors.name): it is written into that e-mail.
 // 1–10 services offered online (else 404 service-not-found), name ≤ 120, plate required (with at least one letter or
 // digit) and normalised like vehicles, at least one of phone/email (else 400 validation with errors.phone and errors.email), note ≤ 500.
 // privacyAccepted false → 400 privacy-consent-required. A filled "website" (honeypot) gets a normal-looking 201
@@ -685,6 +688,15 @@ become catalogue lines on the new work order.
   "services": [ { "name": "Mudança de óleo", "durationMinutes": 60, "priceWithVatCents": 4920 } ],
   "canCancel": true, "declineReason": null }
 ```
+
+#### E-mails (updated 2026-10-26)
+
+With mail on, and only when the booking has an e-mail address, the customer gets: **received** (with the status link
+`<ASP_PUBLIC_URL>/w/{slug}/booking/{token}`, in `language`, else the workshop country's language), then **confirmed**,
+**moved** (the new time) or **declined** (with the reason), in the workshop country's language. Only the first mail
+carries the link, because only the token's hash is stored. Mails go out after the commit and never change an answer.
+Activation links (`POST /admin/workshops`, `POST /users`, and both "send the link again" endpoints) are mailed the same
+way to the user, and the responses still carry `activationPath`.
 
 ### Workshop endpoints (OWNER, FRONT_DESK; mechanics 403)
 

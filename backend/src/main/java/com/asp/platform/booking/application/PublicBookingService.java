@@ -10,9 +10,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.booking.BookingRequested;
 import com.asp.platform.booking.domain.BookedService;
 import com.asp.platform.booking.domain.Booking;
 import com.asp.platform.booking.domain.BookingContact;
@@ -44,14 +46,16 @@ public class PublicBookingService {
     private final BookingSettingsRepository settings;
     private final CatalogueLookup catalogue;
     private final CustomerManagement customers;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     PublicBookingService(BookingRepository bookings, BookingSettingsRepository settings, CatalogueLookup catalogue,
-            CustomerManagement customers, Clock clock) {
+            CustomerManagement customers, ApplicationEventPublisher events, Clock clock) {
         this.bookings = bookings;
         this.settings = settings;
         this.catalogue = catalogue;
         this.customers = customers;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -75,7 +79,7 @@ public class PublicBookingService {
     /// @throws BookingServiceNotFoundException when a service is not offered online (404 `service-not-found`)
     /// @throws SlotUnavailableException        when the slot is not offered or has no place left
     @Transactional
-    public BookingReceipt book(ZoneId zone, BookingRequestCommand command) {
+    public BookingReceipt book(UUID tenantId, ZoneId zone, BookingRequestCommand command) {
         List<BookedService> booked = bookedServices(command.serviceIds());
         BookingContact contact = new BookingContact(command.name(), command.phone(), command.email(),
                 customers.normalizePlate(command.plate()), command.note());
@@ -89,6 +93,11 @@ public class PublicBookingService {
         String token = StatusTokens.generate();
         Booking saved = bookings.save(Booking.request(UUID.randomUUID(), bookings.nextNumber(), command.slotStart(),
                 contact, booked, command.marketingConsent(), StatusTokens.hash(token), now));
+        String email = contact.email();
+        if (email != null) {
+            events.publishEvent(new BookingRequested(tenantId, saved.number(), saved.slotStart(), contact.name(),
+                    email, command.language(), token));
+        }
         return new BookingReceipt(saved.number(), token, saved.slotStart());
     }
 

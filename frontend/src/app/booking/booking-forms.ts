@@ -1,5 +1,6 @@
 import { AbstractControl, FormArray, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 
+import type { Language } from '../core/i18n/i18n.service';
 import { BookingSettings, Closure, OpeningRange, PublicBookingRequest } from './booking.models';
 
 export const NOTE_MAX = 500;
@@ -29,8 +30,9 @@ export function contactForm() {
 
 export type ContactForm = ReturnType<typeof contactForm>;
 
-/** The POST body: texts trimmed, blank optional fields as null, the plate upper case. */
-export function toBookingRequest(serviceIds: readonly string[], slotStart: string, form: ContactForm): PublicBookingRequest {
+/** The POST body: texts trimmed, blank optional fields as null, the plate upper case, the page language. */
+export function toBookingRequest(serviceIds: readonly string[], slotStart: string, form: ContactForm,
+  language: Language): PublicBookingRequest {
   const v = form.getRawValue();
   return {
     serviceIds: [...serviceIds],
@@ -43,6 +45,7 @@ export function toBookingRequest(serviceIds: readonly string[], slotStart: strin
     privacyAccepted: v.privacyAccepted,
     marketingConsent: v.marketingConsent,
     website: v.website,
+    language,
   };
 }
 

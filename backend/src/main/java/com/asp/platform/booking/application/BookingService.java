@@ -10,9 +10,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.booking.BookingStatusChanged;
 import com.asp.platform.booking.domain.Booking;
 import com.asp.platform.booking.domain.BookingNotFoundException;
 import com.asp.platform.booking.domain.BookingRangeTooLongException;
@@ -40,15 +42,28 @@ public class BookingService {
     private final BookingSettingsRepository settings;
     private final CustomerManagement customers;
     private final WorkshopDirectory directory;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     BookingService(BookingRepository bookings, BookingSettingsRepository settings, CustomerManagement customers,
-            WorkshopDirectory directory, Clock clock) {
+            WorkshopDirectory directory, ApplicationEventPublisher events, Clock clock) {
         this.bookings = bookings;
         this.settings = settings;
         this.customers = customers;
         this.directory = directory;
+        this.events = events;
         this.clock = clock;
+    }
+
+    /// Tells the customer after the commit, when they left an e-mail address ([BookingStatusChanged]).
+    private Booking announced(UUID tenantId, Booking booking, BookingStatusChanged.Change change) {
+        String email = booking.contact().email();
+        if (email != null) {
+            events.publishEvent(new BookingStatusChanged(tenantId, booking.number(), booking.slotStart(),
+                    booking.contact().name(), email, change,
+                    change == BookingStatusChanged.Change.DECLINED ? booking.declineReason() : null));
+        }
+        return booking;
     }
 
     /// Bookings whose slot is on the days `from` to `to` (both included, in the workshop's time zone), ordered by
@@ -81,7 +96,7 @@ public class BookingService {
         Booking booking = booking(id);
         booking.requireVersion(expectedVersion);
         booking.confirm(userId, clock.instant());
-        return view(tenantId, bookings.save(booking));
+        return view(tenantId, announced(tenantId, bookings.save(booking), BookingStatusChanged.Change.CONFIRMED));
     }
 
     /// REQUESTED → DECLINED with a reason (400 `decline-reason-required` without one).
@@ -90,7 +105,7 @@ public class BookingService {
         Booking booking = booking(id);
         booking.requireVersion(expectedVersion);
         booking.decline(reason, userId, clock.instant());
-        return view(tenantId, bookings.save(booking));
+        return view(tenantId, announced(tenantId, bookings.save(booking), BookingStatusChanged.Change.DECLINED));
     }
 
     /// Moves the booking to another slot of the opening hours that has not started and has a place left, and
@@ -111,7 +126,7 @@ public class BookingService {
             throw new SlotUnavailableException();
         }
         booking.moveTo(slotStart, userId, now);
-        return view(tenantId, bookings.save(booking));
+        return view(tenantId, announced(tenantId, bookings.save(booking), BookingStatusChanged.Change.MOVED));
     }
 
     /// CONFIRMED → NO_SHOW once the slot has started.

@@ -74,7 +74,7 @@ public class WorkshopAdminService {
         publicWorkshops.evictSlug(slug.value());
         User owner = users.save(User.invite(UUID.randomUUID(), tenant.id(), command.ownerName(), command.ownerEmail(),
                 Role.OWNER, clock.instant()));
-        ActivationLink link = links.issue(owner);
+        ActivationLink link = links.issue(owner, true);
         log.info("Workshop registered: tenantId={} slug={} plan={} status={}", tenant.id(), slug.value(),
                 command.subscription().plan(), command.subscription().status());
         return new ProvisionedWorkshop(new WorkshopOverview(tenant, owner.email(), 1), link);
@@ -119,7 +119,7 @@ public class WorkshopAdminService {
     public Invitation reissueOwnerInvitation(UUID tenantId) {
         tenant(tenantId);
         User owner = users.findFirstOwner(tenantId).orElseThrow(UserNotFoundException::new);
-        return new Invitation(owner, links.issue(owner));
+        return new Invitation(owner, links.issue(owner, true));
     }
 
     private WorkshopOverview overview(Tenant tenant) {

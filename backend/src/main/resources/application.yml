@@ -4,6 +4,15 @@ spring:
   threads:
     virtual:
       enabled: true
+  # The @Async executor (mails after the commit): at most 16 at once, so SMTP connections stay bounded, and a
+  # shutdown waits for the mails still being sent.
+  task:
+    execution:
+      simple:
+        concurrency-limit: 16
+      shutdown:
+        await-termination: true
+        await-termination-period: 20s
   datasource:
     url: ${ASP_DB_URL:jdbc:postgresql://localhost:5432/asp}
     username: ${ASP_DB_APP_USER:asp_app}
@@ -40,6 +49,13 @@ app:
     bootstrap-admin-email: ${ASP_BOOTSTRAP_ADMIN_EMAIL:}
     bootstrap-admin-password: ${ASP_BOOTSTRAP_ADMIN_PASSWORD:}
     bootstrap-admin-name: ${ASP_BOOTSTRAP_ADMIN_NAME:}
+  # Where people open the app, for the absolute links in mails (required while mail is on).
+  public-url: ${ASP_PUBLIC_URL:}
+  # E-mail (module notification). Off by default: nothing is sent and the links stay on screen. The SMTP server is
+  # spring.mail.* below.
+  mail:
+    enabled: ${ASP_MAIL_ENABLED:false}
+    from: ${ASP_MAIL_FROM:}
   # After subscription_until a workshop keeps working for these days, then it is locked out like a suspended one.
   subscription:
     grace-days: ${ASP_SUBSCRIPTION_GRACE_DAYS:7}

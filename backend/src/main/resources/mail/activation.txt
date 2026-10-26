@@ -1,0 +1,12 @@
+[(#{mail.greeting(${name})})]
+
+[(${firstOwner} ? #{activation.bodyOwner(${workshop})} : #{activation.bodyInvite(${workshop})})]
+
+[(#{activation.action})]:
+[(${link})]
+
+[(#{activation.expires(${expires})})]
+[(#{activation.ignore})]
+
+--
+[(#{mail.automatic})]

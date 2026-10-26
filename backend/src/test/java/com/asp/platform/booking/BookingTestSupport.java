@@ -28,7 +28,7 @@ public abstract class BookingTestSupport extends ApiTestSupport {
 
     protected record Workshop(String id, String slug, String owner) {
 
-        protected String publicPath(String path) {
+        public String publicPath(String path) {
             return "/api/v1/public/" + slug + "/booking" + path;
         }
     }

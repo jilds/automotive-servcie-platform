@@ -13,10 +13,25 @@ spring:
   docker:
     compose:
       enabled: false
+  # SMTP (any provider), used only while ASP_MAIL_ENABLED=true; then ASP_MAIL_HOST and ASP_MAIL_FROM are required.
+  mail:
+    host: ${ASP_MAIL_HOST:}
+    port: ${ASP_MAIL_PORT:587}
+    username: ${ASP_MAIL_USERNAME:}
+    password: ${ASP_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${ASP_MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: ${ASP_MAIL_STARTTLS_REQUIRED:true}
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
 
 app:
   security:
     jwt-secret: ${ASP_JWT_SECRET}
+  # https://app.<domain>: the absolute links in mails; required (checked at start) while ASP_MAIL_ENABLED=true.
+  public-url: ${ASP_PUBLIC_URL:}
 
 server:
   # Behind the reverse proxy (Caddy): the client's address, scheme and host come from X-Forwarded-*, but only when the

@@ -1,7 +1,7 @@
 # 02: Release readiness
 
-Status: **in progress** (2a built, 2026-10-26). Four commits: 2a–2d. Migration V16 (lead). Branch
-`feature/release-readiness`.
+Status: **in progress**. 2a done (`b36bd7e`), 2b built (2026-10-26). Four commits: 2a–2d. Migration V16 (lead).
+Branch `feature/release-readiness`.
 
 ## Decisions (2026-10-26)
 
@@ -58,6 +58,35 @@ Status: **in progress** (2a built, 2026-10-26). Four commits: 2a–2d. Migration
   manifest `name`. The manifest `short_name` stays "ASP".
 
 ## 2b `feat(notification): send e-mail through SMTP`
+
+As built (2026-10-26):
+- Events, not calls: `identity.ActivationLinkIssued` (published by `ActivationLinks.issue`, so every link) and
+  `booking.BookingRequested` / `BookingStatusChanged` (only with an e-mail address). `notification` listens with
+  `@Async @TransactionalEventListener` and depends on identity and booking; they never depend on it.
+- The status token is stored only as a hash, so only the "received" mail carries the status link. Confirmed, moved
+  and declined state the new status, the time and the reason instead.
+- Language: the booking page sends `language` (optional, pt-PT / en / pt-BR) for the first mail. Every other mail
+  uses the workshop country's language (PT → pt-PT, BR → pt-BR, else en). No migration was needed.
+- Activation links stay in the responses and on screen with mail on too, so the admin can still copy them.
+- `app.public-url` (`ASP_PUBLIC_URL`) gives the absolute links: required in prod, and checked at start while mail
+  is on. Dev sends to Mailpit (`compose.yaml`, v1.31.5, 127.0.0.1:1025 and :8025).
+- Tests: GreenMail 2.1.14 (`NotificationMailApiTests`: who gets what, the language, the link, rollback sends
+  nothing, a phone-only booking sends nothing), every template in every language (`MailTemplatesTests`), and
+  `SmtpMailerTests` (off sends nothing, a server error never throws, a bad config stops the start).
+- The lead mail to the platform admins comes with 2c.
+- Review fixes (code-reviewer, 2026-10-26):
+  - `ASP_PUBLIC_URL` stays optional in prod and is checked at start only while mail is on, so 2b breaks nothing.
+  - A booking name with a link (`://`, `www.`, `<`, `>`) answers 400 `validation`. The public form writes into a
+    mail sent to any address, so a link there would turn it into a phishing relay.
+  - Failures before the send are logged like failed sends (template only).
+  - `ActivationLinks.issue` requires a transaction (`MANDATORY`).
+  - The `@Async` executor sends at most 16 mails at once and waits up to 20 s on shutdown.
+  - The tests run the listeners on a synchronous executor (no sleeps), and the rollback test rolls back after the
+    link is issued.
+- Backlog from the review:
+  - A per-recipient limit or double opt-in for booking mails, because anyone can type someone else's address.
+  - A Micrometer counter for failed mails.
+  - The Modulith event publication registry for retries. The status token must then not be in the stored payload.
 
 - New module `notification`:
   - facade `Mailer.send(MailMessage)` (recipient, template, locale, model)

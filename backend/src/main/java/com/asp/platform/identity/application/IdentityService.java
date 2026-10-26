@@ -84,7 +84,7 @@ public class IdentityService {
         requireUnusedEmail(command.email());
         User user = users.save(User.invite(UUID.randomUUID(), tenantId, command.name(), command.email(),
                 command.role(), clock.instant()));
-        return new Invitation(user, links.issue(user));
+        return new Invitation(user, links.issue(user, false));
     }
 
     /// A new activation link for a team member who has not activated yet; their older link stops working.
@@ -96,7 +96,7 @@ public class IdentityService {
         if (!user.pending()) {
             throw new AlreadyActivatedException();
         }
-        return new Invitation(user, links.issue(user));
+        return new Invitation(user, links.issue(user, false));
     }
 
     @Transactional(readOnly = true)

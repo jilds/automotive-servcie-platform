@@ -22,7 +22,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 /// the context starts, so this test can never reach another database.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "app.security.jwt-secret=prod-profile-test-secret-not-the-dev-one-0123456789",
-        "management.server.port=0"})
+        "management.server.port=0", "app.public-url=https://app.asp.test"})
 @ActiveProfiles("prod")
 abstract class ProdProfileServerTestSupport {
 
