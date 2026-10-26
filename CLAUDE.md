@@ -63,7 +63,7 @@ Ideas raised for later (do not build without a request): a chatbot that gives a 
 ## 3. Architecture (decided, see `docs/adr/`)
 
 - **ADR 0001, layout:** one Maven reactor. Root `pom.xml` → `frontend` (Angular, built with a pinned Node v24.16.0 / npm 11.16.0) → `backend` (Spring Boot, packages `frontend/dist` as static content). `./mvnw clean verify` is the only build entry point.
-- **Stack:** Java 26, Spring Boot 4.1.1, Spring Modulith 2.1.1, Hibernate 7, Jackson 3, Flyway, PostgreSQL 18.6, Testcontainers 2, ArchUnit 1.4.1. Angular 22 (standalone components, signals, vitest) with **Bootstrap 5.3.8 (Sass only, no Bootstrap JS)** **(updated 2026-10-22)**.
+- **Stack:** Java 26, Spring Boot 4.1.2 **(updated 2026-10-26)**, Spring Modulith 2.1.1, Hibernate 7, Jackson 3, Flyway, PostgreSQL 18.6, Testcontainers 2, ArchUnit 1.4.1. Angular 22 (standalone components, signals, vitest) with **Bootstrap 5.3.8 (Sass only, no Bootstrap JS)** **(updated 2026-10-22)**.
 - **JDK (updated 2026-10-22):** the build targets Java 26 (`<java.version>26`). Cloud container: `/opt/jdk26/jdk-26.0.2.1`. Windows workstation: `export JAVA_HOME=~/.jdks/corretto-27` (Git Bash); JDK 27 compiles for 26 but makes ArchUnit print class-file-71 warnings (the rules still run).
 - **Backend packages:** `com.asp.platform`.
   - `config/{security,persistence,web,time}` for app-wide wiring.
