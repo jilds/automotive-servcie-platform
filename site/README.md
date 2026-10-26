@@ -8,7 +8,7 @@ It is **not** part of the Maven reactor: `./mvnw clean verify` does not build it
 
 ## Requirements
 
-Node v24.16.0 and npm 11.16.0 (`.nvmrc`, `engines`; `.npmrc` sets `engine-strict` and `save-exact`). Every
+Node v24.16.0 exactly and npm 11 from 11.13.0, the npm that Node 24.16.0 ships (`.nvmrc`, `engines`; `.npmrc` sets `engine-strict` and `save-exact`). Every
 dependency is pinned to an exact version and `package-lock.json` is committed.
 
 ## Build and preview
