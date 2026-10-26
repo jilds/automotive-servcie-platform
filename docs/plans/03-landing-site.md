@@ -1,6 +1,6 @@
 # 03: Landing site
 
-Status: **in progress**. Commit `feat(site): add the ASP landing site`. Depends on the lead endpoint in
+Status: **done** (`ef0386d`..`fc0472a`). Commit `feat(site): add the ASP landing site`. Depends on the lead endpoint in
 [02-release-readiness.md](02-release-readiness.md) (2c).
 
 ## Goal
