@@ -1,7 +1,8 @@
 # 02: Release readiness
 
-Status: **in progress**. 2a done (`b36bd7e`), 2b done (`f246cff`), 2c done (`f313192`), 2d built (2026-10-26).
-Four commits: 2a–2d.
+Status: **done** (2026-10-26). 2a `b36bd7e`, 2b `f246cff`, 2c `f313192`, 2d `6630315` (with `3971ac7`, the
+executable bit on `mvnw` and the deploy scripts). Still owed: the 390 px walk of `/admin/leads` (2c) and the
+decisions in `docs/release/checklist.md`.
 Migration V16 (lead).
 Branch `feature/release-readiness`.
 
