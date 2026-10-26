@@ -1,0 +1,38 @@
+---
+import { useT } from '../i18n';
+import { type Lang, href } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <p class="footer-brand">{t('site.name')}</p>
+      <p>{t('footer.tagline')}</p>
+      <p>{t('footer.noTracking')}</p>
+    </div>
+    <nav aria-labelledby="footer-site">
+      <h2 id="footer-site">{t('footer.site')}</h2>
+      <ul>
+        <li><a href={href('auto', lang)}>{t('nav.auto')}</a></li>
+        <li><a href={href('moto', lang)}>{t('nav.moto')}</a></li>
+        <li><a href={href('features', lang)}>{t('nav.features')}</a></li>
+        <li><a href={href('proposal', lang)}>{t('nav.proposal')}</a></li>
+      </ul>
+    </nav>
+    <nav aria-labelledby="footer-legal">
+      <h2 id="footer-legal">{t('footer.legal')}</h2>
+      <ul>
+        <li><a href={href('privacy', lang)}>{t('footer.privacy')}</a></li>
+        <li><a href={href('terms', lang)}>{t('footer.terms')}</a></li>
+        <li><a href={href('cookies', lang)}>{t('footer.cookies')}</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>

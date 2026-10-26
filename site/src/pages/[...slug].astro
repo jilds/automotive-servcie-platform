@@ -1,0 +1,48 @@
+---
+// Every page in every language comes from the route table in src/i18n/routes.ts.
+import Cookies from '../components/pages/Cookies.astro';
+import Features from '../components/pages/Features.astro';
+import Home from '../components/pages/Home.astro';
+import Privacy from '../components/pages/Privacy.astro';
+import Proposal from '../components/pages/Proposal.astro';
+import Segment from '../components/pages/Segment.astro';
+import Terms from '../components/pages/Terms.astro';
+import { type MessageKey, t } from '../i18n';
+import { type Lang, type PageId, routes } from '../i18n/routes';
+import Base from '../layouts/Base.astro';
+
+export function getStaticPaths() {
+  return routes.map((route) => ({
+    params: { slug: route.path === '' ? undefined : route.path.replace(/\/$/, '') },
+    props: { lang: route.lang, page: route.page },
+  }));
+}
+
+interface Props {
+  lang: Lang;
+  page: PageId;
+}
+
+const { lang, page } = Astro.props;
+const meta: Record<PageId, { title: MessageKey; description: MessageKey }> = {
+  home: { title: 'meta.home.title', description: 'meta.home.description' },
+  auto: { title: 'meta.auto.title', description: 'meta.auto.description' },
+  moto: { title: 'meta.moto.title', description: 'meta.moto.description' },
+  features: { title: 'meta.features.title', description: 'meta.features.description' },
+  proposal: { title: 'meta.proposal.title', description: 'meta.proposal.description' },
+  privacy: { title: 'meta.privacy.title', description: 'meta.privacy.description' },
+  terms: { title: 'meta.terms.title', description: 'meta.terms.description' },
+  cookies: { title: 'meta.cookies.title', description: 'meta.cookies.description' },
+};
+---
+
+<Base lang={lang} page={page} title={t(lang, meta[page].title)} description={t(lang, meta[page].description)}>
+  {page === 'home' && <Home lang={lang} />}
+  {page === 'auto' && <Segment lang={lang} segment="auto" />}
+  {page === 'moto' && <Segment lang={lang} segment="moto" />}
+  {page === 'features' && <Features lang={lang} />}
+  {page === 'proposal' && <Proposal lang={lang} />}
+  {page === 'privacy' && <Privacy lang={lang} />}
+  {page === 'terms' && <Terms lang={lang} />}
+  {page === 'cookies' && <Cookies lang={lang} />}
+</Base>

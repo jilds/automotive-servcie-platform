@@ -28,9 +28,11 @@ public class BrandingService {
     private final PublicWorkshopCache publicWorkshops;
     private final Clock clock;
     private final SubscriptionPolicy subscriptions;
+    private final SiteProperties site;
 
     BrandingService(TenantRepository tenants, TenantLogoRepository logos, PublicWorkshopCache publicWorkshops,
-            Clock clock, SubscriptionPolicy subscriptions) {
+            Clock clock, SubscriptionPolicy subscriptions, SiteProperties site) {
+        this.site = site;
         this.subscriptions = subscriptions;
         this.tenants = tenants;
         this.publicWorkshops = publicWorkshops;
@@ -44,13 +46,13 @@ public class BrandingService {
     @Transactional(readOnly = true)
     public BrandingView bySlug(String slug) {
         Tenant tenant = tenantBySlug(slug);
-        return BrandingView.of(tenant, logos.hashOf(tenant.id()).orElse(null));
+        return view(tenant, logos.hashOf(tenant.id()).orElse(null));
     }
 
     @Transactional(readOnly = true)
     public BrandingView current(UUID tenantId) {
         Tenant tenant = tenant(tenantId);
-        return BrandingView.of(tenant, logos.hashOf(tenantId).orElse(null));
+        return view(tenant, logos.hashOf(tenantId).orElse(null));
     }
 
     @Transactional(readOnly = true)
@@ -80,7 +82,7 @@ public class BrandingService {
         // The public pages show the display name and are found by the slug.
         publicWorkshops.evictWorkshop(tenantId, tenant.slug().value());
         publicWorkshops.evictSlug(newSlug.value());
-        return BrandingView.of(saved, logos.hashOf(tenantId).orElse(null));
+        return view(saved, logos.hashOf(tenantId).orElse(null));
     }
 
     /// @throws com.asp.platform.identity.domain.InvalidLogoException when the file is refused
@@ -89,7 +91,7 @@ public class BrandingService {
         Tenant tenant = tenant(tenantId);
         Logo logo = Logo.upload(content, clock.instant());
         logos.save(tenantId, logo);
-        return BrandingView.of(tenant, logo.sha256());
+        return view(tenant, logo.sha256());
     }
 
     @Transactional
@@ -98,7 +100,7 @@ public class BrandingService {
         if (logos.hashOf(tenantId).isPresent()) {
             logos.delete(tenantId);
         }
-        return BrandingView.of(tenant, null);
+        return view(tenant, null);
     }
 
     private Tenant tenantBySlug(String slug) {
@@ -112,5 +114,9 @@ public class BrandingService {
 
     private Tenant tenant(UUID tenantId) {
         return tenants.findById(tenantId).orElseThrow(TenantNotFoundException::new);
+    }
+
+    private BrandingView view(Tenant tenant, @Nullable String logoHash) {
+        return BrandingView.of(tenant, logoHash, site.privacyUrlOrNull());
     }
 }

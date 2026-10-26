@@ -1,0 +1,45 @@
+---
+import LegalEntity from '../LegalEntity.astro';
+import Todo from '../Todo.astro';
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<div class="section">
+  <article class="container prose">
+    <h1>{t('privacy.title')}</h1>
+    <p class="note"><Todo lang={lang} />{t('legal.todoNote')}</p>
+    <p>{t('privacy.intro')}</p>
+
+    <h2>{t('privacy.controller.title')}</h2>
+    <p>{t('privacy.controller.text')}</p>
+    <LegalEntity lang={lang} />
+
+    <h2>{t('privacy.form.title')}</h2>
+    <p>{t('privacy.form.text')}</p>
+
+    <h2>{t('privacy.basis.title')}</h2>
+    <p><Todo lang={lang} />{t('privacy.basis.text')}</p>
+
+    <h2>{t('privacy.retention.title')}</h2>
+    <p><Todo lang={lang} />{t('privacy.retention.text')}</p>
+
+    <h2>{t('privacy.booking.title')}</h2>
+    <p>{t('privacy.booking.text')}</p>
+
+    <h2>{t('privacy.rights.title')}</h2>
+    <p>{t('privacy.rights.text')}</p>
+
+    <h2>{t('footer.cookies')}</h2>
+    <p><a href={href('cookies', lang)}>{t('privacy.cookies.text')}</a></p>
+
+    <p class="hint"><Todo lang={lang} />{t('legal.updated')}</p>
+  </article>
+</div>

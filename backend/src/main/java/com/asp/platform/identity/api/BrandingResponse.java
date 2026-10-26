@@ -15,10 +15,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 /// @param logoUrl          versioned logo address, or null when the workshop has no logo
 /// @param addOns           the add-ons switched on, for the signed-in shell's menus; left out of the public
 ///                         `/branding/{slug}` answer, which says nothing about the subscription
+/// @param privacyUrl       the platform's privacy policy on the landing site (`app.site.privacy-url`), linked from
+///                         the public booking page; null when unset. The same for every workshop
 /// @param version          the workshop's version, sent back with the next theme change; a counter, nothing more
 record BrandingResponse(String slug, String name, @Nullable String displayName, @Nullable String primaryColor,
         @Nullable String primaryTextColor, @Nullable String accentColor, @Nullable String logoUrl,
-        @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable AddOns addOns, long version) {
+        @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable AddOns addOns, @Nullable String privacyUrl,
+        long version) {
 
     private static final int VERSION_LENGTH = 12;
 
@@ -37,6 +40,6 @@ record BrandingResponse(String slug, String name, @Nullable String displayName, 
         String logoUrl = hash == null ? null
                 : "/api/v1/branding/" + v.slug() + "/logo?v=" + hash.substring(0, VERSION_LENGTH);
         return new BrandingResponse(v.slug(), v.name(), v.displayName(), v.primaryColor(), v.primaryTextColor(),
-                v.accentColor(), logoUrl, addOns, v.version());
+                v.accentColor(), logoUrl, addOns, v.privacyUrl(), v.version());
     }
 }

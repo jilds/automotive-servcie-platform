@@ -283,6 +283,9 @@ export function statusLink(origin: string, slug: string, token: string): string 
                           <button type="button" class="btn btn-link btn-sm px-0" aria-controls="bk-privacy-notice" [attr.aria-expanded]="privacyOpen()" (click)="privacyOpen.set(!privacyOpen())">
                             {{ 'booking.contact.privacyShow' | t }}
                           </button>
+                          @if (platformPrivacyUrl(); as url) {
+                            <a id="bk-platform-privacy" class="btn btn-link btn-sm px-0 ms-3" [href]="url" target="_blank" rel="noopener noreferrer">{{ 'booking.contact.platformPrivacy' | t }}</a>
+                          }
                           @if (privacyOpen()) {
                             <p id="bk-privacy-notice" class="small text-body-secondary bg-body-tertiary rounded p-3 mb-0">{{ 'booking.contact.privacyNotice' | t: { workshop: workshopName() } }}</p>
                           }
@@ -411,6 +414,11 @@ export class PublicBooking {
 
   protected workshopName(): string {
     return this.page()?.branding()?.name ?? '';
+  }
+
+  /** The platform's privacy policy on the landing site (`app.site.privacy-url`); no link while it is unset. */
+  protected platformPrivacyUrl(): string | null {
+    return this.page()?.branding()?.privacyUrl ?? null;
   }
 
   protected isSelected(id: string): boolean {

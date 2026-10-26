@@ -19,7 +19,7 @@ class Host {
 
 const BRANDING: Branding = {
   slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: '#0b3d91', primaryTextColor: '#ffffff',
-  accentColor: null, logoUrl: '/api/v1/branding/oficina-azul/logo?v=abc', version: 3,
+  accentColor: null, logoUrl: '/api/v1/branding/oficina-azul/logo?v=abc', privacyUrl: null, version: 3,
 };
 
 describe('PublicPage', () => {

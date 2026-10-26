@@ -47,6 +47,27 @@ jobs:
           path: backend/target/surefire-reports/
           retention-days: 7
 
+  # The landing site (site/, step 03): not in the Maven reactor; Astro type check and static build. The release image
+  # does not depend on it.
+  site:
+    name: Landing site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24.16.0'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
   dependencies:
     name: Dependency scan
     runs-on: ubuntu-24.04

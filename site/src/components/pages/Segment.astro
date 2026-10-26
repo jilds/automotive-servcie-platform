@@ -1,0 +1,82 @@
+---
+// Car workshops and motorcycle workshops pages: the same layout, different texts.
+import CtaBand from '../CtaBand.astro';
+import { type MessageKey, useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  segment: 'auto' | 'moto';
+}
+
+interface SegmentTexts {
+  eyebrow: MessageKey;
+  title: MessageKey;
+  lead: MessageKey;
+  section: MessageKey;
+  points: readonly { title: MessageKey; text: MessageKey }[];
+}
+
+const segments: Record<Props['segment'], SegmentTexts> = {
+  auto: {
+    eyebrow: 'auto.eyebrow',
+    title: 'auto.title',
+    lead: 'auto.lead',
+    section: 'auto.section',
+    points: [
+      { title: 'auto.1.title', text: 'auto.1.text' },
+      { title: 'auto.2.title', text: 'auto.2.text' },
+      { title: 'auto.3.title', text: 'auto.3.text' },
+      { title: 'auto.4.title', text: 'auto.4.text' },
+      { title: 'auto.5.title', text: 'auto.5.text' },
+    ],
+  },
+  moto: {
+    eyebrow: 'moto.eyebrow',
+    title: 'moto.title',
+    lead: 'moto.lead',
+    section: 'moto.section',
+    points: [
+      { title: 'moto.1.title', text: 'moto.1.text' },
+      { title: 'moto.2.title', text: 'moto.2.text' },
+      { title: 'moto.3.title', text: 'moto.3.text' },
+      { title: 'moto.4.title', text: 'moto.4.text' },
+      { title: 'moto.5.title', text: 'moto.5.text' },
+    ],
+  },
+};
+
+const { lang, segment } = Astro.props;
+const t = useT(lang);
+const texts = segments[segment];
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <p class="eyebrow">{t(texts.eyebrow)}</p>
+    <h1 id="page-title">{t(texts.title)}</h1>
+    <p class="lead">{t(texts.lead)}</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
+      <a class="btn btn-secondary" href={href('features', lang)}>{t('cta.features')}</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="points-title">
+  <div class="container">
+    <h2 id="points-title">{t(texts.section)}</h2>
+    <ul class="points">
+      {
+        texts.points.map((point) => (
+          <li class="card">
+            <h3>{t(point.title)}</h3>
+            <p>{t(point.text)}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<CtaBand lang={lang} />

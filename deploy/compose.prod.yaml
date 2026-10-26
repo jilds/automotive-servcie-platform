@@ -29,7 +29,9 @@ services:
       ASP_ACME_EMAIL: ${ASP_ACME_EMAIL:?set ASP_ACME_EMAIL, where Let's Encrypt sends expiry notices}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./site:/srv/site:ro
+      - ./caddy:/etc/caddy/caddy:ro
+      # The built landing site (runbook §2); the placeholder in deploy/site until it is deployed.
+      - ${ASP_SITE_DIR:-./site}:/srv/site:ro
       - caddy-data:/data
       - caddy-config:/config
     networks:
@@ -56,7 +58,9 @@ services:
       ASP_DB_OWNER_PASSWORD: ${ASP_DB_OWNER_PASSWORD:?set ASP_DB_OWNER_PASSWORD}
       ASP_JWT_SECRET: ${ASP_JWT_SECRET:?set ASP_JWT_SECRET, at least 32 random bytes}
       ASP_PUBLIC_URL: https://${ASP_APP_DOMAIN}
-      ASP_SITE_ORIGIN: https://${ASP_SITE_DOMAIN}
+      # The site's origin may post the demo request form (CORS); its privacy page is linked from the booking page.
+      ASP_SITE_ORIGIN: ${ASP_SITE_ORIGIN:-https://${ASP_SITE_DOMAIN}}
+      ASP_SITE_PRIVACY_URL: ${ASP_SITE_PRIVACY_URL:-}
       # Exactly Caddy's address on the proxy network (see caddy.networks).
       ASP_TRUSTED_PROXIES: '172\.30\.0\.10'
       ASP_MAIL_ENABLED: ${ASP_MAIL_ENABLED:-false}

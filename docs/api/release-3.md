@@ -78,12 +78,16 @@ Theme of the branded login page `/w/{slug}`. Presentation only: nothing else abo
   "primaryColor": "#0b3d91",
   "primaryTextColor": "#ffffff",
   "accentColor": "#ffcc00",
-  "logoUrl": "/api/v1/branding/oficina-azul/logo?v=3f2a9c0d1b2e"
+  "logoUrl": "/api/v1/branding/oficina-azul/logo?v=3f2a9c0d1b2e",
+  "privacyUrl": "https://asp.example/privacidade"
 }
 ```
 `name` is the display name or, when unset, the workshop name. Unset colours and logo are `null` (use the ASP theme).
 Unknown or malformed slug: `404 workshop-not-found`. **(updated 2026-10-26)** So is a suspended, cancelled or expired
 workshop, here and on `/branding/{slug}/logo` (ADR 0004): `/w/{slug}` then shows the plain ASP sign-in.
+**(updated 2026-10-26)** `privacyUrl` is the platform's privacy policy on the landing site (`app.site.privacy-url`,
+`ASP_SITE_PRIVACY_URL`), the same for every workshop, or `null` when unset; the public booking page `/w/{slug}/book`
+links it ("Política de privacidade da plataforma", new tab) next to the workshop's privacy notice, only when set.
 
 #### `GET /branding/{slug}/logo`
 The image (`image/png`, `image/webp` or `image/svg+xml`) with `ETag` (its SHA-256), `Cache-Control: public,
@@ -765,7 +769,8 @@ Own security chain: anonymous, the `Authorization` header is not read, CORS only
 `*` or a path stops the start). Each client address may send 5 requests an hour (`app.public-site.leads`, IPv6 by its
 /64), and all addresses together 50 (`app.public-site.leads-total`, `ASP_SITE_LEADS_PER_HOUR`); more answer
 `429 too-many-requests` with `Retry-After`. Only this `POST` (and CORS preflights) is open on the chain; any other
-method or path under `/api/v1/public-site/` answers 403.
+method or path under `/api/v1/public-site/` answers 403. **(updated 2026-10-26)** Cross-origin answers carry
+`Access-Control-Expose-Headers: Retry-After`, so the site can read `Retry-After` on a 429 (seconds until it may try again).
 
 ```json
 { "name": "Ana Silva", "workshopName": "Oficina Azul", "phone": "912345678", "email": "ana@oficina.pt",

@@ -1,0 +1,28 @@
+{
+  "name": "asp-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Static landing site of ASP - Automotive Service Platform",
+  "engines": {
+    "node": "24.16.0",
+    "npm": ">=11.13.0 <12"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "check": "astro check",
+    "build": "astro check && vitest run && astro build",
+    "preview": "astro preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.4",
+    "@fontsource-variable/archivo": "5.3.0",
+    "astro": "7.4.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

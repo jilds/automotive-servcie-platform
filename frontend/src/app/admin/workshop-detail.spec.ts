@@ -42,7 +42,7 @@ describe('WorkshopDetail add-ons card', () => {
     // The theme editor loads the workshop's branding on its own.
     for (const r of http.match('/api/v1/admin/workshops/w1/branding')) {
       r.flush({ slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: null, primaryTextColor: null,
-        accentColor: null, logoUrl: null, addOns: workshop.addOns, version: workshop.version });
+        accentColor: null, logoUrl: null, privacyUrl: null, addOns: workshop.addOns, version: workshop.version });
     }
     fixture.detectChanges();
     return fixture;

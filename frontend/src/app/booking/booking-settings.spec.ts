@@ -82,7 +82,7 @@ describe('Shell bookings menu', () => {
     const http = TestBed.inject(HttpTestingController);
     const f = TestBed.createComponent(Shell);
     f.detectChanges();
-    http.expectOne('/api/v1/branding').flush({ slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: null, primaryTextColor: null, accentColor: null, logoUrl: null, addOns: { booking, shop: false }, version: 1 });
+    http.expectOne('/api/v1/branding').flush({ slug: 'oficina-azul', name: 'Oficina Azul', displayName: null, primaryColor: null, primaryTextColor: null, accentColor: null, logoUrl: null, privacyUrl: null, addOns: { booking, shop: false }, version: 1 });
     f.detectChanges();
     return f.nativeElement.querySelector('a[href="/bookings"]') as HTMLAnchorElement | null;
   }

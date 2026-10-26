@@ -1,0 +1,13 @@
+---
+// Marks a legal placeholder that must be filled in before launch (release checklist).
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const t = useT(Astro.props.lang);
+---
+
+<span class="todo">{t('legal.todo')}</span>

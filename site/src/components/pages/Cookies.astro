@@ -1,0 +1,26 @@
+---
+import LegalEntity from '../LegalEntity.astro';
+import Todo from '../Todo.astro';
+import { useT } from '../../i18n';
+import type { Lang } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<div class="section">
+  <article class="container prose">
+    <h1>{t('cookies.title')}</h1>
+    <p>{t('cookies.none')}</p>
+    <p>{t('cookies.storage')}</p>
+    <p>{t('cookies.fonts')}</p>
+    <p>{t('cookies.changes')}</p>
+    <h2>{t('privacy.controller.title')}</h2>
+    <LegalEntity lang={lang} />
+    <p class="hint"><Todo lang={lang} />{t('legal.updated')}</p>
+  </article>
+</div>

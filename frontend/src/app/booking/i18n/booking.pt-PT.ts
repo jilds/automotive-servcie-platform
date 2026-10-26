@@ -49,6 +49,7 @@ export const bookingPtPT: PortugueseDictionary<BookingKey> = {
   'booking.contact.privacy': 'Li o aviso de privacidade e aceito que a oficina use estes dados para tratar a minha marcação.',
   'booking.contact.privacyRequired': 'Aceite o aviso de privacidade para enviar a marcação.',
   'booking.contact.privacyShow': 'Ler o aviso de privacidade',
+  'booking.contact.platformPrivacy': 'Política de privacidade da plataforma',
   'booking.contact.privacyNotice':
     'A oficina {workshop} usa o seu nome, contactos, matrícula e nota apenas para tratar esta marcação e o serviço da sua viatura. Os dados não são cedidos a terceiros para fins de marketing. Pode pedir à oficina, a qualquer momento, para os consultar, corrigir ou apagar.',
   'booking.contact.marketing': 'Quero receber novidades e promoções da oficina (opcional).',

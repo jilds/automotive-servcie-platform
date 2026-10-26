@@ -13,18 +13,20 @@ import com.asp.platform.identity.domain.Tenant;
 /// @param primaryTextColor `#ffffff` or `#000000`, whichever reaches 4.5:1 on the primary colour; null with it
 /// @param logoHash         SHA-256 of the logo, or null when there is none
 /// @param addOns           the add-ons switched on (online booking, online shop)
+/// @param privacyUrl       the platform's privacy policy on the landing site (`app.site.privacy-url`), or null; the
+///                         same for every workshop, linked from the public booking page
 /// @param version          the workshop's version, sent back with the next theme change (optimistic locking)
 public record BrandingView(String slug, String name, @Nullable String displayName, @Nullable String primaryColor,
         @Nullable String primaryTextColor, @Nullable String accentColor, @Nullable String logoHash, AddOns addOns,
-        long version) {
+        @Nullable String privacyUrl, long version) {
 
-    static BrandingView of(Tenant tenant, @Nullable String logoHash) {
+    static BrandingView of(Tenant tenant, @Nullable String logoHash, @Nullable String privacyUrl) {
         BrandColor primary = tenant.branding().primaryColor();
         BrandColor accent = tenant.branding().accentColor();
         return new BrandingView(tenant.slug().value(), tenant.shownName(), tenant.branding().displayName(),
                 primary == null ? null : primary.hex(),
                 primary == null ? null : primary.textColor().hex(),
                 accent == null ? null : accent.hex(),
-                logoHash, tenant.addOns(), tenant.version());
+                logoHash, tenant.addOns(), privacyUrl, tenant.version());
     }
 }

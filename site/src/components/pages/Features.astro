@@ -1,0 +1,115 @@
+---
+import CtaBand from '../CtaBand.astro';
+import FeatureCard from '../FeatureCard.astro';
+import Icon, { type IconName } from '../Icon.astro';
+import { type MessageKey, useT } from '../../i18n';
+import type { Lang } from '../../i18n/routes';
+import { comingSoon } from './features';
+
+interface Props {
+  lang: Lang;
+}
+
+interface Group {
+  id: string;
+  icon: IconName;
+  title: MessageKey;
+  items: readonly MessageKey[];
+  note?: MessageKey;
+}
+
+const groups: readonly Group[] = [
+  {
+    id: 'checkin',
+    icon: 'car',
+    title: 'feature.checkin.title',
+    items: ['features.checkin.1', 'features.checkin.2', 'features.checkin.3', 'features.checkin.4'],
+  },
+  {
+    id: 'board',
+    icon: 'board',
+    title: 'feature.board.title',
+    items: ['features.board.1', 'features.board.2', 'features.board.3', 'features.board.4'],
+  },
+  {
+    id: 'catalogue',
+    icon: 'list',
+    title: 'feature.catalogue.title',
+    items: ['features.catalogue.1', 'features.catalogue.2', 'features.catalogue.3'],
+  },
+  {
+    id: 'stock',
+    icon: 'box',
+    title: 'feature.stock.title',
+    items: ['features.stock.1', 'features.stock.2', 'features.stock.3', 'features.stock.4'],
+  },
+  {
+    id: 'booking',
+    icon: 'calendar',
+    title: 'feature.booking.title',
+    items: ['features.booking.1', 'features.booking.2', 'features.booking.3', 'features.booking.4'],
+    note: 'features.booking.addon',
+  },
+  {
+    id: 'branding',
+    icon: 'palette',
+    title: 'feature.branding.title',
+    items: ['features.branding.1', 'features.branding.2', 'features.branding.3'],
+  },
+  {
+    id: 'team',
+    icon: 'team',
+    title: 'features.team.title',
+    items: ['features.team.1', 'features.team.2', 'features.team.3'],
+  },
+  {
+    id: 'platform',
+    icon: 'globe',
+    title: 'features.platform.title',
+    items: ['features.platform.1', 'features.platform.2', 'features.platform.3', 'features.platform.4'],
+  },
+];
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <h1 id="page-title">{t('features.title')}</h1>
+    <p class="lead">{t('features.lead')}</p>
+  </div>
+</section>
+
+<div class="section">
+  <div class="container">
+    {
+      groups.map((group) => (
+        <section class="feature-section" aria-labelledby={`f-${group.id}`}>
+          <Icon name={group.icon} class="card-icon" />
+          <h2 id={`f-${group.id}`}>{t(group.title)}</h2>
+          <ul class="check-list">
+            {group.items.map((item) => (
+              <li>{t(item)}</li>
+            ))}
+          </ul>
+          {group.note && <p class="note">{t(group.note)}</p>}
+        </section>
+      ))
+    }
+  </div>
+</div>
+
+<section class="section section-alt" aria-labelledby="soon-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="soon-title">{t('features.soon.title')}</h2>
+      <p class="lead">{t('features.soon.lead')}</p>
+    </div>
+    <div class="grid">
+      {comingSoon.map((f) => <FeatureCard lang={lang} icon={f.icon} title={f.title} text={f.text} soon />)}
+    </div>
+  </div>
+</section>
+
+<CtaBand lang={lang} />

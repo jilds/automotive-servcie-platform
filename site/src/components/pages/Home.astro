@@ -1,0 +1,126 @@
+---
+import BoardMock from '../BoardMock.astro';
+import CtaBand from '../CtaBand.astro';
+import FeatureCard from '../FeatureCard.astro';
+import Icon from '../Icon.astro';
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+import { available, comingSoon } from './features';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const values = [
+  { icon: 'wrench', title: 'home.value.1.title', text: 'home.value.1.text' },
+  { icon: 'phone', title: 'home.value.2.title', text: 'home.value.2.text' },
+  { icon: 'shield', title: 'home.value.3.title', text: 'home.value.3.text' },
+] as const;
+const steps = [
+  { title: 'home.onboarding.1.title', text: 'home.onboarding.1.text' },
+  { title: 'home.onboarding.2.title', text: 'home.onboarding.2.text' },
+  { title: 'home.onboarding.3.title', text: 'home.onboarding.3.text' },
+  { title: 'home.onboarding.4.title', text: 'home.onboarding.4.text' },
+] as const;
+const faq = [
+  { q: 'home.faq.1.q', a: 'home.faq.1.a' },
+  { q: 'home.faq.2.q', a: 'home.faq.2.a' },
+  { q: 'home.faq.3.q', a: 'home.faq.3.a' },
+  { q: 'home.faq.4.q', a: 'home.faq.4.a' },
+  { q: 'home.faq.5.q', a: 'home.faq.5.a' },
+  { q: 'home.faq.6.q', a: 'home.faq.6.a' },
+  { q: 'home.faq.7.q', a: 'home.faq.7.a' },
+] as const;
+---
+
+<section class="hero on-chrome" aria-labelledby="hero-title">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow">{t('home.hero.eyebrow')}</p>
+      <h1 id="hero-title">{t('home.hero.title')}</h1>
+      <p class="lead">{t('home.hero.lead')}</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
+        <a class="btn btn-secondary" href={href('features', lang)}>{t('cta.features')}</a>
+      </div>
+    </div>
+    <BoardMock lang={lang} />
+  </div>
+</section>
+
+<section class="section" aria-labelledby="value-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="value-title">{t('home.value.title')}</h2>
+    </div>
+    <div class="grid">
+      {
+        values.map((value) => (
+          <article class="card">
+            <Icon name={value.icon} class="card-icon" />
+            <h3>{t(value.title)}</h3>
+            <p>{t(value.text)}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" aria-labelledby="features-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="features-title">{t('home.features.title')}</h2>
+      <p class="lead">{t('home.features.lead')}</p>
+    </div>
+    <div class="grid">
+      {available.map((f) => <FeatureCard lang={lang} icon={f.icon} title={f.title} text={f.text} />)}
+      {comingSoon.map((f) => <FeatureCard lang={lang} icon={f.icon} title={f.title} text={f.text} soon />)}
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="onboarding-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="onboarding-title">{t('home.onboarding.title')}</h2>
+      <p class="lead">{t('home.onboarding.lead')}</p>
+    </div>
+    <ol class="steps">
+      {
+        steps.map((step) => (
+          <li>
+            <h3>{t(step.title)}</h3>
+            <p>{t(step.text)}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<section class="section section-alt" aria-labelledby="faq-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="faq-title">{t('home.faq.title')}</h2>
+    </div>
+    <div class="faq">
+      {
+        faq.map((item) => (
+          <details>
+            <summary>
+              {t(item.q)}
+            </summary>
+            <div>
+              <p>{t(item.a)}</p>
+            </div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<CtaBand lang={lang} />
