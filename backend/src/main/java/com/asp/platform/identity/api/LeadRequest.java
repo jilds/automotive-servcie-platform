@@ -33,7 +33,9 @@ record LeadRequest(
         @Nullable Boolean marketingConsent,
         @Nullable @Size(max = 500) String website) implements PhoneOrEmail.Subject {
 
-    static final String ONE_LINE_NO_LINK = "(?i)(?!.*(://|www\\.))[^\\p{Cntrl}<>]*";
+    // (?s): the look-ahead must also see past a line or paragraph separator. \p{Cntrl} is ASCII only, so the C1
+    // controls (NEL among them) are listed too; site/src/scripts/lead-validation.ts mirrors this.
+    static final String ONE_LINE_NO_LINK = "(?is)(?!.*(://|www\\.))[^\\p{Cntrl}\\u0080-\\u009f\\u2028\\u2029<>]*";
 
     boolean honeypotFilled() {
         String w = website;
