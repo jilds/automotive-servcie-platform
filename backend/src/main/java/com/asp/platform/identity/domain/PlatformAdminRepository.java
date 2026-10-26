@@ -15,4 +15,7 @@ public interface PlatformAdminRepository {
     boolean existsByEmail(String normalizedEmail);
 
     boolean existsAny();
+
+    /// The e-mail addresses of the active platform admins.
+    java.util.List<String> activeEmails();
 }

@@ -75,6 +75,11 @@ class DashboardServiceTests {
             }
 
             @Override
+            public java.util.Optional<com.asp.platform.identity.WorkshopProfile> profile(UUID tenantId) {
+                return java.util.Optional.empty();
+            }
+
+            @Override
             public long labourRateCents(UUID tenantId) {
                 return 4500;
             }

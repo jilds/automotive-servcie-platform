@@ -1,0 +1,16 @@
+# Local development: SPRING_PROFILES_ACTIVE=dev. `./mvnw -pl backend spring-boot:run` turns it on (backend/pom.xml);
+# in the IDE, set the active profile to dev. Production uses the prod profile (application-prod.yml).
+spring:
+  # Mailpit from compose.yaml: every mail lands on http://localhost:8025, none leaves the machine.
+  mail:
+    host: ${ASP_MAIL_HOST:localhost}
+    port: ${ASP_MAIL_PORT:1025}
+
+app:
+  security:
+    # Public, so config/security/DevSecretGuard refuses it outside the dev and test profiles.
+    jwt-secret: ${ASP_JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes!!}
+  public-url: ${ASP_PUBLIC_URL:http://localhost:8080}
+  mail:
+    enabled: ${ASP_MAIL_ENABLED:true}
+    from: ${ASP_MAIL_FROM:ASP <noreply@asp.localhost>}

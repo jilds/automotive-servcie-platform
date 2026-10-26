@@ -1,0 +1,15 @@
+# Smoke run only (compose.smoke.yaml): Caddy's own CA instead of Let's Encrypt, on names that resolve to this machine.
+{
+	local_certs
+	skip_install_trust
+}
+
+app.localhost {
+	encode zstd gzip
+	reverse_proxy app:8080
+}
+
+localhost {
+	root * /srv/site
+	file_server
+}

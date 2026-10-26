@@ -17,7 +17,9 @@ On the board, cards move by drag and drop (mouse or touch, Angular CDK) or with 
   - **Stock (sidebar → Stock, Owner and Front desk):** products (SKU unique per workshop, brand, unit, cost, sale price, VAT, minimum stock, bin) with what is on hand, reserved for open work orders and still available; a low-stock filter and a dashboard tile; adjustments with a reason; a movement ledger per product (rows only added); purchase orders (draft → ordered → received; receiving adds the parts to stock). On a work order, "Adicionar peça do stock" adds a part at its sale price and reserves it: removing the line or cancelling the order gives it back, delivering the car takes it out of stock. Stock never goes below zero and two people cannot take the last unit at once (the product row is locked). Mechanics may look parts up (name, SKU, bin, available) but never see cost or prices.
   - **Changing the mechanic:** on a work order, the owner or front desk can hand the car to another mechanic (or to nobody); replacing or removing one needs a reason, and every change is listed with who made it, when and why.
   - **Add-ons and public workshop pages (foundation):** the platform admin switches **online booking** and the **online shop** on per workshop (admin console → workshop → Add-ons; badges in the list), independent of the plan. Public pages under `/api/v1/public/{slug}/…` need no sign-in: the slug picks the workshop and row-level security still applies; unknown, suspended or cancelled workshops and switched-off add-ons answer 404; each address may send 10 writes an hour and 120 reads a minute per workshop (429 with `Retry-After`). Online booking uses them (below); the shop comes next. See [ADR 0004](docs/adr/0004-public-workshop-pages.md).
-  - **Online booking (add-on `booking`, backend):** customers pick services listed online and a free **drop-off slot** on the workshop's public page and get a private status link (no e-mail or SMS yet), where they see the status and may cancel until the workshop's deadline. Slots come from the opening hours per weekday (several ranges, e.g. a lunch break) in the workshop's time zone, cut into 15, 30 or 60 minutes, with a number of cars per slot, closures, a lead time and a horizon; defaults until the owner saves them: 30 min, 1 car, 24 h, 30 days, cancel until 24 h, Monday–Friday 09:00–13:00 and 14:00–18:00. Two requests for the last place give one booking. The front desk confirms, declines (with a reason the customer sees), moves to another free slot or marks a no-show, and checks the car in from a confirmed booking: the booked services still offered become catalogue lines on the new work order, in one step. Mechanics never see bookings. Hidden-field spam is answered like a success and stored nowhere; the privacy notice must be accepted.
+  - **Online booking (add-on `booking`, backend):** customers pick services listed online and a free **drop-off slot** on the workshop's public page and get a private status link (also by e-mail when they leave an address), where they see the status and may cancel until the workshop's deadline. Slots come from the opening hours per weekday (several ranges, e.g. a lunch break) in the workshop's time zone, cut into 15, 30 or 60 minutes, with a number of cars per slot, closures, a lead time and a horizon; defaults until the owner saves them: 30 min, 1 car, 24 h, 30 days, cancel until 24 h, Monday–Friday 09:00–13:00 and 14:00–18:00. Two requests for the last place give one booking. The front desk confirms, declines (with a reason the customer sees), moves to another free slot or marks a no-show, and checks the car in from a confirmed booking: the booked services still offered become catalogue lines on the new work order, in one step. Mechanics never see bookings. Hidden-field spam is answered like a success and stored nowhere; the privacy notice must be accepted.
+  - **E-mail (module `notification`):** when `ASP_MAIL_ENABLED=true`, ASP mails activation links (a new workshop's first owner, invited team members, links sent again) and tells a customer who left an e-mail address that their booking was received (with the status link), confirmed, moved or declined (with the reason). Mails are plain text with an HTML version, in Portuguese (Portugal), English or Portuguese (Brazil): the booking page's language for the first booking mail, else the workshop country's. They go out after the change is saved, off the request; a mail that fails is logged (template only) and never undoes the change. Off by default: then the links stay on screen as before. In development, Mailpit from `compose.yaml` catches every mail on http://localhost:8025.
+  - **Demo requests (step 2c):** the landing site's "Pedir proposta" form posts to `/api/v1/public-site/leads` (anonymous; name, workshop, phone and/or e-mail, district, cars / motorcycles / both, message, consents; hidden-field spam stored nowhere; 5 an hour per address, 50 an hour in all; CORS only from `ASP_SITE_ORIGIN`). The platform admins get a mail (when mail is on; the message itself stays in the console) and work through them in the console under **Demo requests** (`/admin/leads`): new, contacted, closed.
   - Compact language switcher (PT / EN / BR) in the phone top bar; full-height sidebar on long pages; "ASP - Automotive Service Platform" back as the sign-in title.
 
 Mechanics never get customer personal data (name, phone, e-mail, NIF) or prices.
@@ -34,7 +36,7 @@ You need **JDK 26 or newer** (the build targets Java 26; on the Windows workstat
 
 # Packaged: database + one jar serving API and UI on http://localhost:8080
 docker compose up -d
-java -jar backend/target/backend-0.1.0-SNAPSHOT.jar
+java -jar backend/target/backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
 Hot reload while developing:
@@ -44,7 +46,7 @@ Hot reload while developing:
 cd frontend && npm install && npm start # UI on http://localhost:4200, proxies /api and /actuator to :8080
 ```
 
-Or run `TestAspApplication` (backend test sources) from the IDE: it starts the app against a throw-away PostgreSQL, no compose needed.
+Or run `TestAspApplication` (backend test sources) from the IDE: it starts the app against a throw-away PostgreSQL, no compose needed. Run `AspApplication` from the IDE with the active profile `dev`.
 
 First start: there is no signup. Set `ASP_BOOTSTRAP_ADMIN_EMAIL` and `ASP_BOOTSTRAP_ADMIN_PASSWORD` (12+ characters) in the environment; on startup, while no platform admin exists, the app creates one and logs its e-mail (never the password). Sign in with it, you land in the admin console (`/admin`): register a workshop with its first owner, copy the activation link it shows and open it to set the owner's password. Remove the two variables afterwards; they are ignored once a platform admin exists.
 
@@ -98,7 +100,7 @@ Rules the build enforces: `ModularityTests` (no module reaches into another modu
 
 Every domain table has a `tenant_id`. The app connects as `asp_app`, which cannot bypass row-level security, and sets `app.tenant_id` from the signed-in user's token on every connection (`config/persistence`). PostgreSQL then only returns that workshop's rows, even if a query forgets to filter, and fills `tenant_id` on insert. Migrations run as `asp_owner`. `tenant` and `app_user` are read before login, so they are filtered in code instead. `RowLevelSecurityCatalogueTests` reads the migrated schema and fails the build when any table with a `tenant_id` column (also ones added later) lacks ENABLE + FORCE row-level security and the `tenant_isolation` policy, unless it is a named, documented exception (`app_user`, `tenant_logo`). See [ADR 0002](docs/adr/0002-tenant-isolation-with-row-level-security.md).
 
-Platform admins are stored apart (`platform_admin`), belong to no workshop and get no `tenant_id` in their token, so their connections see no workshop rows; the security config also answers them 403 on every API outside `/api/v1/admin/**`. A suspended or cancelled workshop cannot sign in, and tokens issued before stop working at their next request. See [ADR 0003](docs/adr/0003-subscription-onboarding-and-tenant-branding.md).
+Platform admins are stored apart (`platform_admin`), belong to no workshop and get no `tenant_id` in their token, so their connections see no workshop rows; the security config also answers them 403 on every API outside `/api/v1/admin/**`. A suspended or cancelled workshop cannot sign in, and tokens issued before stop working at their next request. So does a workshop whose subscription end date plus the grace days has passed; the admin console marks it "Expired". See [ADR 0003](docs/adr/0003-subscription-onboarding-and-tenant-branding.md).
 
 Public workshop pages (`/api/v1/public/{slug}/…`) have no token: a filter finds the workshop by its slug and runs the request inside `shared.TenantScope` (a `ScopedValue`), which the data source binds as `app.tenant_id` when there is no token. A token always wins and is not even read on public paths, so the two never mix. See [ADR 0004](docs/adr/0004-public-workshop-pages.md).
 
@@ -121,12 +123,40 @@ The UI is in Portuguese (Portugal) by default, with English and Portuguese (Braz
 | `ASP_BOOTSTRAP_ADMIN_EMAIL` / `ASP_BOOTSTRAP_ADMIN_PASSWORD` | unset; creates the first platform admin at startup while none exists (password 12–72 characters) |
 | `ASP_BOOTSTRAP_ADMIN_NAME` | unset ("Platform admin") |
 | `ASP_CONTACT_EMAIL` / `ASP_CONTACT_PHONE` | unset; shown on the login page under "Want ASP for your workshop?" (block hidden when both are unset) |
+| `ASP_SUBSCRIPTION_GRACE_DAYS` | `7`; days after a workshop's subscription end date before it is locked out like a suspended one |
+| `ASP_PUBLIC_URL` | `http://localhost:8080` in dev; where people open the app, for the links in mails (required in prod) |
+| `ASP_MAIL_ENABLED` | `false` (`true` in dev, to Mailpit); sends the activation and booking mails |
+| `ASP_MAIL_FROM` | `ASP <noreply@asp.localhost>` in dev; the sender, required while mail is on |
+| `ASP_MAIL_HOST` / `ASP_MAIL_PORT` | `localhost` / `1025` (Mailpit) in dev, port `587` in prod; any SMTP server |
+| `ASP_MAIL_USERNAME` / `ASP_MAIL_PASSWORD` | unset; SMTP login (prod) |
+| `ASP_MAIL_SMTP_AUTH` / `ASP_MAIL_STARTTLS_REQUIRED` | `true` / `true` (prod) |
+| `ASP_SITE_ORIGIN` | unset; the landing site's origin (`https://asp.example`), the only one allowed to post demo requests from the browser (CORS); scheme, host and port only (`*` or a path stops the start) |
+| `ASP_SITE_LEADS_PER_HOUR` | `50`; demo requests accepted per hour from all addresses together (each address: 5) |
 
-Public workshop pages are rate-limited per client address (IPv6 by its /64): first `app.public.rate-limit.lookups.limit` / `.window` (default 120 per `1m`, every public request across all slugs, checked before the slug is looked up), then per workshop `app.public.rate-limit.writes.limit` / `.window` (default 10 per `1h`, POST/PUT/PATCH/DELETE) and `app.public.rate-limit.reads.limit` / `.window` (default 120 per `1m`, GET/HEAD/OPTIONS). The counters are kept in memory per instance. Behind a reverse proxy set `server.forward-headers-strategy` so the client's address is used, not the proxy's.
+### Production profile
+
+Run with `SPRING_PROFILES_ACTIVE=prod` (`application-prod.yml`). Local runs use the `dev` profile (`application-dev.yml`, which holds the development JWT secret): `spring-boot:run` turns it on; in the IDE set the active profile to `dev`. A run without a profile and without `ASP_JWT_SECRET` does not start.
+
+- `ASP_DB_URL`, `ASP_DB_APP_USER`, `ASP_DB_APP_PASSWORD`, `ASP_DB_OWNER_USER`, `ASP_DB_OWNER_PASSWORD` and `ASP_JWT_SECRET` have no fallback: a missing one stops the start. The development JWT secret is refused outside the `dev` and `test` profiles.
+- Behind the reverse proxy, `X-Forwarded-For` / `-Proto` / `-Host` are used only from trusted proxies: `ASP_TRUSTED_PROXIES`, a regular expression of addresses (default: loopback and private ranges). The rate limits then count the client's address, and HSTS is sent on HTTPS.
+- Actuator moves to the management port `ASP_MANAGEMENT_PORT` (default `8081`, do not publish it): `/actuator/health/liveness`, `/actuator/health/readiness`, `/actuator/info` and `/actuator/prometheus`.
+- Logs are JSON (ECS) on the console. API docs and Swagger UI are off, and Flyway `clean` is disabled.
+
+Every response carries a Content-Security-Policy (scripts, styles, fonts and images from the app itself, plus Google Fonts), `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and a Permissions-Policy, in every profile.
+
+Public workshop pages are rate-limited per client address (IPv6 by its /64): first `app.public.rate-limit.lookups.limit` / `.window` (default 120 per `1m`, every public request across all slugs, checked before the slug is looked up), then per workshop `app.public.rate-limit.writes.limit` / `.window` (default 10 per `1h`, POST/PUT/PATCH/DELETE) and `app.public.rate-limit.reads.limit` / `.window` (default 120 per `1m`, GET/HEAD/OPTIONS). The counters are kept in memory per instance. The prod profile takes the client's address from `X-Forwarded-For` sent by a trusted proxy (see Production profile).
 
 Tokens last 12 h (`app.identity.token.ttl`); role, active state and the workshop's subscription status are re-read from the database at most every 30 s, so a deactivation, demotion or suspension applies within that time.
 
-`/actuator/health` and `/actuator/info` (version, build time, git commit) are open; OpenAPI docs are at `/swagger-ui.html`.
+In development, `/actuator/health` (with `/liveness` and `/readiness`) and `/actuator/info` (version, build time, git commit) are open on the app port; OpenAPI docs are at `/swagger-ui.html`.
+
+## Deployment
+
+- **Image:** `Dockerfile` builds one image (Angular app inside the Spring Boot jar, Spring Boot layers) on `eclipse-temurin:26-jre-noble`, running as a non-root user with the `prod` profile and a healthcheck on the management port. `docker build -t asp .` (tests are not run in the image build; CI runs them first).
+- **CI** (`.github/workflows/ci.yml`): `./mvnw clean verify` on every push and pull request, a Trivy scan of the dependencies and of the image (HIGH/CRITICAL with a fix fail), and for a `v*` tag a push to `ghcr.io/jilds/asp:<version>`. Dependabot (`.github/dependabot.yml`) updates Maven, npm, the actions and the base images weekly.
+- **Server:** `deploy/compose.prod.yaml` runs Caddy (HTTPS from Let's Encrypt, the only published ports), the app and PostgreSQL 18.6; settings in `deploy/.env` from `deploy/env.example`. `deploy/backup.sh` makes the nightly dump and copies it to S3-compatible storage.
+- **Smoke run:** `deploy/smoke.sh` starts the production setup locally with throwaway secrets (`https://app.localhost:18443`) and checks it end to end.
+- How to deploy, upgrade, back up, restore and rotate secrets: [docs/release/runbook.md](docs/release/runbook.md). What is still open before real customers: [docs/release/checklist.md](docs/release/checklist.md).
 
 ## API
 
@@ -157,6 +187,8 @@ Full contract: [`docs/api/release-2.md`](docs/api/release-2.md) and [`docs/api/r
 | POST | `/api/v1/public/{slug}/booking/bookings` (201 with number and status token; 409 `slot-unavailable`) | anyone (add-on `booking`) |
 | GET, POST | `/api/v1/public/{slug}/booking/bookings/{token}` (with the workshop's `timeZone`), `…/{token}/cancel` (409 `booking-cancel-too-late`) | anyone with the status link |
 | POST | `/api/v1/admin/workshops/{id}/owner-activation-link` | Platform admin |
+| POST | `/api/v1/public-site/leads` (demo request from the landing site; CORS from `ASP_SITE_ORIGIN` only, 5 an hour per address, 50 in all) | anyone |
+| GET | `/api/v1/admin/leads` (optional `status`: NEW, CONTACTED or CLOSED); PUT `/api/v1/admin/leads/{id}/status` (version) | Platform admin |
 | GET, POST | `/api/v1/customers`, `/api/v1/customers/{id}`, `/api/v1/customers/{id}/vehicles` | Owner, Front desk |
 | PUT | `/api/v1/customers/{id}` (version) | Owner, Front desk |
 | POST | `/api/v1/vehicles` | Owner, Front desk |

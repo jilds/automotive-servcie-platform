@@ -27,16 +27,20 @@ public class BrandingService {
     private final TenantLogoRepository logos;
     private final PublicWorkshopCache publicWorkshops;
     private final Clock clock;
+    private final SubscriptionPolicy subscriptions;
 
     BrandingService(TenantRepository tenants, TenantLogoRepository logos, PublicWorkshopCache publicWorkshops,
-            Clock clock) {
+            Clock clock, SubscriptionPolicy subscriptions) {
+        this.subscriptions = subscriptions;
         this.tenants = tenants;
         this.publicWorkshops = publicWorkshops;
         this.logos = logos;
         this.clock = clock;
     }
 
-    /// The theme of the branded login page `/w/{slug}`. Unknown and malformed slugs read as not found.
+    /// The theme of the branded login page `/w/{slug}`. Unknown and malformed slugs read as not found, and so do
+    /// suspended, cancelled and expired workshops (ADR 0004): the page then shows the plain ASP sign-in and does not
+    /// reveal that the workshop exists.
     @Transactional(readOnly = true)
     public BrandingView bySlug(String slug) {
         Tenant tenant = tenantBySlug(slug);
@@ -101,7 +105,9 @@ public class BrandingService {
         if (!Slug.isValid(slug)) {
             throw new TenantNotFoundException();
         }
-        return tenants.findBySlug(new Slug(slug)).orElseThrow(TenantNotFoundException::new);
+        return tenants.findBySlug(new Slug(slug))
+                .filter(subscriptions::allowsSignIn)
+                .orElseThrow(TenantNotFoundException::new);
     }
 
     private Tenant tenant(UUID tenantId) {

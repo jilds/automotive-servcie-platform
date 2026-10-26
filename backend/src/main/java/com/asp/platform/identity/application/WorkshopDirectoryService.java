@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.asp.platform.identity.PublicWorkshop;
 import com.asp.platform.identity.TeamMember;
 import com.asp.platform.identity.WorkshopDirectory;
+import com.asp.platform.identity.WorkshopProfile;
 import com.asp.platform.identity.domain.Slug;
 import com.asp.platform.identity.domain.Tenant;
 import com.asp.platform.identity.domain.TenantNotFoundException;
@@ -30,8 +31,11 @@ class WorkshopDirectoryService implements WorkshopDirectory {
     private final TenantRepository tenants;
     private final UserRepository users;
     private final PublicWorkshopCache publicWorkshops;
+    private final SubscriptionPolicy subscriptions;
 
-    WorkshopDirectoryService(TenantRepository tenants, UserRepository users, PublicWorkshopCache publicWorkshops) {
+    WorkshopDirectoryService(TenantRepository tenants, UserRepository users, PublicWorkshopCache publicWorkshops,
+            SubscriptionPolicy subscriptions) {
+        this.subscriptions = subscriptions;
         this.tenants = tenants;
         this.users = users;
         this.publicWorkshops = publicWorkshops;
@@ -47,6 +51,13 @@ class WorkshopDirectoryService implements WorkshopDirectory {
     @Transactional(readOnly = true)
     public String country(UUID tenantId) {
         return tenant(tenantId).settings().country();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<WorkshopProfile> profile(UUID tenantId) {
+        return tenants.findById(tenantId).map(t -> new WorkshopProfile(t.shownName(), t.slug().value(),
+                t.settings().country(), t.settings().zone()));
     }
 
     @Override
@@ -91,14 +102,17 @@ class WorkshopDirectoryService implements WorkshopDirectory {
 
     private Optional<PublicWorkshop> loadPublicWorkshop(String slug) {
         return tenants.findBySlug(new Slug(slug))
-                .filter(Tenant::allowsSignIn)
+                .filter(subscriptions::allowsSignIn)
                 .map(WorkshopDirectoryService::publicWorkshop);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UUID> openWorkshops() {
-        return tenants.idsAllowingSignIn();
+        return tenants.withStatusAllowingSignIn().stream()
+                .filter(subscriptions::allowsSignIn)
+                .map(Tenant::id)
+                .toList();
     }
 
     private static PublicWorkshop publicWorkshop(Tenant tenant) {

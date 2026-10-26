@@ -43,9 +43,18 @@ class JpaPlatformAdminRepository implements PlatformAdminRepository {
     public boolean existsAny() {
         return jpa.count() > 0;
     }
+
+    @Override
+    public java.util.List<String> activeEmails() {
+        return jpa.findActiveEmails();
+    }
 }
 
 interface SpringDataPlatformAdminRepository extends JpaRepository<PlatformAdminEntity, UUID> {
+
+    @org.springframework.data.jpa.repository.Query(
+            "select a.email from PlatformAdminEntity a where a.active = true order by a.createdAt")
+    java.util.List<String> findActiveEmails();
 
     Optional<PlatformAdminEntity> findByEmail(String email);
 

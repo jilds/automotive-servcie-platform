@@ -8,7 +8,7 @@ import { WorkshopDetail } from './workshop-detail';
 
 const WORKSHOP: AdminWorkshop = {
   id: 'w1', name: 'Oficina Azul', nif: null, country: 'PT', timezone: 'Europe/Lisbon', slug: 'oficina-azul',
-  displayName: null, plan: 'PRO', status: 'ACTIVE', subscriptionUntil: null, createdAt: '2026-10-01T10:00:00Z',
+  displayName: null, plan: 'PRO', status: 'ACTIVE', subscriptionUntil: null, expired: false, createdAt: '2026-10-01T10:00:00Z',
   ownerEmail: 'dono@oficina.pt', users: 2, addOns: { booking: false, shop: false }, version: 4,
 };
 
@@ -113,5 +113,16 @@ describe('WorkshopDetail add-ons card', () => {
     expect((page.querySelector('#addon-booking') as HTMLInputElement).checked).toBe(false);
     expect((page.querySelector('#addon-shop') as HTMLInputElement).checked).toBe(true);
     expect(page.querySelector('app-alert')?.textContent).toContain('Outra pessoa alterou');
+  });
+
+  it('shows no expired badge while the subscription runs', () => {
+    const page: HTMLElement = open().nativeElement;
+    expect(page.textContent).not.toContain('Expirada');
+  });
+
+  it('marks an expired subscription and says how to let the workshop back in', () => {
+    const page: HTMLElement = open({ ...WORKSHOP, subscriptionUntil: '2026-09-01', expired: true }).nativeElement;
+    expect(page.querySelector('header .bg-danger-subtle')?.textContent).toContain('Expirada');
+    expect(page.textContent).toContain('Altere a data de fim para voltarem a entrar.');
   });
 });

@@ -113,9 +113,9 @@ describe('booking forms', () => {
   it('sends trimmed texts, blanks as null, the plate upper case and the hidden field as typed ("" for people)', () => {
     const form = contactForm();
     form.patchValue({ name: ' Ana Silva ', phone: ' 912345678 ', email: ' ', plate: ' aa-00-aa ', note: '  ', privacyAccepted: true, marketingConsent: true });
-    expect(toBookingRequest(['s1', 's2'], '2026-11-02T09:00:00Z', form)).toEqual({
+    expect(toBookingRequest(['s1', 's2'], '2026-11-02T09:00:00Z', form, 'en')).toEqual({
       serviceIds: ['s1', 's2'], slotStart: '2026-11-02T09:00:00Z', name: 'Ana Silva', phone: '912345678', email: null,
-      plate: 'AA-00-AA', note: null, privacyAccepted: true, marketingConsent: true, website: '',
+      plate: 'AA-00-AA', note: null, privacyAccepted: true, marketingConsent: true, website: '', language: 'en',
     });
   });
 

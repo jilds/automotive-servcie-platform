@@ -1,9 +1,18 @@
 spring:
   application:
-    name: Automotive Software Platform
+    name: ASP - Automotive Service Platform
   threads:
     virtual:
       enabled: true
+  # The @Async executor (mails after the commit): at most 16 at once, so SMTP connections stay bounded, and a
+  # shutdown waits for the mails still being sent.
+  task:
+    execution:
+      simple:
+        concurrency-limit: 16
+      shutdown:
+        await-termination: true
+        await-termination-period: 20s
   datasource:
     url: ${ASP_DB_URL:jdbc:postgresql://localhost:5432/asp}
     username: ${ASP_DB_APP_USER:asp_app}
@@ -23,7 +32,9 @@ spring:
 
 app:
   security:
-    jwt-secret: ${ASP_JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes!!}
+    # No fallback here: a run without the dev profile (application-dev.yml) and without ASP_JWT_SECRET stops at
+    # startup instead of signing tokens with a secret anyone can read in this repository.
+    jwt-secret: ${ASP_JWT_SECRET:}
   identity:
     token:
       issuer: asp
@@ -38,9 +49,30 @@ app:
     bootstrap-admin-email: ${ASP_BOOTSTRAP_ADMIN_EMAIL:}
     bootstrap-admin-password: ${ASP_BOOTSTRAP_ADMIN_PASSWORD:}
     bootstrap-admin-name: ${ASP_BOOTSTRAP_ADMIN_NAME:}
+  # Where people open the app, for the absolute links in mails (required while mail is on).
+  public-url: ${ASP_PUBLIC_URL:}
+  # E-mail (module notification). Off by default: nothing is sent and the links stay on screen. The SMTP server is
+  # spring.mail.* below.
+  mail:
+    enabled: ${ASP_MAIL_ENABLED:false}
+    from: ${ASP_MAIL_FROM:}
+  # The landing site on the main domain (step 03): its origin may post demo requests to /api/v1/public-site/leads
+  # (CORS); unset, only this app's own pages can. Each client address may send 5 requests an hour, all addresses
+  # together 50.
+  public-site:
+    origin: ${ASP_SITE_ORIGIN:}
+    leads:
+      limit: 5
+      window: 1h
+    leads-total:
+      limit: ${ASP_SITE_LEADS_PER_HOUR:50}
+      window: 1h
+  # After subscription_until a workshop keeps working for these days, then it is locked out like a suspended one.
+  subscription:
+    grace-days: ${ASP_SUBSCRIPTION_GRACE_DAYS:7}
   # Public workshop pages /api/v1/public/{slug}/... (ADR 0004): lookups per client address across all slugs
   # (checked before the slug is looked up), then reads and writes per client address and workshop.
-  # Behind a reverse proxy, set server.forward-headers-strategy so the client's address is used, not the proxy's.
+  # The prod profile reads the client's address from X-Forwarded-For sent by a trusted proxy (application-prod.yml).
   public:
     rate-limit:
       lookups:
@@ -58,6 +90,11 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      # /actuator/health/liveness and /actuator/health/readiness for the container platform
+      probes:
+        enabled: true
   info:
     git:
       mode: simple

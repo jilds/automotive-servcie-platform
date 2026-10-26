@@ -19,6 +19,6 @@ interface SpringDataTenantRepository extends JpaRepository<TenantEntity, UUID> {
 
     List<TenantEntity> findAllByOrderByCreatedAtDesc();
 
-    @Query("select t.id from TenantEntity t where t.status in :statuses order by t.createdAt")
-    List<UUID> findIdsByStatusIn(@Param("statuses") Collection<SubscriptionStatus> statuses);
+    @Query("select t from TenantEntity t where t.status in :statuses order by t.createdAt")
+    List<TenantEntity> findByStatusIn(@Param("statuses") Collection<SubscriptionStatus> statuses);
 }

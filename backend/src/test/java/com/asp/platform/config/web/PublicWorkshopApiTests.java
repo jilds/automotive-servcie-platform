@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -277,6 +279,22 @@ class PublicWorkshopApiTests extends ApiTestSupport {
         assertThat(directory.publicWorkshop(closed.slug())).isEmpty();
         assertThat(directory.publicWorkshop(open.slug())).hasValueSatisfying(
                 w -> assertThat(w.tenantId()).isEqualTo(UUID.fromString(open.id())));
+    }
+
+    @Test
+    void should_close_the_public_pages_and_skip_the_jobs_of_an_expired_workshop() throws Exception {
+        Workshop w = workshop("Oficina Publica Expirada");
+        probe(w.slug()).andExpect(status().isOk());
+
+        // Still ACTIVE, but the end date plus the grace days lies well in the past.
+        call(put("/api/v1/admin/workshops/" + w.id() + "/subscription").content(withVersion(
+                "{\"plan\":\"PRO\",\"status\":\"ACTIVE\",\"subscriptionUntil\":\"%s\"}"
+                        .formatted(LocalDate.now(ZoneId.of("Europe/Lisbon")).minusDays(30)), adminVersion(w))),
+                platformAdmin())
+                .andExpect(status().isOk());
+
+        probe(w.slug()).andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("workshop-not-found"));
+        assertThat(directory.openWorkshops()).doesNotContain(UUID.fromString(w.id()));
     }
 
     private ResultActions probe(String slug) throws Exception {

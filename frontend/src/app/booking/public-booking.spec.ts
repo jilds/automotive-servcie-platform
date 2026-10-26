@@ -94,6 +94,8 @@ describe('PublicBooking', () => {
     expect(post.request.body).toEqual({
       serviceIds: ['s1'], slotStart: start, name: 'Ana Silva', phone: '912345678', email: null, plate: 'AA-00-AA',
       note: 'Barulho ao travar', privacyAccepted: true, marketingConsent: false, website: '',
+      // The page language (this spec runs in English), for the e-mail with the status link.
+      language: 'en',
     });
     post.flush({ number: 12, statusToken: 'tok_123', slotStart: start }, { status: 201, statusText: 'Created' });
     f.detectChanges();

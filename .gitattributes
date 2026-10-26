@@ -1,0 +1,6 @@
+# Shell scripts run in Linux containers and on the server: always LF, also in a Windows checkout (core.autocrlf).
+mvnw text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+deploy/Caddyfile* text eol=lf
+mvnw.cmd text eol=crlf

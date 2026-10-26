@@ -28,7 +28,13 @@ import { ActivationLink, addOnsChanged, AdminWorkshop, Plan, planKey, PLANS, STA
       <header class="d-flex flex-wrap align-items-center gap-3 mb-4">
         <h1 class="mb-0 me-auto text-break">{{ w.name }}</h1>
         <span [class]="statusBadge[w.status]">{{ statusKey(w.status) | t }}</span>
+        @if (w.expired) {
+          <span class="badge bg-danger-subtle text-danger-emphasis">{{ 'admin.status.expired' | t }}</span>
+        }
       </header>
+      @if (w.expired) {
+        <app-alert tone="warning">{{ 'admin.status.expiredHelp' | t }}</app-alert>
+      }
 
       @if (notice()) {
         <app-alert tone="success">{{ notice() }}</app-alert>

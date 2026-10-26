@@ -1,6 +1,7 @@
 package com.asp.platform.identity.domain;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.asp.platform.shared.StaleDataException;
@@ -47,8 +48,19 @@ public record Tenant(UUID id, WorkshopSettings settings, Subscription subscripti
         StaleDataException.check(expectedVersion, version);
     }
 
-    public boolean allowsSignIn() {
-        return subscription.status().allowsSignIn();
+    /// True while the workshop's users may sign in at `now`: see [Subscription#allowsSignIn]. The day is read in the
+    /// workshop's time zone.
+    public boolean allowsSignIn(Instant now, int graceDays) {
+        return subscription.allowsSignIn(today(now), graceDays);
+    }
+
+    /// True once the subscription's end date plus the grace days has passed: see [Subscription#expired].
+    public boolean expired(Instant now, int graceDays) {
+        return subscription.expired(today(now), graceDays);
+    }
+
+    private LocalDate today(Instant now) {
+        return LocalDate.ofInstant(now, settings.zone());
     }
 
     /// The name to show: the display name when set, else the workshop's trading name.

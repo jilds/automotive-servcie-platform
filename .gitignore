@@ -10,3 +10,8 @@ dist/
 .idea/
 *.iml
 .DS_Store
+
+# Database dumps hold customer data: never commit one (deploy/backup.sh writes outside the checkout by default).
+deploy/backups/
+*.dump
+*.dump.partial

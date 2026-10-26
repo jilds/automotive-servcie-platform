@@ -25,6 +25,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
+import com.asp.platform.config.web.PublicSiteProperties;
+import com.asp.platform.config.web.PublicSiteWebConfig;
 import com.asp.platform.identity.AccessDirectory;
 import com.asp.platform.identity.TokenClaims;
 import com.asp.platform.shared.Role;
@@ -45,15 +47,63 @@ class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
-                .headers(SecurityConfig::referrerPolicy)
+                .headers(SecurityConfig::securityHeaders)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 
-    /// Public status links carry their token in the path (`/w/{slug}/booking/{token}`): a link followed from the page
-    /// must not send that URL to another site, so the referrer stays on this origin.
-    private static void referrerPolicy(HeadersConfigurer<HttpSecurity> headers) {
-        headers.referrerPolicy(policy -> policy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN));
+    /// The landing site's API (`/api/v1/public-site/**`, step 2c): anonymous like the public pages, no token read,
+    /// and CORS for `app.public-site.origin` only, so the site on the main domain can post its demo request form.
+    @Bean
+    @Order(0)
+    SecurityFilterChain publicSiteFilterChain(HttpSecurity http, PublicSiteProperties site) throws Exception {
+        http
+                .securityMatcher("/api/v1/public-site/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(PublicSiteWebConfig.corsFor(site)))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requestCache(AbstractHttpConfigurer::disable)
+                .headers(SecurityConfig::securityHeaders)
+                // Only the form is open; anything added under the prefix later is denied until it is listed here.
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public-site/leads").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/v1/public-site/**").permitAll()
+                        .anyRequest().denyAll());
+        return http.build();
+    }
+
+    /// Scripts, styles, fonts, images and API calls only from this origin, plus Google Fonts (`index.html`) and
+    /// `data:` / `blob:` images (logo previews). Inline styles are allowed because Angular and Bootstrap set them;
+    /// inline scripts are not (the theme script is `theme-init.js`, and the build does not inline critical CSS).
+    static final String CONTENT_SECURITY_POLICY = String.join("; ",
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src 'self' https://fonts.gstatic.com",
+            "img-src 'self' data: blob:",
+            "connect-src 'self'",
+            "manifest-src 'self'",
+            "worker-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'");
+
+    /// The ASP screens use none of these browser features.
+    static final String PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+
+    /// Every response, on both chains:
+    /// - the Content-Security-Policy above, and X-Frame-Options DENY (Spring's default) for older browsers;
+    /// - HSTS for a year, sent on HTTPS requests only (behind the proxy, `forward-headers-strategy` makes them HTTPS);
+    /// - Referrer-Policy `same-origin`: public status links carry their token in the path
+    ///   (`/w/{slug}/booking/{token}`), so a link followed from the page must not send that URL to another site;
+    /// - Permissions-Policy denying camera, microphone, location, payment and USB.
+    private static void securityHeaders(HeadersConfigurer<HttpSecurity> headers) {
+        headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
+                .httpStrictTransportSecurity(hsts -> hsts.maxAgeInSeconds(31_536_000).includeSubDomains(true))
+                .referrerPolicy(policy -> policy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN))
+                .permissionsPolicyHeader(policy -> policy.policy(PERMISSIONS_POLICY));
     }
 
     @Bean
@@ -62,7 +112,7 @@ class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .headers(SecurityConfig::referrerPolicy)
+                .headers(SecurityConfig::securityHeaders)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/activate").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/activation", "/api/v1/platform/contact",

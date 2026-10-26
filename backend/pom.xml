@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
         <relativePath/>
     </parent>
 
@@ -22,6 +22,7 @@
         <spring-modulith.version>2.1.1</spring-modulith.version>
         <springdoc.version>3.1.1</springdoc.version>
         <archunit.version>1.4.1</archunit.version>
+        <greenmail.version>2.1.14</greenmail.version>
         <!-- Angular production build, produced by the frontend module (built first by the root reactor) -->
         <frontend.dist>${project.basedir}/../frontend/dist</frontend.dist>
     </properties>
@@ -66,6 +67,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Notification mails (module notification): SMTP, and Thymeleaf for the templates only (no MVC views) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf-spring6</artifactId>
+        </dependency>
+        <!-- /actuator/prometheus, exposed only on the management port of the prod profile -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -139,6 +154,13 @@
             <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- In-memory SMTP server for the notification tests -->
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail-junit5</artifactId>
+            <version>${greenmail.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -158,6 +180,10 @@
                 <configuration>
                     <!-- run from the repository root, like the IDE, so compose.yaml is found -->
                     <workingDirectory>${project.basedir}/..</workingDirectory>
+                    <!-- spring-boot:run and spring-boot:test-run are development runs (application-dev.yml) -->
+                    <profiles>
+                        <profile>dev</profile>
+                    </profiles>
                 </configuration>
                 <executions>
                     <execution>

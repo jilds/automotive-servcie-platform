@@ -1,0 +1,7 @@
+[(#{mail.greeting(${name})})]
+
+[(#{booking-declined.body(${workshop}, ${number}, ${when})})]
+[# th:if="${reason != ''}"][(#{booking-declined.reason(${reason})})][/]
+
+--
+[(#{mail.automatic})]

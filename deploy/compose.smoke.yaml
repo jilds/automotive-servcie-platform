@@ -1,0 +1,31 @@
+# The release smoke run on a workstation, on top of compose.prod.yaml (deploy/smoke.sh runs it):
+# Caddy with its own CA on app.localhost / localhost (ports 18443 and 18080), Mailpit for mail (UI on 18025), and a
+# throwaway project with its own volumes.
+services:
+  caddy:
+    ports: !override
+      - "127.0.0.1:18080:80"
+      - "127.0.0.1:18443:443"
+    volumes: !override
+      - ./Caddyfile.smoke:/etc/caddy/Caddyfile:ro
+      - ./site:/srv/site:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  app:
+    environment:
+      ASP_PUBLIC_URL: https://app.localhost:18443
+      ASP_SITE_ORIGIN: https://localhost:18443
+      ASP_MAIL_ENABLED: "true"
+      ASP_MAIL_HOST: mailpit
+      ASP_MAIL_PORT: "1025"
+      ASP_MAIL_FROM: ASP <noreply@asp.localhost>
+      ASP_MAIL_SMTP_AUTH: "false"
+      ASP_MAIL_STARTTLS_REQUIRED: "false"
+
+  mailpit:
+    image: axllent/mailpit:v1.31.5@sha256:94f6b70c1436defae6799d9ac7ff0eeff9540465b842026d5cdb018f1c0234ea
+    ports:
+      - "127.0.0.1:18025:8025"
+    networks:
+      - outbound

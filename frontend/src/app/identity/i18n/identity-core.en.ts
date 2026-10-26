@@ -13,6 +13,7 @@ export const identityCoreEn = {
   'error.activation-expired': 'This activation link has expired. Ask for a new one.',
   'error.already-activated': 'This user has already activated their account.',
   'error.slug-taken': 'Another workshop already uses this address.',
+  'error.lead-not-found': 'This demo request no longer exists.',
   'error.logo-too-large': 'The logo must be at most 512 KB.',
   'error.logo-unsupported': 'The logo must be a PNG, SVG or WEBP image.',
   'error.logo-unsafe': 'This SVG contains scripts, links or other active content. Export it as a plain drawing or use PNG.',

@@ -480,7 +480,7 @@ export class PublicBooking {
     }
     this.busy.set(true);
     this.error.set(null);
-    this.api.requestBooking(this.slug(), toBookingRequest(this.selected(), slot.start, this.form)).subscribe({
+    this.api.requestBooking(this.slug(), toBookingRequest(this.selected(), slot.start, this.form, this.i18n.lang())).subscribe({
       next: (created) => {
         this.busy.set(false);
         this.created.set(created);

@@ -57,6 +57,14 @@
                   "maximumError": "8kB"
                 }
               ],
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
               "outputHashing": "all",
               "serviceWorker": "ngsw-config.json"
             },
@@ -86,7 +94,8 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "providersFile": "src/test-providers.ts"
+            "providersFile": "src/test-providers.ts",
+            "setupFiles": ["src/test-setup.ts"]
           }
         }
       }

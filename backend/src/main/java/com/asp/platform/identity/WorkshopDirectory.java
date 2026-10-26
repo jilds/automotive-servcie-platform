@@ -15,6 +15,10 @@ public interface WorkshopDirectory {
     /// The workshop's country as an ISO 3166-1 alpha-2 code, for example "PT".
     String country(UUID tenantId);
 
+    /// Name, slug, country and time zone for a message to the workshop's customers or users; empty for an unknown
+    /// workshop. Reads the tenant table, which is not under row-level security, so it works outside a request.
+    Optional<WorkshopProfile> profile(UUID tenantId);
+
     /// The workshop's hourly labour rate before VAT, in cents, from its settings (prices services charged by the hour).
     long labourRateCents(UUID tenantId);
 

@@ -1,0 +1,11 @@
+[(#{mail.greeting(${name})})]
+
+[(#{booking-received.body(${workshop}, ${number}, ${when})})]
+
+[(#{booking-received.action})]:
+[(${link})]
+
+[(#{booking-received.keep})]
+
+--
+[(#{mail.automatic})]

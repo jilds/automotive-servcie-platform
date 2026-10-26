@@ -70,7 +70,7 @@ class PublicBookingController {
         if (!request.acceptedPrivacy()) {
             throw new PrivacyConsentRequiredException();
         }
-        BookingReceipt receipt = booking.book(workshop.timeZone(), request.toCommand());
+        BookingReceipt receipt = booking.book(workshop.tenantId(), workshop.timeZone(), request.toCommand());
         return BookingReceiptResponse.of(receipt);
     }
 

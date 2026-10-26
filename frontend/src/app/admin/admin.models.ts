@@ -21,6 +21,8 @@ export interface AdminWorkshop {
   status: SubscriptionStatus;
   /** `YYYY-MM-DD`, or null. */
   subscriptionUntil: string | null;
+  /** True once `subscriptionUntil` plus the grace days has passed: locked out like a suspended workshop. */
+  expired: boolean;
   createdAt: string;
   ownerEmail: string | null;
   users: number;
@@ -84,4 +86,26 @@ export function planKey(plan: Plan): `admin.plan.${Plan}` {
 
 export function statusKey(status: SubscriptionStatus): `admin.status.${SubscriptionStatus}` {
   return `admin.status.${status}`;
+}
+
+/** Demo requests from the landing site (`/api/v1/admin/leads`, step 2c). */
+export type LeadStatus = 'NEW' | 'CONTACTED' | 'CLOSED';
+export const LEAD_STATUSES: readonly LeadStatus[] = ['NEW', 'CONTACTED', 'CLOSED'];
+export type LeadVehicleType = 'CAR' | 'MOTORCYCLE' | 'BOTH';
+
+export interface Lead {
+  id: string;
+  name: string;
+  workshopName: string;
+  phone: string | null;
+  email: string | null;
+  district: string | null;
+  vehicleType: LeadVehicleType;
+  message: string | null;
+  marketingConsent: boolean;
+  status: LeadStatus;
+  createdAt: string;
+  statusChangedAt: string | null;
+  /** Optimistic locking: sent back with a status change. */
+  version: number;
 }

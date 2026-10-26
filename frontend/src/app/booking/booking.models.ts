@@ -1,3 +1,5 @@
+import type { Language } from '../core/i18n/i18n.service';
+
 /** Online booking (add-on `booking`), see `docs/api/release-3.md`, "Online booking". Money in cents. */
 
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'DECLINED' | 'CANCELLED' | 'NO_SHOW';
@@ -40,6 +42,8 @@ export interface PublicBookingRequest {
   marketingConsent: boolean;
   /** Hidden field: people leave it empty, so it is sent as "". */
   website: string;
+  /** The page language, so the e-mail with the status link is written in it. */
+  language: Language;
 }
 
 /** `201` answer of the public POST. The token is the only key of the status link. */

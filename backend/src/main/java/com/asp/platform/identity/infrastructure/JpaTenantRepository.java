@@ -48,10 +48,11 @@ class JpaTenantRepository implements TenantRepository {
     }
 
     @Override
-    public List<UUID> idsAllowingSignIn() {
-        return jpa.findIdsByStatusIn(Arrays.stream(SubscriptionStatus.values())
-                .filter(SubscriptionStatus::allowsSignIn)
-                .toList());
+    public List<Tenant> withStatusAllowingSignIn() {
+        return jpa.findByStatusIn(Arrays.stream(SubscriptionStatus.values())
+                        .filter(SubscriptionStatus::allowsSignIn)
+                        .toList())
+                .stream().map(TenantEntity::toDomain).toList();
     }
 
     /// Three queries whatever the number of workshops: tenants, user counts per tenant, owners by creation time.

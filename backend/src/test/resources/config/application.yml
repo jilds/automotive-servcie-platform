@@ -7,10 +7,23 @@ spring:
   datasource:
     url: jdbc:postgresql://testcontainers-not-started.invalid:5432/asp
 app:
+  security:
+    # The main application.yml has no fallback secret (the dev one is in application-dev.yml).
+    jwt-secret: test-only-jwt-secret-for-the-test-contexts-0123456789
   platform:
     bootstrap-admin-email: platform-admin@asp.test
     bootstrap-admin-password: platform-admin-test-password
     bootstrap-admin-name: Test platform admin
+  # The landing site's origin for the CORS checks, and a small demo request limit (LeadApiTests).
+  public-site:
+    origin: https://asp.test
+    leads:
+      limit: 3
+      window: 1h
+    # High enough for every lead the test suite sends; PublicSiteLeadLimiterTests checks the cap itself.
+    leads-total:
+      limit: 1000
+      window: 1h
   # Small limits so PublicWorkshopApiTests reaches them quickly; every test uses its own workshops (own slugs) and
   # its own client address.
   public:

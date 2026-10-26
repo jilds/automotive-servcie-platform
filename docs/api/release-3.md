@@ -30,7 +30,9 @@ Decision record: [ADR 0003](../adr/0003-subscription-onboarding-and-tenant-brand
 
 ### Subscription status on every request
 
-`SUSPENDED` and `CANCELLED` workshops are locked out:
+`SUSPENDED` and `CANCELLED` workshops are locked out, and so (updated 2026-10-26) is a workshop whose
+`subscriptionUntil` plus `app.subscription.grace-days` (default 7) lies before today in the workshop's time zone. An
+expired workshop gets the same answers as a suspended one; moving the date forward lets it back in.
 
 | When | Answer |
 |---|---|
@@ -51,6 +53,8 @@ Who the link is for, so the page can greet them.
 ```json
 { "email": "ana@oficina.pt", "name": "Ana", "workshopName": "Oficina Azul", "expiresAt": "2026-10-24T10:00:00Z" }
 ```
+**(updated 2026-10-26)** A suspended, cancelled or expired workshop answers `403 workshop-suspended` here already, so
+the page says so before the form.
 
 #### `POST /auth/activate`
 ```json
@@ -78,7 +82,8 @@ Theme of the branded login page `/w/{slug}`. Presentation only: nothing else abo
 }
 ```
 `name` is the display name or, when unset, the workshop name. Unset colours and logo are `null` (use the ASP theme).
-Unknown or malformed slug: `404 workshop-not-found`.
+Unknown or malformed slug: `404 workshop-not-found`. **(updated 2026-10-26)** So is a suspended, cancelled or expired
+workshop, here and on `/branding/{slug}/logo` (ADR 0004): `/w/{slug}` then shows the plain ASP sign-in.
 
 #### `GET /branding/{slug}/logo`
 The image (`image/png`, `image/webp` or `image/svg+xml`) with `ETag` (its SHA-256), `Cache-Control: public,
@@ -126,10 +131,12 @@ such as `script`, `style`, `foreignObject`, `image`, `a`, `animate`, `set`, `on*
 {
   "id": "…", "name": "Oficina Azul Lda", "nif": "509999999", "country": "PT", "timezone": "Europe/Lisbon",
   "slug": "oficina-azul-lda", "displayName": null, "plan": "PRO", "status": "TRIAL",
-  "subscriptionUntil": "2026-12-31", "createdAt": "2026-10-21T18:10:00Z",
+  "subscriptionUntil": "2026-12-31", "expired": false, "createdAt": "2026-10-21T18:10:00Z",
   "ownerEmail": "ana@oficina.pt", "users": 3
 }
 ```
+**(updated 2026-10-26)** `expired` is true once `subscriptionUntil` plus the grace days has passed, whatever the
+status; the console shows an "Expired" badge.
 
 `POST /admin/workshops`:
 ```json
@@ -667,7 +674,10 @@ become catalogue lines on the new work order.
 // POST /bookings
 { "serviceIds": ["…"], "slotStart": "2026-11-02T09:00:00Z",
   "name": "Ana Silva", "phone": "912345678", "email": "ana@example.pt", "plate": "AA-00-AA", "note": "Barulho ao travar",
-  "privacyAccepted": true, "marketingConsent": false, "website": "" }
+  "privacyAccepted": true, "marketingConsent": false, "website": "", "language": "pt-PT" }
+// (updated 2026-10-26) language: optional, pt-PT | en | pt-BR (else 400 validation): the page language, used for the
+// e-mail with the status link when an e-mail address is given and mail is on (ASP_MAIL_ENABLED). A name containing
+// "://", "www.", "<" or ">" answers 400 validation (errors.name): it is written into that e-mail.
 // 1–10 services offered online (else 404 service-not-found), name ≤ 120, plate required (with at least one letter or
 // digit) and normalised like vehicles, at least one of phone/email (else 400 validation with errors.phone and errors.email), note ≤ 500.
 // privacyAccepted false → 400 privacy-consent-required. A filled "website" (honeypot) gets a normal-looking 201
@@ -678,6 +688,15 @@ become catalogue lines on the new work order.
   "services": [ { "name": "Mudança de óleo", "durationMinutes": 60, "priceWithVatCents": 4920 } ],
   "canCancel": true, "declineReason": null }
 ```
+
+#### E-mails (updated 2026-10-26)
+
+With mail on, and only when the booking has an e-mail address, the customer gets: **received** (with the status link
+`<ASP_PUBLIC_URL>/w/{slug}/booking/{token}`, in `language`, else the workshop country's language), then **confirmed**,
+**moved** (the new time) or **declined** (with the reason), in the workshop country's language. Only the first mail
+carries the link, because only the token's hash is stored. Mails go out after the commit and never change an answer.
+Activation links (`POST /admin/workshops`, `POST /users`, and both "send the link again" endpoints) are mailed the same
+way to the user, and the responses still carry `activationPath`.
 
 ### Workshop endpoints (OWNER, FRONT_DESK; mechanics 403)
 
@@ -733,3 +752,57 @@ catalogue LABOR line (inactive ones are skipped), and the booking becomes CHECKE
 Tables `booking_settings`, `opening_hours`, `booking_closure`, `booking`, `booking_service` (tenant_id with the V2
 default, RLS ENABLE + FORCE with `tenant_isolation`); unique `(tenant_id, number)` and `status_token_hash`; index
 `(tenant_id, slot_start)` where status in REQUESTED/CONFIRMED. Rollback: drop the five tables and delete version `'15'`.
+
+## Demo requests from the landing site (step 2c, updated 2026-10-26)
+
+The landing site on the main domain (step 03) posts its "Pedir proposta" form to the app. The table `lead` is
+platform-level (no `tenant_id`, no row-level security), written only by the form and read only by platform admins.
+
+### Public endpoint (no token): `POST /api/v1/public-site/leads`
+
+Own security chain: anonymous, the `Authorization` header is not read, CORS only for `ASP_SITE_ORIGIN`
+(`app.public-site.origin`; methods `POST`, header `Content-Type`; unset: same origin only; scheme, host and port only,
+`*` or a path stops the start). Each client address may send 5 requests an hour (`app.public-site.leads`, IPv6 by its
+/64), and all addresses together 50 (`app.public-site.leads-total`, `ASP_SITE_LEADS_PER_HOUR`); more answer
+`429 too-many-requests` with `Retry-After`. Only this `POST` (and CORS preflights) is open on the chain; any other
+method or path under `/api/v1/public-site/` answers 403.
+
+```json
+{ "name": "Ana Silva", "workshopName": "Oficina Azul", "phone": "912345678", "email": "ana@oficina.pt",
+  "district": "Lisboa", "vehicleType": "BOTH", "message": "Duas oficinas em Lisboa",
+  "privacyAccepted": true, "marketingConsent": false, "website": "" }
+// → 201, no body.
+// name and workshopName 1–120, district ≤ 60: one line, without "://", "www.", "<", ">" or control characters;
+// phone ≤ 30 (digits, spaces, + ( ) -), email ≤ 254; at least one of phone/email (else 400 validation with
+// errors.phone and errors.email); vehicleType CAR | MOTORCYCLE | BOTH; message ≤ 2000.
+// privacyAccepted false → 400 privacy-consent-required (checked before the honeypot).
+// A filled "website" (honeypot) gets the same 201 and nothing is stored.
+```
+
+With mail on, every active platform admin gets "Novo pedido de proposta: {workshop}" (pt-PT) with the contact
+details and a link to `/admin/leads`. The message is not in the mail (it could carry a link); the mail only says
+there is one.
+
+### Platform admin endpoints
+
+| Method | Path | Body / answer |
+|---|---|---|
+| GET | `/admin/leads` | `Lead[]`, newest first, at most 500; `?status=NEW\|CONTACTED\|CLOSED` filters |
+| PUT | `/admin/leads/{id}/status` | `{ "status", "version" }` → `Lead`; `404 lead-not-found`, `409 stale-data` |
+
+```json
+// Lead
+{ "id": "…", "name": "Ana Silva", "workshopName": "Oficina Azul", "phone": "912345678", "email": null,
+  "district": "Lisboa", "vehicleType": "BOTH", "message": "…", "marketingConsent": false, "status": "NEW",
+  "createdAt": "2026-10-26T10:00:00Z", "statusChangedAt": null, "version": 0 }
+```
+
+Any status may follow any other (a closed request can be reopened). Error code added: `lead-not-found` (404).
+
+### Migration V16
+
+`lead` (id, name, workshop_name, phone, email, district, vehicle_type, message, privacy_accepted_at,
+marketing_consent, status, created_at, status_changed_at, version) with checks on lengths, non-blank names, the enums,
+"phone or e-mail" (blank counts as missing) and `status_changed_at >= created_at`; indexes `(status, created_at desc)`
+and `(created_at desc)`. `asp_app` may select, insert and delete, and update only `status`, `status_changed_at` and
+`version`. New table only: no lock on existing ones.
