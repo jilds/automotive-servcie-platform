@@ -43,9 +43,37 @@ openssl rand -base64 48        # once for each password and for ASP_JWT_SECRET
 4. Sign in at `https://app.<domain>/admin` as the bootstrap admin, then **remove the three `ASP_BOOTSTRAP_ADMIN_*`
    lines** from `.env` and run `up -d` again. Register the first workshop in `/admin` (README, "First start").
 5. Install the backup job (section 5) and run it once by hand.
+6. Deploy the landing site (below).
 
 The app refuses to start without a setting it needs (no development fallbacks in `prod`), and refuses the
 development JWT secret. Check `docker compose … logs app` if it does not become healthy.
+
+### Landing site
+
+Caddy serves the static build of `site/` on `ASP_SITE_DOMAIN` from the folder `ASP_SITE_DIR` (relative paths are
+read from `deploy/`; unset, the placeholder page in `deploy/site`). Build it from the same checkout as the app, in a
+throwaway Node container so the server needs no Node:
+
+```bash
+ASP_SITE_DOMAIN=$(sed -n 's/^ASP_SITE_DOMAIN=//p' deploy/.env)   # only the two domains, no secrets in the shell
+ASP_APP_DOMAIN=$(sed -n 's/^ASP_APP_DOMAIN=//p' deploy/.env)
+docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/site:/site" -w /site \
+  -e PUBLIC_SITE_URL="https://$ASP_SITE_DOMAIN" -e PUBLIC_API_ORIGIN="https://$ASP_APP_DOMAIN" \
+  node:24.16.0-alpine sh -c "npm ci && npm run build"   # writes site/dist; stops if either URL is missing
+grep ^ASP_SITE_DIR deploy/.env              # ASP_SITE_DIR=../site/dist
+docker compose -f deploy/compose.prod.yaml --env-file deploy/.env up -d --wait
+```
+
+A new build in the same folder is live at once (Caddy reads the files on each request; no restart). Changing
+`ASP_SITE_DIR` needs `up -d`. Headers and caching are in `deploy/caddy/site.caddy`: HSTS, `nosniff`,
+`Referrer-Policy`, a Content-Security-Policy that lets the pages talk only to their own origin and to
+`https://ASP_APP_DOMAIN` (the demo request form), **no inline scripts or styles** (the build emits both as
+files), `frame-ancestors 'none'`, the same headers on the 404 page; Astro's hashed files under `/_astro/` are cached for a year
+(`immutable`), pages and other files are revalidated on every visit (`no-cache` with ETag); a missing page answers
+`404.html` with status 404.
+
+The app links the site's privacy page from the public booking page when `ASP_SITE_PRIVACY_URL` is set (an absolute
+`https` URL, else the app does not start); `ASP_SITE_ORIGIN` defaults to `https://ASP_SITE_DOMAIN`.
 
 ## 3. Upgrade
 
@@ -55,6 +83,8 @@ deploy/backup.sh                            # always before a release with a mig
 sed -i 's|^ASP_IMAGE=.*|ASP_IMAGE=ghcr.io/jilds/asp:1.2.0|' deploy/.env
 docker compose -f deploy/compose.prod.yaml --env-file deploy/.env up -d --wait
 ```
+
+Then rebuild the landing site from the new checkout (section 2, "Landing site") if `site/` changed.
 
 Migrations run at start-up, before the app takes requests. They are written to take short locks
 (`lock_timeout = '5s'`); a migration that cannot get its lock fails the start and the old data stays as it was.
@@ -123,5 +153,6 @@ new volume `init.sh` creates them). Row-level security and the policies come bac
 On a workstation with Docker: `deploy/smoke.sh` (or `ASP_IMAGE=ghcr.io/jilds/asp:<version> deploy/smoke.sh` for a
 pushed image). It starts the production compose file with throwaway secrets behind Caddy's own CA on
 `https://app.localhost:18443`, and checks HTTPS and the security headers, that the app and database publish no ports, sign-in,
-a demo request and its mail (Mailpit), that a forged `X-Forwarded-For` does not get past the rate limit, and a backup.
+a demo request and its mail (Mailpit), that a forged `X-Forwarded-For` does not get past the rate limit, the landing site
+placeholder with its headers (CSP, `nosniff`, `no-cache`) and a 404, and a backup.
 Then it removes everything. `SMOKE_KEEP=1` leaves it running.

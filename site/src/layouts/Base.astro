@@ -1,0 +1,62 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import '../styles/global.css';
+
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { useT } from '../i18n';
+import { type Lang, type PageId, defaultLang, href, langs, ogLocale } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  page: PageId;
+  title: string;
+  description: string;
+  /** Pages that should not be indexed (the 404 page). */
+  noindex?: boolean;
+}
+
+const { lang, page, title, description, noindex = false } = Astro.props;
+const t = useT(lang);
+const site = Astro.site ?? new URL('https://asp.example');
+const canonical = new URL(href(page, lang), site).href;
+const alternates = langs.map((other) => ({ lang: other, url: new URL(href(page, other), site).href }));
+const xDefault = new URL(href(page, defaultLang), site).href;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <script is:inline src="/theme-init.js"></script>
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    {!noindex && <link rel="canonical" href={canonical} />}
+    {!noindex && alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.url} />)}
+    {!noindex && <link rel="alternate" hreflang="x-default" href={xDefault} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#1c1f23" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={t('site.name')} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={ogLocale[lang]} />
+    {langs.filter((other) => other !== lang).map((other) => <meta property="og:locale:alternate" content={ogLocale[other]} />)}
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t('a11y.skip')}</a>
+    <Header lang={lang} page={page} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <script>
+      import '../scripts/theme-toggle';
+    </script>
+  </body>
+</html>

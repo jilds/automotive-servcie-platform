@@ -58,6 +58,7 @@ Single-side builds: `./mvnw -pl backend verify`, `./mvnw -pl frontend verify`.
 
 ```
 pom.xml                 aggregator: frontend, then backend
+site/                   landing site (Astro, static; not in the Maven build)
 compose.yaml            local PostgreSQL 18.6 (127.0.0.1:5432), roles from compose/postgres/init.sql
 docs/adr/               architecture decisions
 docs/api/               API contract per release (release-2.md, release-3.md)
@@ -132,6 +133,7 @@ The UI is in Portuguese (Portugal) by default, with English and Portuguese (Braz
 | `ASP_MAIL_SMTP_AUTH` / `ASP_MAIL_STARTTLS_REQUIRED` | `true` / `true` (prod) |
 | `ASP_SITE_ORIGIN` | unset; the landing site's origin (`https://asp.example`), the only one allowed to post demo requests from the browser (CORS); scheme, host and port only (`*` or a path stops the start) |
 | `ASP_SITE_LEADS_PER_HOUR` | `50`; demo requests accepted per hour from all addresses together (each address: 5) |
+| `ASP_SITE_PRIVACY_URL` | unset; the platform's privacy policy on the landing site (`https://asp.example/privacidade`), returned as `privacyUrl` by `GET /api/v1/branding/{slug}` and linked from the public booking page (no link while unset); an absolute `https` URL, plain `http` only for `localhost` / `127.0.0.1` (anything else stops the start) |
 
 ### Production profile
 
@@ -150,11 +152,15 @@ Tokens last 12 h (`app.identity.token.ttl`); role, active state and the workshop
 
 In development, `/actuator/health` (with `/liveness` and `/readiness`) and `/actuator/info` (version, build time, git commit) are open on the app port; OpenAPI docs are at `/swagger-ui.html`.
 
+## Landing site
+
+The public site on the main domain (`<domain>`; the app runs on `app.<domain>`) lives in `site/`: Astro with static output, pt-PT at `/`, EN at `/en/`, pt-BR at `/br/`, not part of the Maven build. Build it with Node 24.16.0: `cd site && npm ci && npm run build` (output in `site/dist`; see `site/README.md`). Its "Pedir proposta" form posts to `POST /api/v1/public-site/leads` on the app (CORS from `ASP_SITE_ORIGIN` only), and the app's public booking page links its privacy page through `ASP_SITE_PRIVACY_URL`. CI builds it in the `site` job; on the server Caddy serves the build from `ASP_SITE_DIR` with its own security headers and caching (`deploy/caddy/site.caddy`, runbook §2). Plan: [docs/plans/03-landing-site.md](docs/plans/03-landing-site.md).
+
 ## Deployment
 
 - **Image:** `Dockerfile` builds one image (Angular app inside the Spring Boot jar, Spring Boot layers) on `eclipse-temurin:26-jre-noble`, running as a non-root user with the `prod` profile and a healthcheck on the management port. `docker build -t asp .` (tests are not run in the image build; CI runs them first).
-- **CI** (`.github/workflows/ci.yml`): `./mvnw clean verify` on every push and pull request, a Trivy scan of the dependencies and of the image (HIGH/CRITICAL with a fix fail), and for a `v*` tag a push to `ghcr.io/jilds/asp:<version>`. Dependabot (`.github/dependabot.yml`) updates Maven, npm, the actions and the base images weekly.
-- **Server:** `deploy/compose.prod.yaml` runs Caddy (HTTPS from Let's Encrypt, the only published ports), the app and PostgreSQL 18.6; settings in `deploy/.env` from `deploy/env.example`. `deploy/backup.sh` makes the nightly dump and copies it to S3-compatible storage.
+- **CI** (`.github/workflows/ci.yml`): `./mvnw clean verify` and the landing site build (`site` job, `npm ci` + `npm run build` in `site/`) on every push and pull request, a Trivy scan of the dependencies and of the image (HIGH/CRITICAL with a fix fail), and for a `v*` tag a push to `ghcr.io/jilds/asp:<version>`. Dependabot (`.github/dependabot.yml`) updates Maven, npm, the actions and the base images weekly.
+- **Server:** `deploy/compose.prod.yaml` runs Caddy (HTTPS from Let's Encrypt, the only published ports; the app on `ASP_APP_DOMAIN`, the landing site build on `ASP_SITE_DOMAIN`), the app and PostgreSQL 18.6; settings in `deploy/.env` from `deploy/env.example`. `deploy/backup.sh` makes the nightly dump and copies it to S3-compatible storage.
 - **Smoke run:** `deploy/smoke.sh` starts the production setup locally with throwaway secrets (`https://app.localhost:18443`) and checks it end to end.
 - How to deploy, upgrade, back up, restore and rotate secrets: [docs/release/runbook.md](docs/release/runbook.md). What is still open before real customers: [docs/release/checklist.md](docs/release/checklist.md).
 

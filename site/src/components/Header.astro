@@ -1,0 +1,76 @@
+---
+import { useT } from '../i18n';
+import { type Lang, type PageId, href } from '../i18n/routes';
+import Icon from './Icon.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import Logo from './Logo.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  lang: Lang;
+  page: PageId;
+}
+
+const { lang, page } = Astro.props;
+const t = useT(lang);
+const links = [
+  { page: 'auto', label: t('nav.auto') },
+  { page: 'moto', label: t('nav.moto') },
+  { page: 'features', label: t('nav.features') },
+  { page: 'proposal', label: t('nav.proposal') },
+] as const;
+---
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href={href('home', lang)}>
+      <Logo class="brand-mark" />
+      <span aria-hidden="true">{t('site.short')}</span>
+      <span class="brand-full" aria-hidden="true">{t('site.full')}</span>
+      <span class="visually-hidden">{t('site.logoAlt')}</span>
+    </a>
+
+    <div class="nav-desktop">
+      <nav aria-label={t('nav.label')}>
+        <ul class="nav-links">
+          {
+            links.map((link) => (
+              <li>
+                <a href={href(link.page, lang)} aria-current={link.page === page ? 'page' : undefined}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <div class="nav-tools">
+        <LangSwitcher lang={lang} page={page} />
+        <ThemeToggle lang={lang} />
+      </div>
+    </div>
+
+    <details class="nav-mobile">
+      <summary><Icon name="menu" class="nav-toggle-icon" />{t('nav.menu')}</summary>
+      <div class="nav-panel">
+        <nav aria-label={t('nav.label')}>
+          <ul class="nav-links">
+            {
+              links.map((link) => (
+                <li>
+                  <a href={href(link.page, lang)} aria-current={link.page === page ? 'page' : undefined}>
+                    {link.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <div class="nav-tools">
+          <LangSwitcher lang={lang} page={page} />
+          <ThemeToggle lang={lang} />
+        </div>
+      </div>
+    </details>
+  </div>
+</header>

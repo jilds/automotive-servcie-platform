@@ -1,0 +1,38 @@
+---
+import LegalEntity from '../LegalEntity.astro';
+import Todo from '../Todo.astro';
+import { useT } from '../../i18n';
+import type { Lang } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<div class="section">
+  <article class="container prose">
+    <h1>{t('terms.title')}</h1>
+    <p class="note"><Todo lang={lang} />{t('legal.todoNote')}</p>
+    <p>{t('terms.intro')}</p>
+
+    <h2>{t('terms.provider.title')}</h2>
+    <LegalEntity lang={lang} />
+
+    <h2>{t('terms.service.title')}</h2>
+    <p>{t('terms.service.text')}</p>
+
+    <h2>{t('terms.content.title')}</h2>
+    <p>{t('terms.content.text')}</p>
+
+    <h2>{t('terms.liability.title')}</h2>
+    <p><Todo lang={lang} />{t('terms.liability.text')}</p>
+
+    <h2>{t('terms.law.title')}</h2>
+    <p><Todo lang={lang} />{t('terms.law.text')}</p>
+
+    <p class="hint"><Todo lang={lang} />{t('legal.updated')}</p>
+  </article>
+</div>

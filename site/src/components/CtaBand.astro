@@ -1,0 +1,19 @@
+---
+import { useT } from '../i18n';
+import { type Lang, href } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<section class="cta-band on-chrome" aria-labelledby="cta-title">
+  <div class="container">
+    <h2 id="cta-title">{t('cta.band.title')}</h2>
+    <p>{t('cta.band.text')}</p>
+    <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
+  </div>
+</section>

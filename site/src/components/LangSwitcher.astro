@@ -1,0 +1,31 @@
+---
+import { useT } from '../i18n';
+import { type Lang, type PageId, href, langs } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  page: PageId;
+}
+
+const { lang, page } = Astro.props;
+const t = useT(lang);
+---
+
+<nav aria-label={t('lang.label')}>
+  <div class="seg">
+    {
+      langs.map((other) => (
+        <a
+          href={href(page, other)}
+          hreflang={other}
+          lang={other}
+          aria-current={other === lang ? 'true' : undefined}
+          title={t(`lang.${other}`)}
+        >
+          <span aria-hidden="true">{t(`lang.short.${other}`)}</span>
+          <span class="visually-hidden">{t(`lang.${other}`)}</span>
+        </a>
+      ))
+    }
+  </div>
+</nav>

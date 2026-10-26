@@ -1,0 +1,206 @@
+---
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+
+// Texts the form script shows; they travel in a data attribute so the script holds no text of its own.
+const messages = {
+  required: t('form.error.required'),
+  name: t('form.error.name'),
+  district: t('form.error.district'),
+  phone: t('form.error.phone'),
+  email: t('form.error.email'),
+  contact: t('form.error.contact'),
+  vehicleType: t('form.error.vehicleType'),
+  message: t('form.error.message'),
+  privacy: t('form.error.privacy'),
+  summary: t('form.error.summary'),
+  submit: t('form.submit'),
+  sending: t('form.sending'),
+  rateLimited: t('form.error.rateLimited'),
+  rateLimitedLater: t('form.error.rateLimitedLater'),
+  network: t('form.error.network'),
+  generic: t('form.error.generic'),
+};
+const vehicleTypes = [
+  { value: 'CAR', label: t('form.vehicle.CAR') },
+  { value: 'MOTORCYCLE', label: t('form.vehicle.MOTORCYCLE') },
+  { value: 'BOTH', label: t('form.vehicle.BOTH') },
+] as const;
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <h1 id="page-title">{t('proposal.title')}</h1>
+  </div>
+</section>
+
+<div class="section">
+  <div class="container form-layout">
+    <div>
+      <p class="lead">{t('proposal.lead')}</p>
+      <p class="hint">{t('form.requiredNote')}</p>
+    </div>
+
+    <div class="form-card">
+      <div class="alert alert-success" data-lead-thanks role="status" tabindex="-1" hidden>
+        <h2>{t('form.thanks.title')}</h2>
+        <p>{t('form.thanks.text')}</p>
+      </div>
+
+      <form method="post" data-lead-form data-messages={JSON.stringify(messages)} novalidate>
+        <noscript><p class="alert alert-danger">{t('form.noscript')}</p></noscript>
+        <div class="alert alert-danger" data-lead-summary role="alert" tabindex="-1"></div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="lead-name">{t('form.name')} <span class="req" aria-hidden="true">*</span></label>
+            <input
+              id="lead-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              maxlength="120"
+              required
+              aria-describedby="lead-name-error"
+            />
+            <p class="field-error" id="lead-name-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="lead-workshopName">{t('form.workshopName')} <span class="req" aria-hidden="true">*</span></label>
+            <input
+              id="lead-workshopName"
+              name="workshopName"
+              type="text"
+              autocomplete="organization"
+              maxlength="120"
+              required
+              aria-describedby="lead-workshopName-error"
+            />
+            <p class="field-error" id="lead-workshopName-error"></p>
+          </div>
+
+          <p class="hint span-2" id="lead-contact-hint">
+            <strong>{t('form.contact')}</strong>{' '}
+            {t('form.contactHint')}
+          </p>
+
+          <div class="field">
+            <label for="lead-phone">{t('form.phone')}</label>
+            <input
+              id="lead-phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              inputmode="tel"
+              maxlength="30"
+              aria-describedby="lead-contact-hint lead-phone-error"
+            />
+            <p class="field-error" id="lead-phone-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="lead-email">{t('form.email')}</label>
+            <input
+              id="lead-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              maxlength="254"
+              aria-describedby="lead-contact-hint lead-email-error"
+            />
+            <p class="field-error" id="lead-email-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="lead-district">{t('form.district')} <span class="optional">{t('form.optional')}</span></label>
+            <input
+              id="lead-district"
+              name="district"
+              type="text"
+              autocomplete="address-level1"
+              maxlength="60"
+              aria-describedby="lead-district-error"
+            />
+            <p class="field-error" id="lead-district-error"></p>
+          </div>
+
+          <fieldset class="field span-2" id="lead-vehicleType" aria-describedby="lead-vehicleType-error">
+            <legend>{t('form.vehicleType')} <span class="req" aria-hidden="true">*</span></legend>
+            <div class="choices">
+              {
+                vehicleTypes.map((type) => (
+                  <label class="check">
+                    <input type="radio" name="vehicleType" value={type.value} required />
+                    <span>{type.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <p class="field-error" id="lead-vehicleType-error"></p>
+          </fieldset>
+
+          <div class="field span-2">
+            <label for="lead-message">{t('form.message')} <span class="optional">{t('form.optional')}</span></label>
+            <textarea
+              id="lead-message"
+              name="message"
+              rows="5"
+              maxlength="2000"
+              aria-describedby="lead-message-hint lead-message-error"></textarea>
+            <p class="hint" id="lead-message-hint">{t('form.messageHint')}</p>
+            <p class="field-error" id="lead-message-error"></p>
+          </div>
+
+          <div class="field span-2">
+            <label class="check" for="lead-privacyAccepted">
+              <input
+                id="lead-privacyAccepted"
+                name="privacyAccepted"
+                type="checkbox"
+                required
+                aria-describedby="lead-privacyAccepted-error"
+              />
+              <span>
+                {t('form.privacy.before')}{' '}
+                <a href={href('privacy', lang)} target="_blank" rel="noopener noreferrer">{t('form.privacy.link')}</a>{' '}
+                {t('form.privacy.after')}
+                <span class="req" aria-hidden="true">*</span>
+              </span>
+            </label>
+            <p class="field-error" id="lead-privacyAccepted-error"></p>
+          </div>
+
+          <div class="field span-2">
+            <label class="check" for="lead-marketingConsent">
+              <input id="lead-marketingConsent" name="marketingConsent" type="checkbox" />
+              <span>{t('form.marketing')}</span>
+            </label>
+          </div>
+
+          <div class="honeypot" aria-hidden="true">
+            <label for="lead-website">{t('form.website')}</label>
+            <input id="lead-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="span-2">
+            <button class="btn btn-primary" type="submit" disabled>
+              <span data-label>{t('form.submit')}</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/lead-form';
+</script>

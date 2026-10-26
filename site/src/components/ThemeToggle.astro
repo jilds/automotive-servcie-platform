@@ -1,0 +1,23 @@
+---
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const t = useT(Astro.props.lang);
+---
+
+<div class="seg theme-toggle" role="group" aria-label={t('theme.label')} hidden>
+  <button type="button" data-theme-mode="light" aria-pressed="false" title={t('theme.light')}>
+    <Icon name="sun" class="seg-icon" /><span class="visually-hidden">{t('theme.light')}</span>
+  </button>
+  <button type="button" data-theme-mode="dark" aria-pressed="false" title={t('theme.dark')}>
+    <Icon name="moon" class="seg-icon" /><span class="visually-hidden">{t('theme.dark')}</span>
+  </button>
+  <button type="button" data-theme-mode="system" aria-pressed="false" title={t('theme.system')}>
+    <Icon name="auto" class="seg-icon" /><span class="visually-hidden">{t('theme.system')}</span>
+  </button>
+</div>

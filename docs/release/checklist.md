@@ -14,12 +14,16 @@ written where the last column says.
 | SMTP provider, sender address, SPF, DKIM and DMARC records | `deploy/.env` (`ASP_MAIL_*`) | open |
 | S3-compatible bucket, region/endpoint, write-only key, lifecycle rule, encryption | `deploy/.env` (`ASP_BACKUP_S3_*`), runbook §5 | open |
 | Company legal name, NIF and address (legal pages, mail footer) | legal pages, mail templates | open |
+| Legal entity in the landing site's legal pages: replace `<Empresa, Lda.>`, `<NIF>`, `<Morada>` and the contact e-mail on `/privacidade`, `/termos`, `/cookies` (and `/en/`, `/br/`), reviewed by a lawyer | `site/` (step 03) | open |
+| Landing site domain (`<domain>`, also in the site's canonical URLs, `sitemap.xml` and `robots.txt`) | `deploy/.env` (`ASP_SITE_DOMAIN`), `site/` config | open |
+| Platform privacy policy URL linked from the public booking page, set once `/privacidade` is final | `deploy/.env` (`ASP_SITE_PRIVACY_URL=https://<domain>/privacidade`) | open |
+| Built landing site on the server | `deploy/.env` (`ASP_SITE_DIR`), runbook §2 "Landing site" | open |
 
 ## Decisions still owed
 
 | Decision | Notes |
 |---|---|
-| Legal pages: privacy policy, terms, cookies | Not built. The booking and demo forms ask for privacy consent, so the policy must exist before launch. |
+| Legal pages: privacy policy, terms, cookies | Placeholders on the landing site (step 03) with `<Empresa, Lda.>`; the final texts must exist before launch, because the booking and demo forms ask for privacy consent. |
 | Data processing agreements | With the hosting, SMTP and backup providers. |
 | Retention of personal data | Demo requests (CLOSED leads), old bookings, backups (bucket lifecycle). Backlog from 2c. |
 | Monitoring and alerts | Prometheus and Grafana, or a hosted service, on `app:8081`; an external uptime check on `https://app.<domain>/`. |

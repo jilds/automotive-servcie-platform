@@ -1,8 +1,11 @@
 # TLS certificates from Let's Encrypt for both hosts. The app sends its own security headers (CSP, HSTS,
-# Referrer-Policy). The smoke run mounts Caddyfile.smoke instead (Caddy's own CA on *.localhost).
+# Referrer-Policy); the site's are in caddy/site.caddy. The smoke run mounts Caddyfile.smoke instead (Caddy's own CA
+# on *.localhost).
 {
 	email {$ASP_ACME_EMAIL}
 }
+
+import caddy/site.caddy
 
 # The app. Caddy replaces any X-Forwarded-For a client sends with the real client address (no trusted_proxies here),
 # and the app trusts the header only from Caddy's fixed address.
@@ -11,15 +14,7 @@
 	reverse_proxy app:8080
 }
 
-# The landing site (step 03). Until it exists, deploy/site holds a placeholder page.
+# The landing site (step 03) on the main domain: the build of site/ (ASP_SITE_DIR); deploy/site holds a placeholder.
 {$ASP_SITE_DOMAIN} {
-	encode zstd gzip
-	root * /srv/site
-	file_server
-	header {
-		Strict-Transport-Security "max-age=31536000"
-		X-Content-Type-Options nosniff
-		Referrer-Policy strict-origin-when-cross-origin
-		Content-Security-Policy "default-src 'self'; frame-ancestors 'none'"
-	}
+	import site https://{$ASP_APP_DOMAIN}
 }

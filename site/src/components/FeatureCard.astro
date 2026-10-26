@@ -1,0 +1,22 @@
+---
+import { type MessageKey, useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+import Icon, { type IconName } from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+  icon: IconName;
+  title: MessageKey;
+  text: MessageKey;
+  soon?: boolean;
+}
+
+const { lang, icon, title, text, soon = false } = Astro.props;
+const t = useT(lang);
+---
+
+<article class:list={['card', { 'card-soon': soon }]}>
+  <Icon name={icon} class="card-icon" />
+  <h3>{t(title)}{soon && <span class="badge-soon">{t('soon')}</span>}</h3>
+  <p>{t(text)}</p>
+</article>

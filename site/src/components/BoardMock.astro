@@ -1,0 +1,35 @@
+---
+// A small picture of the job board for the hero, in HTML so its texts follow the language.
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const t = useT(Astro.props.lang);
+// Sample plates in the Portuguese formats the app checks (data, not text).
+const columns = [
+  { title: t('board.col.open'), cards: [{ plate: 'AB-12-CD', text: t('board.card.1') }] },
+  { title: t('board.col.progress'), cards: [{ plate: '34-XZ-56', text: t('board.card.2') }] },
+  { title: t('board.col.ready'), cards: [{ plate: '78-90-RT', text: t('board.card.3') }] },
+];
+---
+
+<figure class="board" role="img" aria-label={t('home.hero.figure')}>
+  {
+    columns.map((column) => (
+      <div class="board-col" aria-hidden="true">
+        <span class="board-col-title">{column.title}</span>
+        {column.cards.map((card) => (
+          <div class="board-card">
+            <span class="plate">
+              <span class="plate-text">{card.plate}</span>
+            </span>
+            <span>{card.text}</span>
+          </div>
+        ))}
+      </div>
+    ))
+  }
+</figure>

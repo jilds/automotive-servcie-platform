@@ -1,0 +1,26 @@
+---
+// One 404 page for the whole site, in the default language with links to the others.
+import { t } from '../i18n';
+import { defaultLang, href, langs } from '../i18n/routes';
+import Base from '../layouts/Base.astro';
+
+const lang = defaultLang;
+---
+
+<Base lang={lang} page="home" title={t(lang, 'meta.notFound.title')} description={t(lang, 'notFound.text')} noindex>
+  <div class="section">
+    <div class="container prose">
+      <h1>{t(lang, 'notFound.title')}</h1>
+      <p>{t(lang, 'notFound.text')}</p>
+      <ul>
+        {
+          langs.map((other) => (
+            <li lang={other}>
+              <a href={href('home', other)}>{t(other, 'notFound.home')}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</Base>

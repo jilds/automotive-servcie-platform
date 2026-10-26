@@ -48,6 +48,7 @@ ASP_JWT_SECRET=$(secret)
 ASP_BOOTSTRAP_ADMIN_EMAIL=admin@asp.localhost
 ASP_BOOTSTRAP_ADMIN_PASSWORD=$admin_password
 ASP_BOOTSTRAP_ADMIN_NAME=Smoke Admin
+ASP_SITE_PRIVACY_URL=https://localhost:18443/privacidade
 EOF
 
 echo "Starting $COMPOSE_PROJECT_NAME ..."
@@ -66,7 +67,12 @@ check "app (8080, 8081) and database publish no ports" bash -c '[[ -z "$(docker 
 check "Caddy cannot reach the database" bash -c '! "$@" exec -T caddy nc -z -w 3 db 5432 > /dev/null 2>&1' _ "${COMPOSE[@]}"
 check "app can reach the database" bash -c '"$@" exec -T app bash -c "exec 3<>/dev/tcp/db/5432" > /dev/null 2>&1' _ "${COMPOSE[@]}"
 check "API docs off in prod" bash -c '[[ "$(curl -sk -o /dev/null -w "%{http_code}" "$1/v3/api-docs")" != 200 ]]' _ "$APP"
+site_headers=$(curl -sk -D - -o /dev/null "https://localhost:18443/")
 check "landing site placeholder" bash -c 'curl -sk "https://localhost:18443/" | grep -q "Em breve"'
+check "site headers (CSP allows only the app, nosniff, no-cache)" bash -c 'grep -qi "^content-security-policy:.*connect-src '"'"'self'"'"' https://app.localhost:18443" <<< "$1" && grep -qi "^x-content-type-options: nosniff" <<< "$1" && grep -qi "^cache-control: no-cache" <<< "$1"' _ "$site_headers"
+check "site answers 404 for a missing page" test "$(http https://localhost:18443/no-such-page)" = 404
+site_404_headers=$(curl -sk -D - -o /dev/null "https://localhost:18443/no-such-page")
+check "site 404 keeps the CSP and nosniff" bash -c 'grep -qi "^content-security-policy:.*style-src '"'"'self'"'"';" <<< "$1" && grep -qi "^x-content-type-options: nosniff" <<< "$1"' _ "$site_404_headers"
 
 token=$(curl -sk -H 'Content-Type: application/json' "$APP/api/v1/auth/login" \
   -d "{\"email\":\"admin@asp.localhost\",\"password\":\"$admin_password\"}" \

@@ -1,0 +1,19 @@
+---
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+import Todo from './Todo.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<address class="address-block">
+  <Todo lang={lang} />{t('legal.company')}<br />
+  {t('legal.nif')}<br />
+  {t('legal.address')}<br />
+  {t('legal.contact')}
+</address>

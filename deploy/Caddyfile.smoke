@@ -4,12 +4,13 @@
 	skip_install_trust
 }
 
+import caddy/site.caddy
+
 app.localhost {
 	encode zstd gzip
 	reverse_proxy app:8080
 }
 
 localhost {
-	root * /srv/site
-	file_server
+	import site https://app.localhost:18443
 }
