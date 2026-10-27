@@ -19,9 +19,9 @@
 
     <properties>
         <java.version>26</java.version>
-        <spring-modulith.version>2.1.1</spring-modulith.version>
+        <spring-modulith.version>2.1.2</spring-modulith.version>
         <springdoc.version>3.1.1</springdoc.version>
-        <archunit.version>1.4.1</archunit.version>
+        <archunit.version>1.5.1</archunit.version>
         <greenmail.version>2.1.14</greenmail.version>
         <!-- 7.x is the line for Spring Framework 7 / Spring Boot 4 -->
         <shedlock.version>7.10.1</shedlock.version>
