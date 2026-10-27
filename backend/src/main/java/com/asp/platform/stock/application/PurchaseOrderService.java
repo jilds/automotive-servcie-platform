@@ -16,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.stock.StockReservations;
 import com.asp.platform.stock.domain.MovementType;
 import com.asp.platform.stock.domain.Product;
 import com.asp.platform.stock.domain.ProductDetails;
@@ -109,7 +110,7 @@ public class PurchaseOrderService {
         order.markReceived(now);
         PurchaseOrder saved = orders.save(order);
         StockReference reference = new StockReference(StockReference.PURCHASE_ORDER, id);
-        Map<UUID, BigDecimal> perProduct = new TreeMap<>();
+        Map<UUID, BigDecimal> perProduct = new TreeMap<>(StockReservations.LOCK_ORDER);
         saved.details().lines().forEach(line -> perProduct.merge(line.productId(), line.quantity(), BigDecimal::add));
         perProduct.forEach((productId, quantity) -> {
             Product product = products.lock(productId).orElseThrow(ProductNotFoundException::new);

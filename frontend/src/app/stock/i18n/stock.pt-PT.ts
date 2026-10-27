@@ -74,6 +74,7 @@ export const stockPtPT: Record<StockKey, string> = {
   'stock.movementDetail': 'Detalhe',
   'stock.ref.WORK_ORDER': 'Ordem de trabalho',
   'stock.ref.PURCHASE_ORDER': 'Encomenda a fornecedor',
+  'stock.ref.SHOP_ORDER': 'Encomenda online',
   'stock.po.subtitle': 'Encomende peças aos fornecedores e dê-lhes entrada no stock quando chegarem',
   'stock.po.new': 'Nova encomenda',
   'stock.po.edit': 'Editar encomenda',

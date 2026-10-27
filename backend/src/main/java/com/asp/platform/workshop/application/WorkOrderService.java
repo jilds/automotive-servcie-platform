@@ -158,7 +158,7 @@ public class WorkOrderService {
         }
         // Products are locked in one order, so two packages sharing products cannot deadlock.
         parts.stream()
-                .sorted(Comparator.comparing(PartReservation::productId))
+                .sorted(Comparator.comparing(PartReservation::productId, StockReservations.LOCK_ORDER))
                 .forEach(part -> stock.reserve(part.productId(), part.quantity(), ReservationSource.WORK_ORDER,
                         order.id(), part.lineId()));
         return orders.save(order);

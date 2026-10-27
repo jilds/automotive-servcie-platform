@@ -58,6 +58,7 @@ const ICONS = {
   'alert-triangle': ['m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3', 'M12 9v4', 'M12 17h.01'],
   'check-circle': [circle(12, 12, 10), 'm9 12 2 2 4-4'],
   info: [circle(12, 12, 10), 'M12 16v-4', 'M12 8h.01'],
+  bag: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
   gauge: ['m12 14 4-4', 'M3.34 19a10 10 0 1 1 17.32 0'],
   fuel: ['M3 22h12', 'M4 9h10', 'M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18', 'M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5'],
 } as const satisfies Record<string, readonly string[]>;

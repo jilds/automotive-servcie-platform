@@ -13,6 +13,9 @@ import { cataloguePtPT } from '../../catalogue/i18n/catalogue.pt-PT';
 import { identityEn } from '../../identity/i18n/identity.en';
 import { identityPtBR } from '../../identity/i18n/identity.pt-BR';
 import { identityPtPT } from '../../identity/i18n/identity.pt-PT';
+import { shopEn } from '../../shop/i18n/shop.en';
+import { shopPtBR } from '../../shop/i18n/shop.pt-BR';
+import { shopPtPT } from '../../shop/i18n/shop.pt-PT';
 import { stockEn } from '../../stock/i18n/stock.en';
 import { stockPtBR } from '../../stock/i18n/stock.pt-BR';
 import { stockPtPT } from '../../stock/i18n/stock.pt-PT';
@@ -27,9 +30,9 @@ import { ptPT } from './messages.pt-PT';
  * completeness checks); the app loads them lazily through `feature-texts.ts`.
  */
 export const ALL_TEXTS = {
-  en: { core: en, admin: adminEn, backoffice: backofficeEn, booking: bookingEn, catalogue: catalogueEn, identity: identityEn, stock: stockEn },
-  'pt-PT': { core: ptPT, admin: adminPtPT, backoffice: backofficePtPT, booking: bookingPtPT, catalogue: cataloguePtPT, identity: identityPtPT, stock: stockPtPT },
-  'pt-BR': { core: ptBR, admin: adminPtBR, backoffice: backofficePtBR, booking: bookingPtBR, catalogue: cataloguePtBR, identity: identityPtBR, stock: stockPtBR },
+  en: { core: en, admin: adminEn, backoffice: backofficeEn, booking: bookingEn, catalogue: catalogueEn, identity: identityEn, shop: shopEn, stock: stockEn },
+  'pt-PT': { core: ptPT, admin: adminPtPT, backoffice: backofficePtPT, booking: bookingPtPT, catalogue: cataloguePtPT, identity: identityPtPT, shop: shopPtPT, stock: stockPtPT },
+  'pt-BR': { core: ptBR, admin: adminPtBR, backoffice: backofficePtBR, booking: bookingPtBR, catalogue: cataloguePtBR, identity: identityPtBR, shop: shopPtBR, stock: stockPtBR },
 } satisfies Record<Language, Record<TextPart, object>> & LoadedTexts;
 
 /** All texts of a language in one dictionary, as the app has them once every feature is loaded. */

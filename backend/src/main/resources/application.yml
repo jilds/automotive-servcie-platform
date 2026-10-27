@@ -88,6 +88,16 @@ app:
       reads:
         limit: 120
         window: 1m
+  # Scheduled jobs (@Scheduled, one instance at a time through ShedLock's table `shedlock`). The tests turn them off
+  # and run the jobs directly.
+  scheduling:
+    enabled: ${ASP_SCHEDULING_ENABLED:true}
+  shop:
+    # Shop orders past their hold time expire at the top of every hour (UTC, Spring cron).
+    expiry-cron: "0 0 * * * *"
+    # Online orders (PLACED or READY) one workshop may hold at once; more answer 409 shop-busy. Orders are paid only
+    # at the counter, so this keeps anonymous orders from reserving all the stock.
+    max-open-orders: ${ASP_SHOP_MAX_OPEN_ORDERS:50}
 
 management:
   endpoints:

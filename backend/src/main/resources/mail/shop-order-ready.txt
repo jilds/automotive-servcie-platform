@@ -1,0 +1,9 @@
+[(#{mail.greeting(${name})})]
+
+[(#{shop-order-ready.body(${workshop}, ${number}, ${until})})]
+[# th:if="${pickupNote != ''}"][(#{shop-order-ready.note(${pickupNote})})][/]
+
+[(#{shop.link})]
+
+--
+[(#{mail.automatic})]

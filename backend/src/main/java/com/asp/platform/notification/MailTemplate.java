@@ -18,7 +18,16 @@ public enum MailTemplate {
     BOOKING_DECLINED("booking-declined", "workshop", "number"),
     /// To each platform admin: a demo request from the landing site. Model: `name`, `workshop`, `phone`, `email`,
     /// `district`, `vehicleType` (`CAR`, `MOTORCYCLE`, `BOTH`), `message` (empty strings when not given), `link`.
-    LEAD_RECEIVED("lead-received", "workshop");
+    LEAD_RECEIVED("lead-received", "workshop"),
+    /// To a customer who placed a shop order. Model: `name`, `workshop`, `number`, `total` (formatted), `until`,
+    /// `link`.
+    SHOP_ORDER_RECEIVED("shop-order-received", "workshop", "number"),
+    /// Model: `name`, `workshop`, `number`, `until` (the new hold), `pickupNote` (empty when none).
+    SHOP_ORDER_READY("shop-order-ready", "workshop", "number"),
+    /// Cancelled by the workshop. Model: `name`, `workshop`, `number`, `reason`.
+    SHOP_ORDER_CANCELLED("shop-order-cancelled", "workshop", "number"),
+    /// Not collected in time. Model: `name`, `workshop`, `number`, `until`.
+    SHOP_ORDER_EXPIRED("shop-order-expired", "workshop", "number");
 
     private final String file;
     private final List<String> subjectArguments;

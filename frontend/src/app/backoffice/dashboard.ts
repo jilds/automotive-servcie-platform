@@ -9,6 +9,7 @@ import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { MoneyPipe } from '../shared/money.pipe';
 import { BookingApi } from '../booking/booking-api.service';
+import { ShopApi } from '../shop/shop-api.service';
 import { TenantThemeService } from '../shared/theme.service';
 import { StockApi } from '../stock/stock-api.service';
 import { BackofficeApi } from './backoffice-api.service';
@@ -106,6 +107,19 @@ import { monthDate, statusBars, workloadBars } from './dashboard.model';
           </a>
         }
 
+        @if (pendingShopOrders(); as pending) {
+          <a class="card shadow-sm border-warning-subtle text-decoration-none d-block mb-4" routerLink="/shop-orders">
+            <div class="card-body d-flex flex-wrap align-items-center gap-3 py-3">
+              <span class="text-warning-emphasis d-inline-flex"><app-icon name="bag" /></span>
+              <span class="d-flex flex-column me-auto">
+                <span class="fw-semibold text-body">{{ 'shop.dashboard.pending' | t }}: {{ pending }}</span>
+                <span class="small text-body-secondary">{{ 'shop.dashboard.pendingHint' | t }}</span>
+              </span>
+              <span class="small fw-semibold d-inline-flex align-items-center gap-1">{{ 'shop.dashboard.open' | t }}<app-icon name="arrow-right" [size]="14" /></span>
+            </div>
+          </a>
+        }
+
         <div class="row g-3">
           <div class="col-lg-6">
             <section class="card shadow-sm h-100">
@@ -188,6 +202,10 @@ export class Dashboard implements OnInit {
   protected readonly pendingBookings = signal<number | null>(null);
   /** The shell loads the add-ons with the branding; the tile follows when they arrive after this page. */
   private readonly bookingOn = computed(() => !!this.theme.branding()?.addOns?.booking);
+  private readonly shop = inject(ShopApi);
+  /** Online shop orders still to prepare; null when the add-on is off or nothing waits. */
+  protected readonly pendingShopOrders = signal<number | null>(null);
+  private readonly shopOn = computed(() => !!this.theme.branding()?.addOns?.shop);
   private readonly refreshes = signal(0);
 
   protected readonly byStatus = computed(() => statusBars(this.data()?.openByStatus ?? {}));
@@ -204,6 +222,11 @@ export class Dashboard implements OnInit {
     effect(() => {
       this.refreshes();
       if (this.bookingOn()) untracked(() => this.loadPendingBookings());
+    });
+    effect(() => {
+      this.refreshes();
+      if (this.shopOn()) untracked(() => this.loadPendingShopOrders());
+      else this.pendingShopOrders.set(null);
     });
     this.reloads
       .pipe(
@@ -236,6 +259,11 @@ export class Dashboard implements OnInit {
     // Low-stock tile: hidden when nothing is low or the list cannot be read.
     this.stock.lowStock().subscribe({ next: (list) => this.lowStock.set(list.length), error: () => this.lowStock.set(null) });
     this.refreshes.update((n) => n + 1);
+  }
+
+  /** Shop tile: only with the shop add-on; hidden when nothing waits or the count cannot be read. */
+  private loadPendingShopOrders(): void {
+    this.shop.pendingCount().subscribe({ next: (r) => this.pendingShopOrders.set(r.count || null), error: () => this.pendingShopOrders.set(null) });
   }
 
   /** Bookings tile: only with the booking add-on; hidden when nothing waits or the count cannot be read. */

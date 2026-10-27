@@ -41,6 +41,11 @@ export const FEATURE_TEXTS = {
     'pt-PT': () => import('../../identity/i18n/identity.pt-PT').then((m) => m.identityPtPT),
     'pt-BR': () => import('../../identity/i18n/identity.pt-BR').then((m) => m.identityPtBR),
   },
+  shop: {
+    en: () => import('../../shop/i18n/shop.en').then((m) => m.shopEn),
+    'pt-PT': () => import('../../shop/i18n/shop.pt-PT').then((m) => m.shopPtPT),
+    'pt-BR': () => import('../../shop/i18n/shop.pt-BR').then((m) => m.shopPtBR),
+  },
   stock: {
     en: () => import('../../stock/i18n/stock.en').then((m) => m.stockEn),
     'pt-PT': () => import('../../stock/i18n/stock.pt-PT').then((m) => m.stockPtPT),

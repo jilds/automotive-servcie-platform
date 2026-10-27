@@ -39,6 +39,8 @@ describe('authInterceptor', () => {
 
   it('knows which URLs carry the token', () => {
     expect(sendsToken('/api/v1/branding')).toBe(true);
+    // The public theme by slug is anonymous: a stale token there would sign a customer out of a shop page.
+    expect(sendsToken('/api/v1/branding/oficina-azul')).toBe(false);
     expect(sendsToken('/api/v1/public/x/booking/services')).toBe(false);
     expect(sendsToken('/assets/logo.png')).toBe(false);
     expect(sendsToken('https://elsewhere.example/api/v1/bookings')).toBe(false);

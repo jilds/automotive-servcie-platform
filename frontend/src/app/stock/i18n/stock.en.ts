@@ -72,6 +72,7 @@ export const stockEn = {
   'stock.movementDetail': 'Detail',
   'stock.ref.WORK_ORDER': 'Work order',
   'stock.ref.PURCHASE_ORDER': 'Purchase order',
+  'stock.ref.SHOP_ORDER': 'Online order',
   'stock.po.subtitle': 'Order parts from suppliers and add them to stock when they arrive',
   'stock.po.new': 'New purchase order',
   'stock.po.edit': 'Edit purchase order',

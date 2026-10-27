@@ -1,0 +1,6 @@
+[(#{mail.greeting(${name})})]
+
+[(#{shop-order-expired.body(${workshop}, ${number}, ${until})})]
+
+--
+[(#{mail.automatic})]

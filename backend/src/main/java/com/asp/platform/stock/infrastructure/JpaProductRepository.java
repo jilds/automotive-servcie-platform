@@ -1,5 +1,6 @@
 package com.asp.platform.stock.infrastructure;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +10,7 @@ import jakarta.persistence.EntityManager;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Repository;
 
 import com.asp.platform.shared.persistence.Constraints;
@@ -16,6 +18,8 @@ import com.asp.platform.shared.persistence.Upserts;
 import com.asp.platform.stock.domain.DuplicateSkuException;
 import com.asp.platform.stock.domain.Product;
 import com.asp.platform.stock.domain.ProductRepository;
+import com.asp.platform.stock.domain.ProductStock;
+import com.asp.platform.stock.domain.StockLevel;
 
 @Repository
 class JpaProductRepository implements ProductRepository {
@@ -67,6 +71,14 @@ class JpaProductRepository implements ProductRepository {
     @Override
     public List<Product> search(@Nullable String query, boolean activeOnly) {
         return jpa.search(query, activeOnly).stream().map(ProductEntity::toDomain).toList();
+    }
+
+    @Override
+    public List<ProductStock> onlineStock(@Nullable String query, int limit) {
+        return jpa.onlineStock(query, Limit.of(limit)).stream().map(row -> {
+            Product product = ((ProductEntity) row[0]).toDomain();
+            return new ProductStock(product, new StockLevel(product.onHand(), (BigDecimal) row[1]));
+        }).toList();
     }
 
     @Override
