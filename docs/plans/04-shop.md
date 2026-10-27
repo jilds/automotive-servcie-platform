@@ -1,6 +1,6 @@
 # 04: Online shop, pay at the counter
 
-Status: **in progress**. Commit `feat(shop)`. Migration V17. New module `com.asp.platform.shop`, which depends on identity
+Status: **done** (`f295a32`..`5a1dc8f`). Commit `feat(shop)`. Migration V17. New module `com.asp.platform.shop`, which depends on identity
 and stock. Contract: new `docs/api/release-4.md`, written before the code.
 
 ## Data (RLS)

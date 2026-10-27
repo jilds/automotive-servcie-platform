@@ -15,7 +15,7 @@ Rules:
 | [01-booking.md](01-booking.md): public online booking with slots and check-in | done | `3890d6c` |
 | [02-release-readiness.md](02-release-readiness.md): production profile, e-mail, leads, CI and deployment | done | `b36bd7e`..`3971ac7` |
 | [03-landing-site.md](03-landing-site.md): static landing site `site/` | done | `ef0386d`..`fc0472a` |
-| [04-shop.md](04-shop.md): online shop, pay at the counter | in progress | |
+| [04-shop.md](04-shop.md): online shop, pay at the counter | done | `f295a32`..`5a1dc8f` |
 | [05-quotes.md](05-quotes.md): quotes with a customer approval link | planned | |
 | [06-workshop-floor.md](06-workshop-floor.md): mechanic time tracking, photos, checklists | planned | |
 | [07-invoicing-payments.md](07-invoicing-payments.md): certified invoicing, Multibanco and MB WAY behind provider adapters | planned | |
