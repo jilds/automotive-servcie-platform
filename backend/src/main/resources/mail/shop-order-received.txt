@@ -1,0 +1,11 @@
+[(#{mail.greeting(${name})})]
+
+[(#{shop-order-received.body(${workshop}, ${number}, ${total}, ${until})})]
+
+[(#{shop-order-received.action})]:
+[(${link})]
+
+[(#{shop-order-received.keep})]
+
+--
+[(#{mail.automatic})]

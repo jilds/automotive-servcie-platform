@@ -23,6 +23,8 @@
         <springdoc.version>3.1.1</springdoc.version>
         <archunit.version>1.4.1</archunit.version>
         <greenmail.version>2.1.14</greenmail.version>
+        <!-- 7.x is the line for Spring Framework 7 / Spring Boot 4 -->
+        <shedlock.version>7.10.1</shedlock.version>
         <!-- Angular production build, produced by the frontend module (built first by the root reactor) -->
         <frontend.dist>${project.basedir}/../frontend/dist</frontend.dist>
     </properties>
@@ -110,6 +112,17 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
+        </dependency>
+        <!-- One instance at a time for @Scheduled jobs (shop order expiry), locks in the `shedlock` table -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>${shedlock.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>${shedlock.version}</version>
         </dependency>
 
         <!-- Tests -->

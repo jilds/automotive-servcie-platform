@@ -28,6 +28,11 @@ import { Toasts } from './toasts';
           <app-icon name="clock" [size]="16" />{{ 'booking.settings.tab' | t }}
         </a>
       }
+      @if (shopOn()) {
+        <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/shop" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <app-icon name="bag" [size]="16" />{{ 'shop.settings.tab' | t }}
+        </a>
+      }
       <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/settings" routerLinkActive="active" ariaCurrentWhenActive="page">
         <app-icon name="wrench" [size]="16" />{{ 'backoffice.tab.settings' | t }}
       </a>
@@ -55,4 +60,6 @@ export class BackofficeLayout {
   /** The online booking add-on is on (from `GET /branding`, loaded by the shell). */
   private readonly theme = inject(TenantThemeService);
   protected readonly bookingOn = computed(() => !!this.theme.branding()?.addOns?.booking);
+  /** The online shop add-on is on. */
+  protected readonly shopOn = computed(() => !!this.theme.branding()?.addOns?.shop);
 }

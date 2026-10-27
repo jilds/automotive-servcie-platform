@@ -1,9 +1,12 @@
 package com.asp.platform.notification.application;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -26,13 +29,16 @@ import com.asp.platform.notification.MailMessage;
 import com.asp.platform.notification.MailTemplate;
 import com.asp.platform.notification.Mailer;
 import com.asp.platform.notification.domain.MailLanguage;
+import com.asp.platform.shop.OrderPlaced;
+import com.asp.platform.shop.OrderStatusChanged;
 
 /// Turns other modules' events into mails. Each listener runs only after the publishing transaction committed (a
 /// rolled-back change sends nothing) and off the request thread (`@Async`), so a slow or failing mail server never
 /// delays or undoes the business change. With mail off, nothing is read or sent.
 ///
 /// The booking status token exists only in [BookingRequested], so only that first mail carries the status link; the
-/// later mails say the new status and time.
+/// later mails say the new status and time. The same holds for shop orders ([OrderPlaced], then
+/// [OrderStatusChanged]); a cancel by the customer publishes nothing, so it sends nothing.
 @Component
 class NotificationMails {
 
@@ -125,6 +131,58 @@ class NotificationMails {
             model.put("reason", nonNull(event.reason()));
             mailer.send(new MailMessage(event.email(), template, locale, model));
         }));
+    }
+
+    /// The first shop mail, the only one with the status link, in the page language when the customer chose one.
+    @Async
+    @TransactionalEventListener
+    void on(OrderPlaced event) {
+        if (!mailer.enabled()) {
+            return;
+        }
+        safely(MailTemplate.SHOP_ORDER_RECEIVED, () -> directory.profile(event.tenantId()).ifPresent(workshop -> {
+            Locale locale = MailLanguage.of(event.language(), workshop.country());
+            Map<String, Object> model = order(event.name(), workshop, event.number(), event.holdUntil(), locale);
+            model.put("total", money(event.totalCents(), locale));
+            model.put("link", links.link("/w/" + workshop.slug() + "/shop/" + event.statusToken()));
+            mailer.send(new MailMessage(event.email(), MailTemplate.SHOP_ORDER_RECEIVED, locale, model));
+        }));
+    }
+
+    /// Ready, cancelled by the workshop, or expired; in the language of the order's page.
+    @Async
+    @TransactionalEventListener
+    void on(OrderStatusChanged event) {
+        if (!mailer.enabled()) {
+            return;
+        }
+        MailTemplate template = switch (event.change()) {
+            case READY -> MailTemplate.SHOP_ORDER_READY;
+            case CANCELLED -> MailTemplate.SHOP_ORDER_CANCELLED;
+            case EXPIRED -> MailTemplate.SHOP_ORDER_EXPIRED;
+        };
+        safely(template, () -> directory.profile(event.tenantId()).ifPresent(workshop -> {
+            Locale locale = MailLanguage.of(event.language(), workshop.country());
+            Map<String, Object> model = order(event.name(), workshop, event.number(), event.holdUntil(), locale);
+            model.put("reason", nonNull(event.reason()));
+            model.put("pickupNote", nonNull(event.pickupNote()));
+            mailer.send(new MailMessage(event.email(), template, locale, model));
+        }));
+    }
+
+    private static Map<String, Object> order(String name, WorkshopProfile workshop, int number, Instant holdUntil,
+            Locale locale) {
+        Map<String, Object> model = base(name, workshop);
+        model.put("number", Integer.toString(number));
+        model.put("until", format(holdUntil, workshop.timeZone(), locale, FormatStyle.FULL));
+        return model;
+    }
+
+    /// Euros in the mail's language, as text so MessageFormat leaves it alone.
+    static String money(long cents, Locale locale) {
+        NumberFormat format = NumberFormat.getCurrencyInstance(locale);
+        format.setCurrency(Currency.getInstance("EUR"));
+        return format.format(BigDecimal.valueOf(cents, 2));
     }
 
     /// A failure before the send (the workshop lookup, a date format) is logged like a failed send: template only.

@@ -19,6 +19,17 @@ export const routes: Routes = [
     resolve: { texts: textsFor('booking') },
     loadComponent: () => import('./booking/booking-status').then((m) => m.BookingStatusPage),
   },
+  // Public shop pages of a workshop (add-on `shop`): no sign-in, lazy.
+  {
+    path: 'w/:slug/shop',
+    resolve: { texts: textsFor('shop') },
+    loadComponent: () => import('./shop/public-shop').then((m) => m.PublicShop),
+  },
+  {
+    path: 'w/:slug/shop/:token',
+    resolve: { texts: textsFor('shop') },
+    loadComponent: () => import('./shop/shop-order-status').then((m) => m.ShopOrderStatusPage),
+  },
   {
     path: 'activate',
     resolve: { texts: textsFor('identity') },
@@ -70,6 +81,12 @@ export const routes: Routes = [
         canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
         resolve: { texts: textsFor('booking') },
         loadComponent: () => import('./booking/bookings-page').then((m) => m.BookingsPage),
+      },
+      {
+        path: 'shop-orders',
+        canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
+        resolve: { texts: textsFor('shop') },
+        loadComponent: () => import('./shop/shop-orders-page').then((m) => m.ShopOrdersPage),
       },
       {
         path: 'backoffice',

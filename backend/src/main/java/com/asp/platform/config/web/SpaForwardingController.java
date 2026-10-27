@@ -14,6 +14,8 @@ class SpaForwardingController {
             "/w/{slug}",
             "/w/{slug}/book",
             "/w/{slug}/booking/{token}",
+            "/w/{slug}/shop",
+            "/w/{slug}/shop/{token}",
             "/admin",
             "/admin/workshops/{id}",
             "/admin/leads",
@@ -30,7 +32,9 @@ class SpaForwardingController {
             "/backoffice/services",
             "/backoffice/settings",
             "/backoffice/booking",
-            "/bookings"
+            "/backoffice/shop",
+            "/bookings",
+            "/shop-orders"
     })
     String forward() {
         return "forward:/index.html";

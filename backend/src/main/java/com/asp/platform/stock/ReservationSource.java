@@ -4,6 +4,6 @@ package com.asp.platform.stock;
 public enum ReservationSource {
     /// A part line of a work order.
     WORK_ORDER,
-    /// A line of an online shop order (later release).
+    /// A line of an online shop order.
     SHOP_ORDER
 }

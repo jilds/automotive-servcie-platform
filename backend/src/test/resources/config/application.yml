@@ -27,6 +27,9 @@ app:
   # Returned by the public branding (BrandingApiTests).
   site:
     privacy-url: https://asp.test/privacidade
+  # No scheduled jobs in the tests: ShopOrderExpiryTests calls the expiry directly.
+  scheduling:
+    enabled: false
   # Small limits so PublicWorkshopApiTests reaches them quickly; every test uses its own workshops (own slugs) and
   # its own client address.
   public:

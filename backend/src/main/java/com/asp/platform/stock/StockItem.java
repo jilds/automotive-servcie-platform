@@ -9,6 +9,7 @@ import java.util.UUID;
 /// @param salePriceCents sale price before VAT, per unit
 /// @param vatRate        VAT percentage, 0 to 100
 /// @param active         false when the product is no longer sold (it cannot be reserved)
+/// @param listedOnline   true when the workshop offers it in its online shop
 public record StockItem(UUID id, String sku, String name, String unit, long salePriceCents, BigDecimal vatRate,
-        boolean active) {
+        boolean active, boolean listedOnline) {
 }

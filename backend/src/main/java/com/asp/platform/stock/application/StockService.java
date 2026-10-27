@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.asp.platform.identity.WorkshopDirectory;
+import com.asp.platform.stock.OnlineProduct;
 import com.asp.platform.stock.ReservationSource;
 import com.asp.platform.stock.StockItem;
 import com.asp.platform.stock.StockReservations;
@@ -138,7 +139,20 @@ public class StockService implements StockReservations {
 
     private static StockItem stockItem(Product product) {
         ProductDetails d = product.details();
-        return new StockItem(product.id(), d.sku(), d.name(), d.unit(), d.salePriceCents(), d.vatRate(), d.active());
+        return new StockItem(product.id(), d.sku(), d.name(), d.unit(), d.salePriceCents(), d.vatRate(), d.active(),
+                d.listedOnline());
+    }
+
+    /// Active products listed online with their reserved quantity, read in one query.
+    @Override
+    @Transactional(readOnly = true)
+    public List<OnlineProduct> onlineProducts(@Nullable String query) {
+        return products.onlineStock(blankToNull(query), ONLINE_LIMIT).stream().map(s -> {
+            Product p = s.product();
+            ProductDetails d = p.details();
+            return new OnlineProduct(p.id(), d.sku(), d.name(), d.brand(), d.unit(), d.salePriceCents(), d.vatRate(),
+                    s.level().available(), d.minStock());
+        }).toList();
     }
 
     @Override

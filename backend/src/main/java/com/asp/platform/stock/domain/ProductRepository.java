@@ -25,6 +25,10 @@ public interface ProductRepository {
     /// By name; `query` matches SKU, name or brand, any case; null lists everything.
     List<Product> search(@Nullable String query, boolean activeOnly);
 
+    /// Active products listed online, by name, with their reserved quantity, in one query; at most `limit`.
+    /// `query` matches SKU, name or brand, any case; null lists them all.
+    List<ProductStock> onlineStock(@Nullable String query, int limit);
+
     /// True when a product other than `exceptId` has this SKU, case ignored.
     boolean skuTaken(String sku, @Nullable UUID exceptId);
 }

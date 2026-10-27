@@ -84,3 +84,29 @@ Contract first: [release-4.md](../api/release-4.md) (decisions: whole units 1–
 availability IN_STOCK / LAST_UNITS / OUT, no back-orders, no customer record, hold from placement and again from
 READY, customer cancels only while PLACED, staff cancel needs a reason, `cancel-reason-required` added). Then two Orca
 workers: backend and frontend, in parallel against the contract.
+
+## Result (2026-10-27)
+
+Built by two Orca workers against the contract: backend (module `shop`, V17, `StockReservations.onlineProducts`,
+ShedLock expiry, mails) and frontend (public shop and status page, staff `/shop-orders`, `/backoffice/shop`, sidebar
+item and dashboard tile). One fix loop after the reviews (code, security, dba, performance):
+
+- `stock.ref.SHOP_ORDER` texts, so stock movements of collected orders read "Encomenda online".
+- One product lock order for every module (`StockReservations.LOCK_ORDER`, PostgreSQL's uuid order); work-order
+  packages and purchase-order receipts sorted by `UUID.compareTo` (signed) before and could deadlock with the shop.
+- Placing an order reserves first and takes the `shop_settings` lock last; at most `app.shop.max-open-orders` (50)
+  open orders per workshop (409 `shop-busy`), so anonymous orders cannot hold all the stock.
+- Expiry in batches of 200, one transaction per order; a conflict with the front desk skips that order only.
+- V17 checks: EXPIRED ⇔ cancelled by EXPIRY, `hold_until > placed_at`; rollback notes release the reservations.
+- Names refuse C1 controls and U+2028/U+2029 (server and form); the receipt carries `timeZone`.
+- Found in the browser walk: a stale token in the browser sent the visitor of a public page to /login, because
+  `GET /api/v1/branding/{slug}` carried it (booking pages too). The interceptor no longer sends it there.
+
+Gate: `./mvnw clean verify` (counts in the commit), browser walk on a throwaway database (pt-PT order with an invalid
+then valid NIF, ready, collect by card with the stock ISSUE shown as "Encomenda online"; EN order cancelled on the
+status link; mails received / ready in pt-PT and received in EN, none for the customer's own cancel; public and staff
+screens at 390 px without horizontal scroll and without console errors).
+
+Left for later: staff screens show times in the browser's zone (bookings use the workshop's); cart items beyond the
+first 200 listed products; LIKE wildcards in the product search; retention of order contact data (GDPR, with step 10);
+expiry only over open workshops (orders of a suspended workshop stay reserved); a believable honeypot total.

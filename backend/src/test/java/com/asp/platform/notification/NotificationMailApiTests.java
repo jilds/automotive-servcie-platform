@@ -26,7 +26,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.asp.platform.booking.BookingTestSupport;
+import com.asp.platform.shop.ShopTestSupport;
 import com.asp.platform.identity.application.IdentityService;
 import com.asp.platform.identity.application.InviteUserCommand;
 import com.asp.platform.shared.Role;
@@ -44,7 +44,7 @@ import com.jayway.jsonpath.JsonPath;
         "app.public-url=https://app.asp.test/",
         "spring.mail.host=127.0.0.1",
         "spring.mail.port=3025"})
-class NotificationMailApiTests extends BookingTestSupport {
+class NotificationMailApiTests extends ShopTestSupport {
 
     @RegisterExtension
     static final GreenMailExtension SMTP = new GreenMailExtension(ServerSetupTest.SMTP);
@@ -200,6 +200,52 @@ class NotificationMailApiTests extends BookingTestSupport {
         assertThat(decodedText(mail)).contains("Ana Silva", "ana@oficina.example", "Porto", "Motociclos",
                 "O pedido tem uma mensagem", "https://app.asp.test/admin/leads")
                 .doesNotContain("Queremos uma demonstração");
+    }
+
+    @Test
+    void should_mail_the_shop_status_link_then_ready_and_cancel_in_the_page_language() throws Exception {
+        Shop s = shop("Loja Correio", true);
+        String filter = product(s, "FLT-OL-01", "Filtro de óleo", 1200, true, 10);
+        call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/shop/settings")
+                .content("{\"holdDays\":3,\"pickupNote\":\"Ao balcão, 9h-18h\",\"version\":0}"), s.owner())
+                .andExpect(status().isOk());
+        String email = uniqueEmail("comprador");
+        String body = orderBody(filter, 2).replace("ana@example.pt", email).replace("\"pt-PT\"", "\"en\"");
+
+        String token = JsonPath.read(order(s, body).andExpect(status().isCreated()).andReturn().getResponse()
+                .getContentAsString(), "$.statusToken");
+
+        MimeMessage received = mailTo(email);
+        assertThat(received.getSubject()).isEqualTo("Order no. 1 at Loja Correio");
+        assertThat(decodedText(received)).contains("See or cancel your order", "€29.52",
+                "https://app.asp.test/w/" + s.slug() + "/shop/" + token);
+
+        call(post("/api/v1/shop-orders/" + orderId(s, 1) + "/ready").content("{\"version\":0}"), s.owner())
+                .andExpect(status().isOk());
+        MimeMessage ready = awaitMails(email, 2).get(1);
+        // Later mails keep the page language and carry no token.
+        assertThat(ready.getSubject()).isEqualTo("Order no. 1 at Loja Correio is ready");
+        assertThat(decodedText(ready)).contains("From the workshop: Ao balcão, 9h-18h").doesNotContain(token);
+
+        call(post("/api/v1/shop-orders/" + orderId(s, 1) + "/cancel")
+                .content("{\"reason\":\"Produto danificado\",\"version\":1}"), s.owner()).andExpect(status().isOk());
+        MimeMessage cancelled = awaitMails(email, 3).get(2);
+        assertThat(cancelled.getSubject()).isEqualTo("Order no. 1 at Loja Correio cancelled");
+        assertThat(decodedText(cancelled)).contains("Reason: Produto danificado");
+    }
+
+    @Test
+    void should_send_nothing_when_the_customer_cancels_a_shop_order() throws Exception {
+        Shop s = shop("Loja Desiste", true);
+        String filter = product(s, "FLT-OL-01", "Filtro de óleo", 1200, true, 10);
+        String email = uniqueEmail("desiste");
+        String token = JsonPath.read(order(s, orderBody(filter, 1).replace("ana@example.pt", email))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.statusToken");
+        assertThat(mailTo(email).getSubject()).isEqualTo("Encomenda n.º 1 em Loja Desiste");
+
+        publicCall(post(s.publicPath("/orders/" + token + "/cancel"))).andExpect(status().isOk());
+
+        assertThat(mailsTo(email)).hasSize(1);
     }
 
     private static String subject(MimeMessage message) {

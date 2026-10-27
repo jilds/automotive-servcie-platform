@@ -1,0 +1,7 @@
+[(#{mail.greeting(${name})})]
+
+[(#{shop-order-cancelled.body(${workshop}, ${number})})]
+[# th:if="${reason != ''}"][(#{shop-order-cancelled.reason(${reason})})][/]
+
+--
+[(#{mail.automatic})]

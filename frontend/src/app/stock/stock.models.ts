@@ -49,7 +49,7 @@ export interface Movement {
   type: MovementType;
   /** Positive for what came in, negative for what went out. */
   quantity: number;
-  /** `WORK_ORDER` or `PURCHASE_ORDER`; null for an adjustment. */
+  /** `WORK_ORDER`, `PURCHASE_ORDER` or `SHOP_ORDER`; null for an adjustment. */
   referenceType: string | null;
   referenceId: string | null;
   reason: string | null;
