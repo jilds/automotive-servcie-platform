@@ -1,6 +1,6 @@
 # 04: Online shop, pay at the counter
 
-Status: **planned**. Commit `feat(shop)`. Migration V17. New module `com.asp.platform.shop`, which depends on identity
+Status: **in progress**. Commit `feat(shop)`. Migration V17. New module `com.asp.platform.shop`, which depends on identity
 and stock. Contract: new `docs/api/release-4.md`, written before the code.
 
 ## Data (RLS)
@@ -77,3 +77,10 @@ Also reused: `insufficient-stock`.
 - Public 404 / 429.
 - Mechanics get 403.
 - The expiry job runs across two workshops.
+
+## Execution (2026-10-27)
+
+Contract first: [release-4.md](../api/release-4.md) (decisions: whole units 1–20 per line and 1–20 lines,
+availability IN_STOCK / LAST_UNITS / OUT, no back-orders, no customer record, hold from placement and again from
+READY, customer cancels only while PLACED, staff cancel needs a reason, `cancel-reason-required` added). Then two Orca
+workers: backend and frontend, in parallel against the contract.
