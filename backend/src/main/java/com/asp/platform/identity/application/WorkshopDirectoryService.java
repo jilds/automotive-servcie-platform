@@ -68,6 +68,12 @@ class WorkshopDirectoryService implements WorkshopDirectory {
 
     @Override
     @Transactional(readOnly = true)
+    public int quoteValidDays(UUID tenantId) {
+        return tenant(tenantId).settings().quoteValidDays();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<TeamMember> activeMechanics(UUID tenantId) {
         return users.findByTenant(tenantId).stream()
                 .filter(WorkshopDirectoryService::isActiveMechanic)

@@ -165,3 +165,158 @@ and delete version `'17'`.
 - Staff `/shop-orders` (to prepare / ready / done; ready, collect, cancel).
 - Owner `/backoffice/shop` (hold days, pickup note).
 - Sidebar item and dashboard tile "orders to prepare" only when the signed-in branding's `addOns.shop` is true.
+
+## Quotes
+
+Plan step 05 (`docs/plans/05-quotes.md`). Part of module `workshop`; a core feature (no add-on). Tests that pin this
+contract: `QuoteApiTests`, `PublicQuoteApiTests`, `QuoteExpiryTests`, `QuoteConcurrencyTests`,
+`RowLevelSecurityCatalogueTests`, `SpaForwardingTests`, `MailTemplatesTests`.
+
+The front desk sends the customer a **quote**: a frozen copy of the work order's lines and totals. The customer opens
+a private link and approves or rejects it, or tells the front desk by phone, who records the decision.
+
+### Rules
+
+- **Send** (OWNER, FRONT_DESK): the work order must be DIAGNOSTICS or AWAITING_APPROVAL and have at least one line,
+  else 409 `work-order-not-quotable`. In one transaction: a SENT quote of the order becomes SUPERSEDED, the new quote
+  copies every line and the totals (`quote_line`, never changed afterwards), `validUntil` = now + the workshop's
+  `quoteValidDays`, and the order moves to AWAITING_APPROVAL (it may already be there). Only the hash of the status
+  token is stored; the raw token is in the response and in the first mail only.
+- **Supersede:** while a quote is SENT, adding a line (by hand, from the catalogue or from stock), removing a line, a
+  new send, or cancelling the order makes it SUPERSEDED. Editing the check-in data does not.
+- **Decide:** a SENT quote may be approved or rejected once, by the customer on the link (channel `CUSTOMER`) or by
+  the front desk / owner for the customer (channel `STAFF`, note required). A quote that is not SENT answers 409
+  `quote-not-open`; a SENT quote past `validUntil` answers 409 `quote-expired` (and becomes EXPIRED).
+- **Approval moves the order** when it is still AWAITING_APPROVAL: to AWAITING_PARTS when the quote has a PART line
+  without `productId` (a part typed by hand), else to IN_PROGRESS. When the order is in another status (the staff
+  moved it by hand), only the decision is recorded. **Rejection** does not move the order.
+- **Expiry:** a SENT quote past `validUntil` reads `EXPIRED` everywhere at once; the hourly job `QuoteExpiry` stores
+  it (ShedLock, per open workshop inside `TenantScope.callAs`, batches of 200, one transaction per quote, failures
+  logged with the workshop id only). Expiry does not move the order.
+- **Locking:** sending, line changes, decisions, expiry and status moves lock the work order row
+  (`PESSIMISTIC_WRITE`, 3 s → 409 `try-again`), so an approval racing a line change gives one winner: either the quote
+  is approved with the old lines and the line change then supersedes nothing (the quote is no longer SENT), or the
+  quote is superseded first and the approval answers 409 `quote-not-open`.
+- **Mechanics** get 403 on every quote endpoint. They see only `quote.status` on the work order and `quoteStatus` on
+  the board card (no amounts, no lines).
+- Quote numbers count per workshop from 1 (`(tenant_id, number)` unique; a race across two orders answers 409
+  `try-again`).
+
+Quote status:
+
+| From | To |
+|---|---|
+| SENT | APPROVED, REJECTED, SUPERSEDED, EXPIRED |
+| APPROVED, REJECTED, SUPERSEDED, EXPIRED | — (409 `quote-not-open`) |
+
+### Workshop endpoints (OWNER, FRONT_DESK; mechanics 403)
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/work-orders/{id}/quotes` | No body → `201 SentQuoteResponse`; 404 `work-order-not-found`; 409 `work-order-not-quotable` |
+| GET | `/work-orders/{id}/quotes` | `QuoteResponse[]`, newest first, with lines |
+| POST | `/work-orders/{id}/quotes/{quoteId}/decision` | `{ "decision": "APPROVED" or "REJECTED", "note": "…", "version": 0 }` → `QuoteResponse`. `note` 1–500 required (400 `decision-note-required`, `errors.note`); another `decision` → 400 `validation`; 404 `quote-not-found` (also for a quote of another order) |
+
+A different stored `version` answers 409 `stale-data`.
+
+```json
+// SentQuoteResponse
+{ "quote": { "…": "QuoteResponse" }, "statusToken": "…43 chars…", "customerHasEmail": true }
+// The screen builds the link <origin>/w/{slug}/quote/{statusToken} (slug from the signed-in branding).
+// customerHasEmail: the vehicle's customer has an e-mail, so a mail goes out when mail is on.
+
+// QuoteResponse
+{ "id": "…", "number": 4, "workOrderId": "…", "status": "SENT", "sentAt": "…", "sentByName": "Rita",
+  "validUntil": "…", "netCents": 10000, "vatCents": 2300, "totalCents": 12300,
+  "lines": [ { "position": 1, "type": "LABOR", "description": "Mudança de óleo", "quantity": 1,
+               "unitPriceCents": 4000, "discountPercent": 0, "vatRate": 23, "netCents": 4000, "vatCents": 920,
+               "serviceItemId": "…", "productId": null } ],
+  "vatByRate": [ { "vatRate": 23, "netCents": 10000, "vatCents": 2300 } ],
+  "decidedAt": null, "decidedChannel": null, "decidedName": null, "decidedByName": null, "decidedNote": null,
+  "version": 0 }
+// decidedChannel: CUSTOMER | STAFF. decidedName: the name the customer typed (CUSTOMER).
+// decidedByName: the staff member (STAFF). decidedNote: the staff note, or the customer's rejection reason.
+// vatByRate: one entry per VAT rate of the lines, ascending, sums of the line nets and line VATs.
+```
+
+### Work order and board (changes)
+
+- `WorkOrderResponse` gets `quote`: the latest quote of the order, or null:
+  `{ "id": "…", "number": 4, "status": "APPROVED", "validUntil": "…", "decidedAt": "…", "decidedChannel": "CUSTOMER" }`
+  (no amounts; mechanics get it too). `status` is `EXPIRED` for a SENT quote past `validUntil`.
+- Board `Card` gets `quoteStatus` (latest quote's status, same rule, or null).
+- Line endpoints answer as before; when they supersede a quote, the returned `quote.status` is `SUPERSEDED`.
+
+### Workshop settings (changes)
+
+- `GET/PUT /workshop/settings` gets `quoteValidDays` (integer 1–90, default 15; else 400 `validation`,
+  `errors.quoteValidDays`). Optional on `PUT`: left out or null keeps the stored value, so older clients keep working.
+
+### Public endpoints (`/api/v1/public/{slug}`, no add-on)
+
+Same scope, rate limits and 404s as the booking pages (release 3, ADR 0004). Unknown token (or one of another
+workshop) → 404 `quote-not-found`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/quotes/{token}` | → `PublicQuoteResponse` |
+| POST | `/quotes/{token}/approve` | `{ "name": "Ana Silva", "accepted": true }` → `PublicQuoteResponse`. `name` 1–120, one line without `://`, `www.`, `<`, `>` or control characters (as the shop); `accepted` must be true (400 `validation`, `errors.accepted`) |
+| POST | `/quotes/{token}/reject` | `{ "reason": "…" }` (optional, ≤ 500, no control characters except tab and newline, no U+2028 / U+2029; else 400 `validation`, `errors.reason`) → `PublicQuoteResponse` |
+
+Both POSTs: 409 `quote-not-open` / `quote-expired` as above.
+
+```json
+// PublicQuoteResponse (no customer data, no ids; times shown in timeZone)
+{ "number": 4, "workOrderNumber": 12, "status": "SENT", "sentAt": "…", "validUntil": "…",
+  "timeZone": "Europe/Lisbon", "workshopName": "Oficina Azul",
+  "vehicle": { "plateDisplay": "AA-00-AA", "plateEra": "PT_2020", "registrationCountry": "PT",
+               "label": "Renault Clio" },
+  "lines": [ { "type": "LABOR", "description": "Mudança de óleo", "quantity": 1, "unitPriceCents": 4000,
+               "discountPercent": 0, "vatRate": 23, "netCents": 4000 } ],
+  "vatByRate": [ { "vatRate": 23, "netCents": 10000, "vatCents": 2300 } ],
+  "netCents": 10000, "vatCents": 2300, "totalCents": 12300,
+  "decidedAt": null, "decidedChannel": null, "canDecide": true }
+// canDecide: status SENT and not past validUntil. vehicle is null when the vehicle is not found.
+```
+
+#### E-mail
+
+With mail on, and only when the vehicle's customer has an e-mail, sending a quote mails it (template `quote-sent`,
+event `workshop.QuoteSent` with the raw token and a token-free `toString`): workshop name, work order number, plate,
+total with VAT, `validUntil` in the workshop's zone and the link `<ASP_PUBLIC_URL>/w/{slug}/quote/{token}`, in the
+workshop country's language (PT → pt-PT, BR → pt-BR, else en). After the commit, never changes the answer.
+`CustomerManagement.contactForVehicle(vehicleId)` gives the name and e-mail for this mail only.
+
+### Error codes added
+
+| Status | `code` | When |
+|---|---|---|
+| 404 | `quote-not-found` | Not in the workshop / not of this order, or unknown status token |
+| 409 | `quote-not-open` | The quote is not SENT (decided, superseded or expired) |
+| 409 | `quote-expired` | The quote is SENT but past `validUntil` |
+| 409 | `work-order-not-quotable` | Send outside DIAGNOSTICS / AWAITING_APPROVAL, or the order has no lines |
+| 400 | `decision-note-required` | Staff decision without a note |
+
+Reused: `work-order-not-found`, `try-again`, `stale-data`, `validation`, `too-many-requests`, `workshop-not-found`.
+
+### Migration V18
+
+`quote` and `quote_line` (tenant_id with the V2 default, RLS ENABLE + FORCE with `tenant_isolation`); unique
+`(tenant_id, number)` and `status_token_hash`; partial unique `(work_order_id) where status = 'SENT'`; index
+`(tenant_id, work_order_id, number desc)` (history and the board's latest quote: "latest" means the highest number)
+and partial `(tenant_id, valid_until) where status = 'SENT'` for the expiry job; checks on status, channel,
+cents ≥ 0, `valid_until > sent_at`, decided columns set ⇔ status APPROVED / REJECTED. `asp_app` gets select and
+insert on `quote_line` only (no update, no delete), and on `quote` select, insert and an update of the status and
+decision columns only (the amounts, `valid_until` and the token hash never change after sending). `tenant.quote_valid_days smallint not null default 15
+check (between 1 and 90)`. Rollback: drop `quote_line`, `quote`, the column, and delete version `'18'`.
+
+### Screens (for the Angular side)
+
+- Work order: quotes panel (OWNER, FRONT_DESK): "Send quote" (enabled in DIAGNOSTICS / AWAITING_APPROVAL with lines),
+  the link with a copy button after sending (and whether it was e-mailed), a warning with "Send again" when the latest
+  quote is SUPERSEDED or EXPIRED, "Record decision" (approved / rejected + note) on a SENT quote, and the history.
+  Mechanics: a status badge only.
+- Board card: badge for `quoteStatus` (sent / approved / rejected / expired; none for superseded).
+- Public `/w/{slug}/quote/{token}` on `shared/public-page.ts`: vehicle, lines, VAT by rate, total, valid until (in
+  `timeZone`), approve (name + accept checkbox) and reject (optional reason); the decision when taken. Mobile first.
+- `/backoffice` settings: "Quote valid for (days)".

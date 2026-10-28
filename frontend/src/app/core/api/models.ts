@@ -23,6 +23,19 @@ export type WorkOrderStatus =
   | 'DELIVERED'
   | 'CANCELLED';
 
+/** Status of a quote; a SENT quote past its `validUntil` already reads EXPIRED. */
+export type QuoteStatus = 'SENT' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED' | 'EXPIRED';
+
+/** The latest quote of a work order, without amounts (mechanics get it too). */
+export interface WorkOrderQuote {
+  id: string;
+  number: number;
+  status: QuoteStatus;
+  validUntil: string;
+  decidedAt: string | null;
+  decidedChannel: 'CUSTOMER' | 'STAFF' | null;
+}
+
 export interface User {
   id: string;
   tenantId: string;
@@ -193,6 +206,8 @@ export interface WorkOrder extends PlateInfo {
   totalCents: number | null;
   /** True for a mechanic viewing a job that is not theirs (from the vehicle history): no actions. */
   readOnly: boolean;
+  /** The latest quote, or null when none was sent. */
+  quote?: WorkOrderQuote | null;
 }
 
 export interface BoardCard extends PlateInfo {
@@ -202,6 +217,8 @@ export interface BoardCard extends PlateInfo {
   vehicle: string;
   assignedMechanicId: string | null;
   statusChangedAt: string;
+  /** Status of the latest quote, or null when none was sent. */
+  quoteStatus?: QuoteStatus | null;
 }
 
 export interface Board {

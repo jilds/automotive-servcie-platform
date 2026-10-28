@@ -27,7 +27,10 @@ public enum MailTemplate {
     /// Cancelled by the workshop. Model: `name`, `workshop`, `number`, `reason`.
     SHOP_ORDER_CANCELLED("shop-order-cancelled", "workshop", "number"),
     /// Not collected in time. Model: `name`, `workshop`, `number`, `until`.
-    SHOP_ORDER_EXPIRED("shop-order-expired", "workshop", "number");
+    SHOP_ORDER_EXPIRED("shop-order-expired", "workshop", "number"),
+    /// To the customer of a vehicle: a quote to approve. Model: `name`, `workshop`, `number` (the work order's),
+    /// `plate`, `total` (formatted, VAT included), `until`, `link`.
+    QUOTE_SENT("quote-sent", "workshop", "number");
 
     private final String file;
     private final List<String> subjectArguments;

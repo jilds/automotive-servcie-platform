@@ -50,6 +50,9 @@ class TenantEntity implements DomainEntity<Tenant> {
     @Column(name = "labour_rate_cents", nullable = false)
     private long labourRateCents;
 
+    @Column(name = "quote_valid_days", nullable = false)
+    private short quoteValidDays;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Plan plan;
@@ -107,6 +110,7 @@ class TenantEntity implements DomainEntity<Tenant> {
         this.timezone = s.timezone();
         this.defaultVatRate = s.defaultVatRate();
         this.labourRateCents = s.labourRateCents();
+        this.quoteValidDays = (short) s.quoteValidDays();
         Subscription sub = tenant.subscription();
         this.plan = sub.plan();
         this.status = sub.status();
@@ -124,7 +128,8 @@ class TenantEntity implements DomainEntity<Tenant> {
     @Override
     public Tenant toDomain() {
         return new Tenant(id,
-                new WorkshopSettings(name, nif, country, timezone, defaultVatRate, labourRateCents),
+                new WorkshopSettings(name, nif, country, timezone, defaultVatRate, labourRateCents,
+                        quoteValidDays),
                 new Subscription(plan, status, subscriptionUntil),
                 new Slug(slug),
                 new Branding(displayName, color(primaryColor), color(accentColor)),

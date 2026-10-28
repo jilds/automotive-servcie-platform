@@ -1,6 +1,7 @@
 package com.asp.platform.identity.application;
 
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +30,15 @@ public class WorkshopSettingsService {
         return tenant(tenantId);
     }
 
+    /// @param change          makes the new settings from the stored ones (a request may leave fields out)
     /// @param expectedVersion the workshop version the editor read (settings, branding and subscription share it)
     /// @throws com.asp.platform.shared.StaleDataException  when someone else saved the workshop since
     /// @throws com.asp.platform.shared.InvalidNifException when a Portuguese NIF is not valid
     @Transactional
-    public Tenant update(UUID tenantId, WorkshopSettings settings, long expectedVersion) {
+    public Tenant update(UUID tenantId, UnaryOperator<WorkshopSettings> change, long expectedVersion) {
         Tenant tenant = tenant(tenantId);
         tenant.requireVersion(expectedVersion);
-        Tenant saved = tenants.save(tenant.withSettings(settings.checkNif()));
+        Tenant saved = tenants.save(tenant.withSettings(change.apply(tenant.settings()).checkNif()));
         // The public pages show the name, country and time zone.
         publicWorkshops.evictWorkshop(tenantId, tenant.slug().value());
         return saved;

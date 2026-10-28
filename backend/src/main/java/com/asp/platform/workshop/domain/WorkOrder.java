@@ -97,6 +97,16 @@ public final class WorkOrder {
         return Optional.of(change);
     }
 
+    /// A quote is sent in diagnostics or while awaiting approval, for an order with at least one line.
+    ///
+    /// @throws WorkOrderNotQuotableException otherwise
+    public void requireQuotable() {
+        boolean open = status == WorkOrderStatus.DIAGNOSTICS || status == WorkOrderStatus.AWAITING_APPROVAL;
+        if (!open || lines.isEmpty()) {
+            throw new WorkOrderNotQuotableException();
+        }
+    }
+
     public boolean isAssignedTo(UUID mechanicId) {
         return mechanicId.equals(assignedMechanicId);
     }

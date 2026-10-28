@@ -60,6 +60,6 @@ class WorkshopSettingsTests {
     }
 
     private static WorkshopSettings settings(String country, String zone, String vat, long labour) {
-        return new WorkshopSettings("Oficina", "123456789", country, zone, new BigDecimal(vat), labour);
+        return new WorkshopSettings("Oficina", "123456789", country, zone, new BigDecimal(vat), labour, 15);
     }
 }

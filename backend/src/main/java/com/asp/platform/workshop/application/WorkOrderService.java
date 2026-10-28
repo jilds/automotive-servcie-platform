@@ -2,6 +2,7 @@ package com.asp.platform.workshop.application;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -37,6 +38,8 @@ import com.asp.platform.workshop.domain.LineType;
 import com.asp.platform.workshop.domain.MechanicChange;
 import com.asp.platform.workshop.domain.MechanicChangeRepository;
 import com.asp.platform.workshop.domain.NewLine;
+import com.asp.platform.workshop.domain.QuoteHeadline;
+import com.asp.platform.workshop.domain.QuoteRepository;
 import com.asp.platform.workshop.domain.UnknownVehicleException;
 import com.asp.platform.workshop.domain.WorkOrder;
 import com.asp.platform.workshop.domain.WorkOrderLine;
@@ -57,6 +60,8 @@ public class WorkOrderService {
 
     private final WorkOrderRepository orders;
     private final MechanicChangeRepository mechanicChanges;
+    private final QuoteRepository quotes;
+    private final QuoteService quoteService;
     private final CatalogueLookup catalogue;
     private final StockReservations stock;
     private final CustomerManagement customers;
@@ -64,11 +69,13 @@ public class WorkOrderService {
     private final BookingCheckIns bookings;
     private final Clock clock;
 
-    WorkOrderService(WorkOrderRepository orders, MechanicChangeRepository mechanicChanges, CatalogueLookup catalogue,
-            StockReservations stock, CustomerManagement customers, WorkshopDirectory directory,
-            BookingCheckIns bookings, Clock clock) {
+    WorkOrderService(WorkOrderRepository orders, MechanicChangeRepository mechanicChanges, QuoteRepository quotes,
+            QuoteService quoteService, CatalogueLookup catalogue, StockReservations stock,
+            CustomerManagement customers, WorkshopDirectory directory, BookingCheckIns bookings, Clock clock) {
         this.orders = orders;
         this.mechanicChanges = mechanicChanges;
+        this.quotes = quotes;
+        this.quoteService = quoteService;
         this.catalogue = catalogue;
         this.stock = stock;
         this.customers = customers;
@@ -110,7 +117,7 @@ public class WorkOrderService {
         if (details.mileageIn() != null) {
             customers.recordMileage(vehicle.id(), details.mileageIn());
         }
-        return new WorkOrderView(order, VehiclePlate.of(vehicle));
+        return new WorkOrderView(order, VehiclePlate.of(vehicle), null);
     }
 
     /// Any work order of the workshop. A mechanic may open jobs that are not theirs (from a vehicle's service
@@ -122,9 +129,11 @@ public class WorkOrderService {
 
     @Transactional
     public WorkOrderView addLine(UUID id, NewLine line) {
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         order.addLine(UUID.randomUUID(), line);
-        return view(orders.save(order));
+        WorkOrder saved = orders.save(order);
+        supersedeQuote(saved);
+        return view(saved);
     }
 
     /// Adds a catalogue service (one line) or a package (one line per item, adding up to the package price) at the
@@ -136,11 +145,13 @@ public class WorkOrderService {
     /// @param packageId a package of the catalogue, or null when `serviceId` is given
     @Transactional
     public WorkOrderView addCatalogueLines(UUID id, @Nullable UUID serviceId, @Nullable UUID packageId) {
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         List<CatalogueLine> lines = serviceId != null
                 ? catalogue.linesForService(serviceId)
                 : catalogue.linesForPackage(Objects.requireNonNull(packageId, "serviceId or packageId"));
-        return view(addLines(order, lines));
+        WorkOrder saved = addLines(order, lines);
+        supersedeQuote(saved);
+        return view(saved);
     }
 
     /// Puts catalogue lines on the order and reserves the parts among them, then saves the order.
@@ -175,32 +186,36 @@ public class WorkOrderService {
     /// @throws com.asp.platform.stock.domain.ProductInactiveException when it is no longer sold
     @Transactional
     public WorkOrderView addStockLine(UUID id, UUID productId, BigDecimal quantity) {
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         StockItem item = stock.item(productId);
         UUID lineId = UUID.randomUUID();
         order.addLine(lineId, new NewLine(LineType.PART, item.name() + " (" + item.sku() + ")", quantity,
                 item.salePriceCents(), null, item.vatRate(), null, item.id()));
         stock.reserve(item.id(), quantity, ReservationSource.WORK_ORDER, order.id(), lineId);
-        return view(orders.save(order));
+        WorkOrder saved = orders.save(order);
+        supersedeQuote(saved);
+        return view(saved);
     }
 
     /// Removing a part line from stock gives its reservation back.
     @Transactional
     public WorkOrderView removeLine(UUID id, UUID lineId) {
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         boolean fromStock = order.lines().stream()
                 .anyMatch(line -> line.id().equals(lineId) && line.productId() != null);
         order.removeLine(lineId);
         if (fromStock) {
             stock.releaseLine(ReservationSource.WORK_ORDER, lineId);
         }
-        return view(orders.save(order));
+        WorkOrder saved = orders.save(order);
+        supersedeQuote(saved);
+        return view(saved);
     }
 
     /// Delivering a work order takes its reserved parts out of stock; cancelling it gives them back.
     @Transactional
     public WorkOrderView move(UUID id, WorkOrderStatus target, CurrentUser user) {
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         if (user.isMechanic() && !order.isAssignedTo(user.userId())) {
             throw new AccessDeniedException("Mechanics can only move their own work orders");
         }
@@ -215,14 +230,18 @@ public class WorkOrderService {
                 stock.releaseAll(ReservationSource.WORK_ORDER, order.id());
             }
         }
-        return view(orders.save(order));
+        WorkOrder saved = orders.save(order);
+        if (target == WorkOrderStatus.CANCELLED) {
+            supersedeQuote(saved);
+        }
+        return view(saved);
     }
 
     /// Corrects the check-in data while the order is still editable. A changed odometer reading is also
     /// recorded on the vehicle, which keeps the highest reading it has seen.
     @Transactional
     public WorkOrderView editCheckIn(UUID id, CheckInDetails corrected) {
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         @Nullable Integer previousMileage = order.checkIn().mileageIn();
         order.editCheckIn(corrected);
         WorkOrder saved = orders.save(order);
@@ -241,7 +260,7 @@ public class WorkOrderService {
     @Transactional
     public WorkOrderView assign(CurrentUser user, UUID id, @Nullable UUID mechanicId, @Nullable String reason) {
         requireMechanic(user.tenantId(), mechanicId, ASSIGN_MECHANIC_FIELD);
-        WorkOrder order = order(id);
+        WorkOrder order = lockedOrder(id);
         order.reassign(mechanicId, reason, user.userId(), UUID.randomUUID(), clock.instant())
                 .ifPresent(mechanicChanges::save);
         return view(orders.save(order));
@@ -283,13 +302,16 @@ public class WorkOrderService {
                 : orders.findByStatusIn(columns);
         Map<UUID, VehicleSummary> vehicles = active.isEmpty() ? Map.of()
                 : customers.findVehicles(active.stream().map(WorkOrder::vehicleId).collect(Collectors.toSet()));
+        Map<UUID, QuoteHeadline> latestQuotes = quotes.latestOf(active.stream().map(WorkOrder::id).toList());
+        Instant now = clock.instant();
         Map<WorkOrderStatus, List<BoardCard>> board = new LinkedHashMap<>();
         columns.forEach(status -> board.put(status, new ArrayList<>()));
         for (WorkOrder order : active) {
             Optional<VehicleSummary> vehicle = Optional.ofNullable(vehicles.get(order.vehicleId()));
             board.get(order.status()).add(new BoardCard(order.id(), order.number(),
                     vehicle.map(VehiclePlate::of).orElse(null), vehicle.map(VehicleSummary::label).orElse(""),
-                    order.assignedMechanicId(), order.statusChangedAt()));
+                    order.assignedMechanicId(), order.statusChangedAt(),
+                    Optional.ofNullable(latestQuotes.get(order.id())).map(q -> q.statusAt(now)).orElse(null)));
         }
         return new Board(board);
     }
@@ -299,7 +321,12 @@ public class WorkOrderService {
     @Transactional(readOnly = true)
     public List<WorkOrderView> historyOf(UUID vehicleId) {
         VehiclePlate plate = plateOf(vehicleId);
-        return orders.findByVehicle(vehicleId).stream().map(order -> new WorkOrderView(order, plate)).toList();
+        List<WorkOrder> found = orders.findByVehicle(vehicleId);
+        Map<UUID, QuoteHeadline> latestQuotes = quotes.latestOf(found.stream().map(WorkOrder::id).toList());
+        Instant now = clock.instant();
+        return found.stream()
+                .map(order -> new WorkOrderView(order, plate, summary(latestQuotes.get(order.id()), now)))
+                .toList();
     }
 
     /// The user table has no row-level security, so the workshop is checked explicitly.
@@ -314,7 +341,24 @@ public class WorkOrderService {
     }
 
     private WorkOrderView view(WorkOrder order) {
-        return new WorkOrderView(order, plateOf(order.vehicleId()));
+        QuoteHeadline latest = quotes.latestOf(List.of(order.id())).get(order.id());
+        return new WorkOrderView(order, plateOf(order.vehicleId()), summary(latest, clock.instant()));
+    }
+
+    private static @Nullable QuoteSummary summary(@Nullable QuoteHeadline quote, Instant now) {
+        return quote == null ? null : QuoteSummary.of(quote, now);
+    }
+
+    /// Reads the order and locks its row for the rest of the transaction (3 s, then 409 `try-again`), so a line
+    /// change, a status move and a quote decision of one order never interleave.
+    private WorkOrder lockedOrder(UUID id) {
+        return orders.lockById(id).orElseThrow(WorkOrderNotFoundException::new);
+    }
+
+    /// The lines changed or the order was cancelled: a SENT quote no longer matches it. Called under the order's
+    /// lock.
+    private void supersedeQuote(WorkOrder order) {
+        quoteService.supersedeOpen(order.id());
     }
 
     private @Nullable VehiclePlate plateOf(UUID vehicleId) {

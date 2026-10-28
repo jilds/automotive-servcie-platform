@@ -13,6 +13,7 @@ import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { Plate } from '../shared/plate';
+import { boardQuoteStatus, QUOTE_BADGE, quoteBadgeKey } from './quote-logic';
 import { allowedDropTargets, allowedMoves, BOARD_COLUMNS, canMoveCard, Mover } from './board-moves';
 
 /** A touch has to rest this long before a card lifts, so a swipe still scrolls the board. */
@@ -86,6 +87,9 @@ interface Dragging {
                     <span class="small fw-semibold text-body-secondary">#{{ card.number }}</span>
                   </span>
                   <a class="stretched-link small fw-medium text-body text-break text-decoration-none" [routerLink]="['/work-orders', card.id]">{{ card.vehicle }}</a>
+                  @if (quoteStatus(card); as qs) {
+                    <span class="badge align-self-start" [class]="quoteBadge[qs]" data-test="quote-badge">{{ quoteBadgeKey(qs) | t }}</span>
+                  }
                   <span class="d-flex align-items-center gap-1 small text-body-secondary">
                     <app-icon name="clock" [size]="14" />{{ 'board.since' | t: { time: card.statusChangedAt | date: 'dd/MM HH:mm' } }}
                   </span>
@@ -121,6 +125,9 @@ export class Board implements OnInit {
   protected readonly columns = BOARD_COLUMNS;
   protected readonly statusKey = statusKey;
   protected readonly startDelay = START_DELAY;
+  protected readonly quoteBadge = QUOTE_BADGE;
+  protected readonly quoteBadgeKey = quoteBadgeKey;
+  protected readonly quoteStatus = (card: BoardCard) => boardQuoteStatus(card.quoteStatus);
   protected readonly board = signal<BoardData | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly moveError = signal<string | null>(null);

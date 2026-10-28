@@ -2,6 +2,7 @@ import { bookingCorePtBR } from '../../booking/i18n/booking-core.pt-BR';
 import { catalogueCorePtBR } from '../../catalogue/i18n/catalogue-core.pt-BR';
 import { identityCorePtBR } from '../../identity/i18n/identity-core.pt-BR';
 import { shopCorePtBR } from '../../shop/i18n/shop-core.pt-BR';
+import { quoteCorePtBR } from '../../workshop/i18n/quote-core.pt-BR';
 import { stockCorePtBR } from '../../stock/i18n/stock-core.pt-BR';
 import { CoreKey } from './messages.en';
 import { PortugueseDictionary } from './plural';
@@ -232,4 +233,5 @@ export const ptBR: PortugueseDictionary<CoreKey> = {
   ...stockCorePtBR,
   ...bookingCorePtBR,
   ...shopCorePtBR,
+  ...quoteCorePtBR,
 };

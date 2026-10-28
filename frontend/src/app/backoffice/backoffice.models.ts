@@ -52,6 +52,8 @@ export interface WorkshopSettings {
   defaultVatRate: number;
   /** Hourly labour rate in cents, ≥ 0. */
   labourRateCents: number;
+  /** Days a sent quote stays open, 1..90 (default 15). */
+  quoteValidDays: number;
   /** Workshop version (shared with the theme); a newer save answers 409 `stale-data`. */
   version: number;
 }

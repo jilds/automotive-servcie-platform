@@ -26,7 +26,7 @@ class RowLevelSecurityCatalogueTests extends ApiTestSupport {
 
     private static final Set<String> KNOWN_WORKSHOP_TABLES = Set.of("customer", "vehicle", "work_order",
             "work_order_line", "booking_settings", "opening_hours", "booking_closure", "booking", "booking_service",
-            "shop_settings", "shop_order", "shop_order_line");
+            "shop_settings", "shop_order", "shop_order_line", "quote", "quote_line");
 
     @Autowired
     JdbcClient jdbc;

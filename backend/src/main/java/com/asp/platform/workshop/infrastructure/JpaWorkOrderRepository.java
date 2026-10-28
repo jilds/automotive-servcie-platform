@@ -32,6 +32,11 @@ class JpaWorkOrderRepository implements WorkOrderRepository {
     }
 
     @Override
+    public Optional<WorkOrder> lockById(UUID id) {
+        return jpa.lockById(id).map(WorkOrderEntity::toDomain);
+    }
+
+    @Override
     public int nextNumber() {
         return jpa.nextNumber();
     }

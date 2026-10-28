@@ -14,7 +14,7 @@ import { COUNTRIES, FIELD_CONTROL, SettingsForm, settingsForm, timeZones, toForm
 import { Toasts } from './toasts';
 import { HasUnsavedChanges } from './unsaved-changes.guard';
 
-/** Workshop settings for the owner: name, NIF, country, time zone, default VAT rate and labour rate. */
+/** Workshop settings for the owner: name, NIF, country, time zone, default VAT rate, labour rate and how long quotes stay open. */
 @Component({
   selector: 'app-backoffice-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,6 +100,15 @@ import { HasUnsavedChanges } from './unsaved-changes.guard';
                 <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ message('labourRateEuros', 'backoffice.settings.labourInvalid') }}</div>
               } @else {
                 <div class="form-text">{{ 'backoffice.settings.labourHelp' | t }}</div>
+              }
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="ws-quote-days">{{ 'backoffice.settings.quoteValidDays' | t }}</label>
+              <input id="ws-quote-days" class="form-control" formControlName="quoteValidDays" type="number" inputmode="numeric" min="1" max="90" step="1" [class.is-invalid]="invalid('quoteValidDays')" />
+              @if (invalid('quoteValidDays')) {
+                <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ message('quoteValidDays', 'backoffice.settings.quoteValidDaysInvalid') }}</div>
+              } @else {
+                <div class="form-text">{{ 'backoffice.settings.quoteValidDaysHelp' | t }}</div>
               }
             </div>
             <div class="col-12 d-flex flex-wrap justify-content-end gap-2">

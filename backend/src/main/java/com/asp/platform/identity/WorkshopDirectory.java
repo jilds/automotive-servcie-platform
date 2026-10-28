@@ -22,6 +22,9 @@ public interface WorkshopDirectory {
     /// The workshop's hourly labour rate before VAT, in cents, from its settings (prices services charged by the hour).
     long labourRateCents(UUID tenantId);
 
+    /// Days a quote sent to a customer of the workshop stays open (1 to 90), from its settings.
+    int quoteValidDays(UUID tenantId);
+
     /// Active mechanics of the workshop, by name.
     List<TeamMember> activeMechanics(UUID tenantId);
 

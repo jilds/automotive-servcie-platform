@@ -159,6 +159,8 @@ describe('WorkOrderDetail check-in edit action', () => {
     http.match((r) => r.url.startsWith('/api/v1/catalogue/')).forEach((r) => r.flush([]));
     // ...and the stock picker loads the products it offers.
     http.match((r) => r.url.startsWith('/api/v1/stock/')).forEach((r) => r.flush([]));
+    // ...and the quote panel loads the order's quotes.
+    http.match('/api/v1/work-orders/w1/quotes').forEach((r) => r.flush([]));
     http.verify();
   });
 });

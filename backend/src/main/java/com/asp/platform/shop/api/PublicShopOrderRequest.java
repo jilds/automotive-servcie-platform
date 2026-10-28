@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Size;
 
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.shared.OneLineName;
 import com.asp.platform.shared.PhoneOrEmail;
 import com.asp.platform.shop.application.PlaceOrderCommand;
 import com.asp.platform.shop.domain.ShopContact;
@@ -27,12 +28,8 @@ import com.asp.platform.shop.domain.ShopOrderLine;
 @PhoneOrEmail
 record PublicShopOrderRequest(
         @NotEmpty @Size(max = ShopOrder.MAX_LINES) List<@NotNull Line> lines,
-        // The name goes into the mail to the given address, so a link or a line break in it would turn the form into
-        // a phishing relay.
-        @NotBlank @Size(max = ShopContact.MAX_NAME)
-        @Pattern(regexp = "(?is)(?!.*(://|www\\.|<|>|\\p{Cntrl}|[\\u0080-\\u009f\\u2028\\u2029])).*",
-                message = "One line without links")
-        String name,
+        // The name goes into the mail to the given address (see OneLineName).
+        @NotBlank @Size(max = ShopContact.MAX_NAME) @OneLineName String name,
         @Nullable @Size(max = ShopContact.MAX_PHONE)
         @Pattern(regexp = "[0-9 +()\\-]*", message = "Digits, spaces and + ( ) - only") String phone,
         @Nullable @Email @Size(max = ShopContact.MAX_EMAIL) String email,

@@ -60,6 +60,11 @@ export function maxDecimals(digits: number): ValidatorFn {
   };
 }
 
+/** Days a sent quote stays open (`quoteValidDays`, whole days 1–90, server default 15). */
+export const QUOTE_VALID_DAYS_MIN = 1;
+export const QUOTE_VALID_DAYS_MAX = 90;
+export const QUOTE_VALID_DAYS_DEFAULT = 15;
+
 /**
  * Typed form for the workshop settings. The labour rate is edited in euros and sent in cents. A Portuguese workshop's
  * NIF must pass the check digit (`nif` error); it is re-checked when the country changes.
@@ -72,6 +77,12 @@ export function settingsForm() {
     timezone: new FormControl('Europe/Lisbon', { nonNullable: true, validators: [Validators.required, notBlank] }),
     defaultVatRate: new FormControl<number | null>(23, [Validators.required, Validators.min(0), Validators.max(100), maxDecimals(2)]),
     labourRateEuros: new FormControl<number | null>(0, [Validators.required, Validators.min(0), maxDecimals(2)]),
+    quoteValidDays: new FormControl<number | null>(QUOTE_VALID_DAYS_DEFAULT, [
+      Validators.required,
+      Validators.min(QUOTE_VALID_DAYS_MIN),
+      Validators.max(QUOTE_VALID_DAYS_MAX),
+      maxDecimals(0),
+    ]),
   });
   form.controls.nif.setValidators(nifValidator(() => form.controls.country.value));
   form.controls.country.valueChanges.subscribe(() => form.controls.nif.updateValueAndValidity({ emitEvent: false }));
@@ -88,6 +99,7 @@ export const FIELD_CONTROL: Record<Exclude<keyof WorkshopSettings, 'version'>, k
   timezone: 'timezone',
   defaultVatRate: 'defaultVatRate',
   labourRateCents: 'labourRateEuros',
+  quoteValidDays: 'quoteValidDays',
 };
 
 export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
@@ -98,6 +110,7 @@ export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
     timezone: s.timezone,
     defaultVatRate: s.defaultVatRate,
     labourRateEuros: s.labourRateCents / 100,
+    quoteValidDays: s.quoteValidDays ?? QUOTE_VALID_DAYS_DEFAULT,
   };
 }
 
@@ -112,6 +125,7 @@ export function toSettings(form: SettingsForm, version: number): WorkshopSetting
     timezone: v.timezone,
     defaultVatRate: Number(v.defaultVatRate),
     labourRateCents: Math.round(Number(v.labourRateEuros) * 100),
+    quoteValidDays: Number(v.quoteValidDays),
     version,
   };
 }

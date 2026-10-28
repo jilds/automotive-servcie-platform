@@ -85,6 +85,11 @@ class DashboardServiceTests {
             }
 
             @Override
+            public int quoteValidDays(UUID tenantId) {
+                return 15;
+            }
+
+            @Override
             public List<TeamMember> activeMechanics(UUID tenantId) {
                 return List.of(new TeamMember(RUI, "Rui"), new TeamMember(ZE, "Zé"));
             }

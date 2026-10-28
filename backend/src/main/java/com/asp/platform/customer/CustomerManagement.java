@@ -22,6 +22,10 @@ public interface CustomerManagement {
     /// @throws IllegalArgumentException when nothing is left of it
     String normalizePlate(String plate);
 
+    /// The name and e-mail of the customer who owns the vehicle, for a message to them; empty when the vehicle is
+    /// not found in the workshop.
+    Optional<CustomerContact> contactForVehicle(UUID vehicleId);
+
     /// Records a newer odometer reading, ignoring readings lower than the current one.
     void recordMileage(UUID vehicleId, int mileage);
 }

@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asp.platform.customer.CustomerContact;
 import com.asp.platform.customer.CustomerManagement;
 import com.asp.platform.customer.VehicleSummary;
 import com.asp.platform.customer.domain.ContactDetails;
@@ -148,6 +149,14 @@ public class CustomerService implements CustomerManagement {
     @Transactional(readOnly = true)
     public Optional<VehicleSummary> findVehicle(UUID vehicleId) {
         return vehicles.findById(vehicleId).map(this::summary);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CustomerContact> contactForVehicle(UUID vehicleId) {
+        return vehicles.findById(vehicleId).flatMap(vehicle -> customers.findById(vehicle.customerId())
+                .map(customer -> new CustomerContact(customer.contact().name(), customer.contact().email(),
+                        vehicle.formattedPlate(plates).display())));
     }
 
     @Override
