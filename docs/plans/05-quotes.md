@@ -1,6 +1,6 @@
 # 05: Quotes with a customer approval link
 
-Status: **in progress**. Commit `feat(workshop): add quotes with an approval link`. Migration V18. Contract: section
+Status: **done** (`61bb563`..`f593bb8`). Commit `feat(workshop): add quotes with an approval link`. Migration V18. Contract: section
 "Quotes" in [release-4.md](../api/release-4.md), written before the code.
 
 ## Today
