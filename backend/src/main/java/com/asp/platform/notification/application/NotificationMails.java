@@ -31,6 +31,7 @@ import com.asp.platform.notification.Mailer;
 import com.asp.platform.notification.domain.MailLanguage;
 import com.asp.platform.shop.OrderPlaced;
 import com.asp.platform.shop.OrderStatusChanged;
+import com.asp.platform.workshop.QuoteSent;
 
 /// Turns other modules' events into mails. Each listener runs only after the publishing transaction committed (a
 /// rolled-back change sends nothing) and off the request thread (`@Async`), so a slow or failing mail server never
@@ -38,7 +39,8 @@ import com.asp.platform.shop.OrderStatusChanged;
 ///
 /// The booking status token exists only in [BookingRequested], so only that first mail carries the status link; the
 /// later mails say the new status and time. The same holds for shop orders ([OrderPlaced], then
-/// [OrderStatusChanged]); a cancel by the customer publishes nothing, so it sends nothing.
+/// [OrderStatusChanged]); a cancel by the customer publishes nothing, so it sends nothing. A quote mail
+/// ([QuoteSent]) carries its approval link.
 @Component
 class NotificationMails {
 
@@ -167,6 +169,25 @@ class NotificationMails {
             model.put("reason", nonNull(event.reason()));
             model.put("pickupNote", nonNull(event.pickupNote()));
             mailer.send(new MailMessage(event.email(), template, locale, model));
+        }));
+    }
+
+    /// The quote with its approval link, in the workshop country's language.
+    @Async
+    @TransactionalEventListener
+    void on(QuoteSent event) {
+        if (!mailer.enabled()) {
+            return;
+        }
+        safely(MailTemplate.QUOTE_SENT, () -> directory.profile(event.tenantId()).ifPresent(workshop -> {
+            Locale locale = MailLanguage.of(null, workshop.country());
+            Map<String, Object> model = base(event.name(), workshop);
+            model.put("number", Integer.toString(event.workOrderNumber()));
+            model.put("plate", event.plate());
+            model.put("total", money(event.totalCents(), locale));
+            model.put("until", format(event.validUntil(), workshop.timeZone(), locale, FormatStyle.FULL));
+            model.put("link", links.link("/w/" + workshop.slug() + "/quote/" + event.statusToken()));
+            mailer.send(new MailMessage(event.email(), MailTemplate.QUOTE_SENT, locale, model));
         }));
     }
 

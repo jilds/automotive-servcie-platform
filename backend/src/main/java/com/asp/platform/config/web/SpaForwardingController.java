@@ -16,6 +16,7 @@ class SpaForwardingController {
             "/w/{slug}/booking/{token}",
             "/w/{slug}/shop",
             "/w/{slug}/shop/{token}",
+            "/w/{slug}/quote/{token}",
             "/admin",
             "/admin/workshops/{id}",
             "/admin/leads",

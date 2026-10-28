@@ -116,7 +116,7 @@ describe('BackofficeApi (team and settings)', () => {
     api.settings().subscribe();
     expect(http.expectOne('/api/v1/workshop/settings').request.method).toBe('GET');
 
-    const settings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500, version: 0 };
+    const settings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500, quoteValidDays: 15, version: 0 };
     api.saveSettings(settings).subscribe();
     const put = http.expectOne('/api/v1/workshop/settings');
     expect(put.request.method).toBe('PUT');
@@ -204,7 +204,7 @@ describe('Dashboard loading', () => {
 });
 
 describe('Settings server errors', () => {
-  const settings: WorkshopSettings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500, version: 0 };
+  const settings: WorkshopSettings = { name: 'Oficina', nif: null, country: 'PT', timezone: 'Europe/Lisbon', defaultVatRate: 23, labourRateCents: 4500, quoteValidDays: 15, version: 0 };
 
   it('shows API validation errors on the matching fields, in the UI language', () => {
     TestBed.configureTestingModule({
@@ -250,9 +250,23 @@ describe('settings form helpers', () => {
 
   it('round-trips the API shape (cents to euros and back)', () => {
     const form = settingsForm();
-    form.reset(toFormValue({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, version: 2 }));
+    form.reset(toFormValue({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, quoteValidDays: 30, version: 2 }));
     expect(form.controls.labourRateEuros.value).toBe(45.5);
-    expect(toSettings(form, 2)).toEqual({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, version: 2 });
+    expect(toSettings(form, 2)).toEqual({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, quoteValidDays: 30, version: 2 });
+  });
+
+  it('requires the quote validity in whole days from 1 to 90', () => {
+    const form = settingsForm();
+    expect(form.controls.quoteValidDays.value).toBe(15);
+    for (const bad of [null, 0, 91, 7.5]) {
+      form.controls.quoteValidDays.setValue(bad);
+      expect(form.controls.quoteValidDays.invalid).toBe(true);
+    }
+    for (const ok of [1, 90]) {
+      form.controls.quoteValidDays.setValue(ok);
+      expect(form.controls.quoteValidDays.valid).toBe(true);
+    }
+    expect(toSettings(form, 0).quoteValidDays).toBe(90);
   });
 
   it('falls back to a fixed time zone list and always keeps the stored zone', () => {

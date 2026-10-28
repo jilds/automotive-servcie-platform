@@ -12,6 +12,12 @@ public interface WorkOrderRepository {
 
     Optional<WorkOrder> findById(UUID id);
 
+    /// Reads the order and locks its row until the transaction ends (`PESSIMISTIC_WRITE`), so sending a quote, a line
+    /// change, a decision, the expiry and a status move of one order run one after the other. Waits 3 s at most,
+    /// then fails with a pessimistic locking error (409 `try-again`). Call it before reading the order or its quotes
+    /// in the transaction, so they are read after the lock.
+    Optional<WorkOrder> lockById(UUID id);
+
     /// Numbers restart at 1 in every workshop.
     int nextNumber();
 

@@ -17,11 +17,13 @@ import { CheckInEditDialog } from './check-in-edit-dialog';
 import { CataloguePicker } from '../catalogue/catalogue-picker';
 import { StockPicker } from '../stock/stock-picker';
 import { MechanicCard } from './mechanic-card';
+import { QUOTE_BADGE, quoteBadgeKey } from './quote-logic';
+import { QuotePanel } from './quote-panel';
 
 @Component({
   selector: 'app-work-order-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker],
+  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker, QuotePanel],
   template: `
     <a routerLink="/board" class="d-inline-block mb-2 small fw-medium text-body-secondary text-decoration-none">{{ 'workOrder.back' | t }}</a>
     @if (error()) {
@@ -33,6 +35,9 @@ import { MechanicCard } from './mechanic-card';
           <h1 class="d-flex flex-wrap align-items-center gap-2 column-gap-3 mb-0">
             #{{ w.number }} <app-plate [plate]="w.plateDisplay ?? w.plate" [era]="w.plateEra" [country]="w.registrationCountry" [registrationDate]="w.registrationDate" />
             <span class="badge status-badge" [attr.data-status]="w.status">{{ statusKey(w.status) | t }}</span>
+            @if (w.quote; as q) {
+              <span class="badge fs-6 fw-semibold" [class]="quoteBadge[q.status]" data-test="quote-badge">{{ quoteBadgeKey(q.status) | t }}</span>
+            }
           </h1>
           <ul class="list-inline d-flex flex-wrap gap-2 column-gap-4 mt-3 mb-0 small text-body-secondary">
             <li class="d-inline-flex align-items-center gap-2"><app-icon name="gauge" [size]="16" />{{ w.mileageIn | km: i18n.lang() }}</li>
@@ -89,6 +94,7 @@ import { MechanicCard } from './mechanic-card';
 
       @if (auth.hasRole('OWNER', 'FRONT_DESK')) {
         <app-mechanic-card [workOrder]="w" (changed)="mechanicChanged($event)" />
+        <app-quote-panel [workOrder]="w" (changed)="reload()" />
       }
 
       <h2 class="mt-5 mb-3">{{ 'workOrder.lines' | t }}</h2>
@@ -203,6 +209,8 @@ export class WorkOrderDetail implements OnInit {
   protected readonly auth = inject(AuthService);
   protected readonly i18n = inject(I18nService);
   protected readonly statusKey = statusKey;
+  protected readonly quoteBadge = QUOTE_BADGE;
+  protected readonly quoteBadgeKey = quoteBadgeKey;
   protected readonly wo = signal<WorkOrder | null>(null);
   protected readonly error = signal<string | null>(null);
   /** Warning shown after the order was reloaded because a check-in edit hit a conflict. */
@@ -245,7 +253,7 @@ export class WorkOrderDetail implements OnInit {
     this.reload();
   }
 
-  private reload(): void {
+  protected reload(): void {
     this.api.workOrder(this.id()).subscribe({ next: (w) => this.wo.set(w), error: (e) => this.error.set(this.i18n.error(e)) });
   }
 

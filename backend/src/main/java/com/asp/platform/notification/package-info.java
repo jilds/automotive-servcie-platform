@@ -3,7 +3,8 @@
 /// Public API: [Mailer] with [MailMessage] and [MailTemplate]. Listens, after the commit and off the request thread,
 /// to [com.asp.platform.identity.ActivationLinkIssued], [com.asp.platform.booking.BookingRequested],
 /// [com.asp.platform.booking.BookingStatusChanged], [com.asp.platform.shop.OrderPlaced],
-/// [com.asp.platform.shop.OrderStatusChanged] and [com.asp.platform.identity.LeadReceived] (to the platform admins
+/// [com.asp.platform.shop.OrderStatusChanged], [com.asp.platform.workshop.QuoteSent] and
+/// [com.asp.platform.identity.LeadReceived] (to the platform admins
 /// from [com.asp.platform.identity.PlatformTeam]), and reads the workshop's name, slug, country and time zone from
 /// [com.asp.platform.identity.WorkshopDirectory]. No other module depends on it for those mails, so a mail problem
 /// never undoes a business change.

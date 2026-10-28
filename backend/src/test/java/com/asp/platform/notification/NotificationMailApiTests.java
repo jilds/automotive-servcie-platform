@@ -26,11 +26,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.asp.platform.shop.ShopTestSupport;
 import com.asp.platform.identity.application.IdentityService;
 import com.asp.platform.identity.application.InviteUserCommand;
 import com.asp.platform.shared.Role;
 import com.asp.platform.shared.TenantScope;
+import com.asp.platform.workshop.QuoteTestSupport;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import com.jayway.jsonpath.JsonPath;
@@ -44,7 +44,7 @@ import com.jayway.jsonpath.JsonPath;
         "app.public-url=https://app.asp.test/",
         "spring.mail.host=127.0.0.1",
         "spring.mail.port=3025"})
-class NotificationMailApiTests extends ShopTestSupport {
+class NotificationMailApiTests extends QuoteTestSupport {
 
     @RegisterExtension
     static final GreenMailExtension SMTP = new GreenMailExtension(ServerSetupTest.SMTP);
@@ -246,6 +246,32 @@ class NotificationMailApiTests extends ShopTestSupport {
         publicCall(post(s.publicPath("/orders/" + token + "/cancel"))).andExpect(status().isOk());
 
         assertThat(mailsTo(email)).hasSize(1);
+    }
+
+    @Test
+    void should_mail_the_quote_link_in_the_workshops_language_only_to_a_customer_with_an_email() throws Exception {
+        Shop g = garage("Oficina Orcamento");
+        String email = uniqueEmail("orcamento");
+        String wo = workOrder(g, vehicle(g, email), null);
+        labour(g, wo, "Mudança de óleo", 4000, 23);
+        int orderNumber = JsonPath.read(call(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .get("/api/v1/work-orders/" + wo), g.owner()).andExpect(status().isOk()).andReturn().getResponse()
+                .getContentAsString(), "$.number");
+
+        String token = tokenOfQuote(sendQuote(g, wo));
+
+        MimeMessage mail = mailTo(email);
+        assertThat(mail.getSubject())
+                .isEqualTo("Orçamento da ordem de reparação n.º " + orderNumber + " em Oficina Orcamento");
+        assertThat(decodedText(mail)).contains("Ver e aprovar o orçamento", "49,20",
+                "https://app.asp.test/w/" + g.slug() + "/quote/" + token);
+
+        // A customer without an e-mail gets nothing; the quote is still sent.
+        int before = SMTP.getReceivedMessages().length;
+        String noMail = workOrder(g, vehicle(g, (String) null), null);
+        labour(g, noMail, "Revisão", 5000, 23);
+        send(g.owner(), noMail).andExpect(status().isCreated());
+        assertThat(SMTP.getReceivedMessages()).hasSize(before);
     }
 
     private static String subject(MimeMessage message) {

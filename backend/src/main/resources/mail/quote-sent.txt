@@ -1,0 +1,11 @@
+[(#{mail.greeting(${name})})]
+
+[(#{quote-sent.body(${workshop}, ${number}, ${plate}, ${total}, ${until})})]
+
+[(#{quote-sent.action})]:
+[(${link})]
+
+[(#{quote-sent.keep})]
+
+--
+[(#{mail.automatic})]

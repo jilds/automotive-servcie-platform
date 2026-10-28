@@ -18,8 +18,14 @@ import com.asp.platform.shared.PortugueseNif;
 /// @param timezone        IANA zone id, for example "Europe/Lisbon"; "this month" is counted in it
 /// @param defaultVatRate  VAT percentage suggested for new lines, 0 to 100 with at most 2 decimals
 /// @param labourRateCents hourly labour rate in cents, suggested for new labour lines
+/// @param quoteValidDays  days a quote sent to a customer stays open, [#MIN_QUOTE_VALID_DAYS] to
+///                        [#MAX_QUOTE_VALID_DAYS]
 public record WorkshopSettings(String name, @Nullable String nif, String country, String timezone,
-        BigDecimal defaultVatRate, long labourRateCents) {
+        BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays) {
+
+    public static final int MIN_QUOTE_VALID_DAYS = 1;
+    public static final int MAX_QUOTE_VALID_DAYS = 90;
+    public static final int DEFAULT_QUOTE_VALID_DAYS = 15;
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final int VAT_DECIMALS = 2;
@@ -46,6 +52,10 @@ public record WorkshopSettings(String name, @Nullable String nif, String country
         if (labourRateCents < 0) {
             throw new IllegalArgumentException("Labour rate cannot be negative");
         }
+        if (quoteValidDays < MIN_QUOTE_VALID_DAYS || quoteValidDays > MAX_QUOTE_VALID_DAYS) {
+            throw new IllegalArgumentException("A quote is valid for " + MIN_QUOTE_VALID_DAYS + " to "
+                    + MAX_QUOTE_VALID_DAYS + " days");
+        }
     }
 
     /// Checks a Portuguese NIF (check digit and first digit). Called when settings are written, not when they are
@@ -65,7 +75,8 @@ public record WorkshopSettings(String name, @Nullable String nif, String country
     /// Settings of a workshop the platform admin registers: the owner sets VAT and labour rate later.
     /// The 23% VAT default is Portugal's standard rate, the first market.
     public static WorkshopSettings initial(String name, @Nullable String nif, String country, String timezone) {
-        return new WorkshopSettings(name, nif, country, timezone, new BigDecimal("23.00"), 0);
+        return new WorkshopSettings(name, nif, country, timezone, new BigDecimal("23.00"), 0,
+                DEFAULT_QUOTE_VALID_DAYS);
     }
 
     public ZoneId zone() {

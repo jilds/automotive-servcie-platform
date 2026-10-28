@@ -30,6 +30,12 @@ export const routes: Routes = [
     resolve: { texts: textsFor('shop') },
     loadComponent: () => import('./shop/shop-order-status').then((m) => m.ShopOrderStatusPage),
   },
+  // Public quote page (core feature, no add-on): the customer approves or rejects on a private link; lazy.
+  {
+    path: 'w/:slug/quote/:token',
+    resolve: { texts: textsFor('quote') },
+    loadComponent: () => import('./workshop/public-quote').then((m) => m.PublicQuotePage),
+  },
   {
     path: 'activate',
     resolve: { texts: textsFor('identity') },
@@ -67,7 +73,7 @@ export const routes: Routes = [
       { path: 'vehicles/:id', loadComponent: () => import('./workshop/vehicle-history').then((m) => m.VehicleHistory) },
       {
         path: 'work-orders/:id',
-        resolve: { texts: textsFor('catalogue') },
+        resolve: { texts: textsFor('catalogue', 'quote') },
         loadComponent: () => import('./workshop/work-order-detail').then((m) => m.WorkOrderDetail),
       },
       {

@@ -17,7 +17,8 @@ class SpaForwardingTests extends ApiTestSupport {
             "/check-in", "/customers", "/customers/1", "/vehicles/1", "/work-orders/1", "/backoffice",
             "/backoffice/team", "/stock", "/stock/purchase-orders", "/backoffice/services", "/backoffice/settings",
             "/w/oficina-azul/book", "/w/oficina-azul/booking/abc_DEF-123", "/bookings", "/backoffice/booking",
-            "/w/oficina-azul/shop", "/w/oficina-azul/shop/abc_DEF-123", "/shop-orders", "/backoffice/shop"})
+            "/w/oficina-azul/shop", "/w/oficina-azul/shop/abc_DEF-123", "/shop-orders", "/backoffice/shop",
+            "/w/oficina-azul/quote/abc_DEF-123"})
     void should_serve_the_app_on_its_routes(String path) throws Exception {
         mvc.perform(get(path)).andExpect(forwardedUrl("/index.html"));
     }

@@ -21,7 +21,7 @@ class MailTemplatesTests {
             "https://app.asp.test/w/oficina-azul/booking/TOKEN", "expires", "29/10/2026 10:00", "firstOwner", true,
             "reason", "Sem peças", "vehicleType", "BOTH", "phone", "912345678", "email", "", "district", "Lisboa",
             "hasMessage", true, "total", "29,52 €", "until", "sexta-feira, 30 de outubro de 2026 18:00",
-            "pickupNote", "Das 9h às 18h");
+            "pickupNote", "Das 9h às 18h", "plate", "AA-00-AA");
 
     private final MailTemplates templates = new MailTemplateConfig().mailTemplates();
 
@@ -47,7 +47,8 @@ class MailTemplatesTests {
         assertThat(mail.text()).contains("Ana Silva").doesNotContain("??", "[(", "{0}");
         assertThat(mail.html()).contains("Ana Silva", "lang=\"" + locale.toLanguageTag() + "\"")
                 .doesNotContain("??", "{0}");
-        if (template.file().startsWith("booking-") || template.file().startsWith("shop-")) {
+        if (template.file().startsWith("booking-") || template.file().startsWith("shop-")
+                || template.file().startsWith("quote-")) {
             assertThat(mail.subject()).contains("1234");
         }
     }
@@ -58,7 +59,8 @@ class MailTemplatesTests {
         MailTemplates.Rendered mail = templates.render(new MailMessage("ana@example.pt", template, locale, MODEL));
 
         boolean hasLink = template == MailTemplate.ACTIVATION || template == MailTemplate.BOOKING_RECEIVED
-                || template == MailTemplate.LEAD_RECEIVED || template == MailTemplate.SHOP_ORDER_RECEIVED;
+                || template == MailTemplate.LEAD_RECEIVED || template == MailTemplate.SHOP_ORDER_RECEIVED
+                || template == MailTemplate.QUOTE_SENT;
         assertThat(mail.text().contains("https://app.asp.test/")).isEqualTo(hasLink);
         assertThat(mail.html().contains("href=\"https://app.asp.test/")).isEqualTo(hasLink);
     }
@@ -70,7 +72,7 @@ class MailTemplatesTests {
                 model("name", "<b>Ana</b>", "workshop", "Oficina & Filhos", "number", "1", "when", "x",
                         "link", "https://app.asp.test/x", "expires", "x", "firstOwner", false, "reason", "",
                         "vehicleType", "CAR", "phone", "", "email", "", "district", "", "hasMessage", false,
-                        "total", "1 €", "until", "x", "pickupNote", "<i>x</i>")));
+                        "total", "1 €", "until", "x", "pickupNote", "<i>x</i>", "plate", "AA-00-AA")));
 
         assertThat(mail.html()).doesNotContain("<b>Ana</b>").contains("&lt;b&gt;Ana&lt;/b&gt;");
     }
@@ -96,5 +98,24 @@ class MailTemplatesTests {
                 MailTemplate.SHOP_ORDER_RECEIVED, Locale.ENGLISH, MODEL));
         assertThat(received.subject()).isEqualTo("Order no. 1234 at Oficina Azul");
         assertThat(received.text()).contains("(29,52 €)", "See or cancel your order");
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_send_the_quote_with_its_total_validity_and_link_in_each_language() {
+        MailTemplates.Rendered pt = templates.render(new MailMessage("ana@example.pt", MailTemplate.QUOTE_SENT,
+                Locale.forLanguageTag("pt-PT"), MODEL));
+        assertThat(pt.subject()).isEqualTo("Orçamento da ordem de reparação n.º 1234 em Oficina Azul");
+        assertThat(pt.text()).contains("Olá Ana Silva,", "(viatura AA-00-AA): 29,52 € com IVA",
+                "válido até sexta-feira, 30 de outubro de 2026 18:00", "Ver e aprovar o orçamento",
+                "https://app.asp.test/w/oficina-azul/booking/TOKEN");
+
+        MailTemplates.Rendered en = templates.render(new MailMessage("ana@example.pt", MailTemplate.QUOTE_SENT,
+                Locale.ENGLISH, MODEL));
+        assertThat(en.subject()).isEqualTo("Quote for work order no. 1234 at Oficina Azul");
+        assertThat(en.text()).contains("(vehicle AA-00-AA): 29,52 € with VAT", "See and approve the quote");
+
+        MailTemplates.Rendered br = templates.render(new MailMessage("ana@example.pt", MailTemplate.QUOTE_SENT,
+                Locale.forLanguageTag("pt-BR"), MODEL));
+        assertThat(br.subject()).isEqualTo("Orçamento da ordem de serviço nº 1234 em Oficina Azul");
     }
 }

@@ -2,6 +2,7 @@ import { bookingCoreEn } from '../../booking/i18n/booking-core.en';
 import { catalogueCoreEn } from '../../catalogue/i18n/catalogue-core.en';
 import { identityCoreEn } from '../../identity/i18n/identity-core.en';
 import { shopCoreEn } from '../../shop/i18n/shop-core.en';
+import { quoteCoreEn } from '../../workshop/i18n/quote-core.en';
 import { stockCoreEn } from '../../stock/i18n/stock-core.en';
 import type { AdminKey } from '../../admin/i18n/admin.en';
 import type { BookingKey } from '../../booking/i18n/booking.en';
@@ -9,6 +10,7 @@ import type { CatalogueKey } from '../../catalogue/i18n/catalogue.en';
 import type { BackofficeKey } from '../../backoffice/i18n/backoffice.en';
 import type { IdentityKey } from '../../identity/i18n/identity.en';
 import type { ShopKey } from '../../shop/i18n/shop.en';
+import type { QuoteKey } from '../../workshop/i18n/quote.en';
 import type { StockKey } from '../../stock/i18n/stock.en';
 import { PluralBase } from './plural';
 
@@ -237,6 +239,7 @@ export const en = {
   ...stockCoreEn,
   ...bookingCoreEn,
   ...shopCoreEn,
+  ...quoteCoreEn,
 } as const;
 
 /** Keys of the start-up dictionaries (this file and the `*-core` feature files spread into it). */
@@ -246,7 +249,7 @@ export type CoreKey = keyof typeof en;
  * Every message key: the core keys plus the feature dictionaries that load with their routes (see `feature-texts.ts`).
  * The feature keys are imported as types only, so they add no code to the start-up bundle.
  */
-export type MessageKey = CoreKey | AdminKey | BackofficeKey | BookingKey | CatalogueKey | IdentityKey | ShopKey | StockKey;
+export type MessageKey = CoreKey | AdminKey | BackofficeKey | BookingKey | CatalogueKey | IdentityKey | QuoteKey | ShopKey | StockKey;
 
 /** A count message, such as `history.lines`, translated with the plural form `Intl.PluralRules` picks for `{count}`. */
 export type PluralKey = PluralBase<MessageKey>;

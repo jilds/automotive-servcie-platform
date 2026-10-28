@@ -33,6 +33,6 @@ class WorkshopSettingsController {
     @PutMapping
     @PreAuthorize("hasRole('OWNER')")
     WorkshopSettingsResponse update(CurrentUser user, @Valid @RequestBody WorkshopSettingsRequest request) {
-        return WorkshopSettingsResponse.of(settings.update(user.tenantId(), request.toSettings(), request.version()));
+        return WorkshopSettingsResponse.of(settings.update(user.tenantId(), request::toSettings, request.version()));
     }
 }
