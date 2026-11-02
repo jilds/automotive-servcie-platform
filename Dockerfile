@@ -3,7 +3,7 @@
 # The tests are not run here: they need Docker (Testcontainers). CI runs ./mvnw clean verify before building this.
 #   docker build -t asp .
 
-FROM eclipse-temurin:26-jdk-noble@sha256:26d6a81be420aa8debd8618b58b27755663ba36f2418d7196e91f1c0aedc1809 AS build
+FROM eclipse-temurin:26-jdk-noble@sha256:9c0e8eddecccc0d5679b317b0c90fa7103ad25cae33df1c00280675eb681c7f8 AS build
 WORKDIR /src
 # The wrapper and the poms first, so dependency downloads stay cached while only sources change.
 COPY .mvn/ .mvn/
@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     ./mvnw -B -ntp clean package -DskipTests \
  && java -Djarmode=tools -jar backend/target/backend-*.jar extract --layers --launcher --destination /extracted
 
-FROM eclipse-temurin:26-jre-noble@sha256:7f09cd24daab29ca40ee171f8a8c77c78524ca80f489e1d97aacb9a16f9af67e
+FROM eclipse-temurin:26-jre-noble@sha256:adfd44c114916dc79fa9a24087fbac34252096edb9892d1c2d9d82db3f8947b3
 LABEL org.opencontainers.image.title="ASP - Automotive Service Platform" \
       org.opencontainers.image.source="https://github.com/jilds/automotive-servcie-platform"
 RUN groupadd --system --gid 10001 asp && useradd --system --uid 10001 --gid asp --no-create-home asp
