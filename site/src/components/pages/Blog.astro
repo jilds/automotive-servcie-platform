@@ -1,0 +1,54 @@
+---
+import CtaBand from '../CtaBand.astro';
+import { postKeys, posts } from './blog';
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long', timeZone: 'UTC' });
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <h1 id="page-title">{t('blog.title')}</h1>
+    <p class="lead">{t('blog.lead')}</p>
+  </div>
+</section>
+
+<section class="section" aria-label={t('blog.title')}>
+  <div class="container">
+    <ul class="posts">
+      {
+        posts.map((post) => {
+          const keys = postKeys(post.id);
+          return (
+            <li class="card">
+              <p class="hint">
+                <time datetime={post.published}>{date.format(new Date(post.published))}</time>
+              </p>
+              <h2 class="post-title">
+                <a class="card-link" href={href(post.id, lang)}>
+                  {t(keys.title)}
+                </a>
+              </h2>
+              <p>{t(keys.summary)}</p>
+              <p>
+                <a href={href(post.id, lang)}>
+                  {t('blog.read')}
+                  <span class="visually-hidden"> – {t(keys.title)}</span>
+                </a>
+              </p>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+</section>
+
+<CtaBand lang={lang} />

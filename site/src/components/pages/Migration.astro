@@ -1,0 +1,81 @@
+---
+import CtaBand from '../CtaBand.astro';
+import FaqList from '../FaqList.astro';
+import Icon from '../Icon.astro';
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const items = ['migration.what.1', 'migration.what.2', 'migration.what.3', 'migration.what.4', 'migration.what.5'] as const;
+const steps = [
+  { title: 'migration.step.1.title', text: 'migration.step.1.text' },
+  { title: 'migration.step.2.title', text: 'migration.step.2.text' },
+  { title: 'migration.step.3.title', text: 'migration.step.3.text' },
+  { title: 'migration.step.4.title', text: 'migration.step.4.text' },
+] as const;
+const faq = [
+  { q: 'migration.faq.1.q', a: 'migration.faq.1.a' },
+  { q: 'migration.faq.2.q', a: 'migration.faq.2.a' },
+  { q: 'migration.faq.3.q', a: 'migration.faq.3.a' },
+] as const;
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <p class="eyebrow">{t('migration.eyebrow')}</p>
+    <h1 id="page-title">{t('migration.title')}</h1>
+    <p class="lead">{t('migration.lead')}</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
+      <a class="btn btn-secondary" href={href('demo', lang)}>{t('cta.demo')}</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="what-title">
+  <div class="container split">
+    <div>
+      <Icon name="swap" class="card-icon" />
+      <h2 id="what-title">{t('migration.what.title')}</h2>
+      <p class="lead">{t('migration.what.lead')}</p>
+    </div>
+    <ul class="check-list">
+      {items.map((item) => <li>{t(item)}</li>)}
+    </ul>
+  </div>
+</section>
+
+<section class="section section-alt" aria-labelledby="steps-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="steps-title">{t('migration.steps.title')}</h2>
+    </div>
+    <ol class="steps">
+      {
+        steps.map((step) => (
+          <li>
+            <h3>{t(step.title)}</h3>
+            <p>{t(step.text)}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="note">{t('migration.checks')}</p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="migration-faq-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="migration-faq-title">{t('home.faq.title')}</h2>
+    </div>
+    <FaqList lang={lang} items={faq} />
+  </div>
+</section>
+
+<CtaBand lang={lang} />

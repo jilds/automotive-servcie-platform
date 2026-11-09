@@ -1,0 +1,45 @@
+---
+// "Which workshops use ASP": a card per workshop type. Cars and motorcycles link to their pages.
+import Icon, { type IconName } from './Icon.astro';
+import { type MessageKey, useT } from '../i18n';
+import { type Lang, type PageId, href } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+interface Segment {
+  icon: IconName;
+  title: MessageKey;
+  text: MessageKey;
+  page?: PageId;
+}
+
+const segments: readonly Segment[] = [
+  { icon: 'car', title: 'seg.car.title', text: 'seg.car.text', page: 'auto' },
+  { icon: 'bike', title: 'seg.moto.title', text: 'seg.moto.text', page: 'moto' },
+  { icon: 'tyre', title: 'seg.tyres.title', text: 'seg.tyres.text' },
+  { icon: 'brush', title: 'seg.body.title', text: 'seg.body.text' },
+  { icon: 'glass', title: 'seg.glass.title', text: 'seg.glass.text' },
+  { icon: 'pulse', title: 'seg.diag.title', text: 'seg.diag.text' },
+  { icon: 'store', title: 'seg.dealer.title', text: 'seg.dealer.text' },
+  { icon: 'gear', title: 'seg.special.title', text: 'seg.special.text' },
+];
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<ul class="segments">
+  {
+    segments.map((segment) => (
+      <li class="card">
+        <Icon name={segment.icon} class="card-icon" />
+        <h3>
+          {segment.page ? <a class="card-link" href={href(segment.page, lang)}>{t(segment.title)}</a> : t(segment.title)}
+        </h3>
+        <p>{t(segment.text)}</p>
+      </li>
+    ))
+  }
+</ul>

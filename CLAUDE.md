@@ -52,6 +52,8 @@ Done (online shop) **(updated 2026-10-27)**: module `shop` (migration V17, plan 
 
 Done (quotes) **(updated 2026-10-27)**: quotes with a customer approval link in module `workshop` (migration V18, plan `docs/plans/05-quotes.md`, contract `docs/api/release-4.md` "Quotes"): send (snapshot in `quote_line`, insert only), public `/w/{slug}/quote/{token}` approve / reject, phone decisions by the front desk with a note, supersede on line changes, hourly `QuoteExpiry`, workshop setting `quoteValidDays`, mail `quote-sent`.
 
+Done (landing site v2) **(updated 2026-11-09)**: the static site in `site/` (plan `docs/plans/11-landing-site-v2.md`) has pricing (price amounts are marked TODO placeholders), data migration, about, demo (same lead endpoint, message marked `[DEMO]`), blog, FAQ and mock-UI blocks in pt-PT, EN and pt-BR; testimonials and customer logos render nothing until real data exists. Shop and quotes are listed as available.
+
 Still to build for release 1 (in the agreed order):
 1. Service catalogue with standard labour times and prices.
 2. Scheduling: bays, mechanic calendar, bookings with SMS or e-mail confirmation.
@@ -188,4 +190,5 @@ Every feature must meet all of these before it is reported as done:
 - **(updated 2026-10-26)** Billing is not built (ADR 0003); activation links are mailed when mail is on (module `notification`); `subscription_until` is enforced (see §4).
 - **(updated 2026-10-24)** Public pages (ADR 0004): the rate-limit counters are per instance and in memory (a shared store before scaling out); `identity/login.ts` keeps its own header and does not use `shared/public-page.ts` yet.
 - **(updated 2026-10-26)** Online booking: e-mail to the customer (received with the status link, confirmed, moved, declined) when mail is on; no SMS; no bays or mechanic calendar (capacity is cars per slot); bookings are not cleaned up after their slot (a REQUESTED booking whose slot passed stays REQUESTED until the front desk declines it).
+- **(updated 2026-11-09)** Landing site v2: prices, the trial / no-lock-in / migration offer (`site/src/offer.ts`, all unset) and the legal entity are TODO placeholders; demo requests are leads whose message starts with `[DEMO]` (no backend intent field). `site/scripts/dist-check.mjs` fails a production build of the site while a TODO is on a page.
 - **(updated 2026-10-24)** Done: one generic save (`shared.persistence.Upserts` + `DomainEntity`) for the `Jpa*Repository` adapters; see `docs/plans/jpa-adapter-upsert.md`.

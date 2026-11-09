@@ -44,7 +44,7 @@ export const ptBR: Record<MessageKey, string> = {
 
   'meta.home.title': 'ASP – Automotive Service Platform | Software de gestão de oficinas',
   'meta.home.description':
-    'Software online para oficinas de carros e de motos: check-in por placa ou chassi (VIN), quadro de serviços, app do mecânico no celular, catálogo de serviços, estoque e agendamento online.',
+    'Software online para oficinas de carros e de motos: check-in por placa ou VIN, quadro de serviços, orçamentos aprovados online, estoque, agendamento e loja online.',
   'meta.auto.title': 'Software para oficinas de carros | ASP',
   'meta.auto.description':
     'Check-in por placa ou VIN, ordens de serviço, quadro de serviços, peças em estoque e agendamento online para oficinas de carros.',
@@ -53,7 +53,7 @@ export const ptBR: Record<MessageKey, string> = {
     'Check-in, pacotes de serviços, peças em estoque e agendamento online para oficinas de motos, no computador ou no celular.',
   'meta.features.title': 'Funcionalidades | ASP',
   'meta.features.description':
-    'Tudo o que o ASP faz hoje: check-in, quadro de serviços, app do mecânico, catálogo e pacotes, estoque, agendamento online, marca própria, três idiomas.',
+    'Tudo o que o ASP faz hoje: check-in, quadro de serviços, app do mecânico, catálogo e pacotes, orçamentos, estoque, agendamento online, loja online, marca própria, três idiomas.',
   'meta.proposal.title': 'Pedir proposta | ASP',
   'meta.proposal.description':
     'Conte sobre a sua oficina e receba uma proposta para o plano do ASP que serve para ela. Sem compromisso.',
@@ -68,7 +68,7 @@ export const ptBR: Record<MessageKey, string> = {
   'home.hero.eyebrow': 'Software de gestão de oficinas',
   'home.hero.title': 'Gerencie sua oficina da recepção à entrega.',
   'home.hero.lead':
-    'O ASP – Automotive Service Platform é um software online para oficinas de carros e de motos: check-in por placa ou VIN, quadro de serviços, catálogo de serviços, estoque e agendamento online. Funciona no computador e no celular.',
+    'O ASP – Automotive Service Platform é um software online para oficinas de carros e de motos: check-in por placa ou VIN, quadro de serviços, orçamentos que o cliente aprova online, estoque e agendamento online. Funciona no computador e no celular.',
   'home.hero.figure': 'Exemplo do quadro de serviços com três serviços',
   'board.col.open': 'Recebido',
   'board.col.progress': 'Em andamento',
@@ -77,19 +77,7 @@ export const ptBR: Record<MessageKey, string> = {
   'board.card.2': 'Barulho nos freios dianteiros',
   'board.card.3': 'Revisão anual',
 
-  'home.value.title': 'O que o ASP faz pela sua oficina',
-  'home.value.1.title': 'Uma ordem de serviço, do início ao fim',
-  'home.value.1.text':
-    'Quilometragem, nível de combustível, reclamação e avarias no check-in; mão de obra e peças com desconto e imposto; totais calculados para você; o histórico fica com o veículo.',
-  'home.value.2.title': 'Feito para a oficina',
-  'home.value.2.text':
-    'Os mecânicos veem os próprios serviços no celular. Nunca veem preços nem dados pessoais dos clientes.',
-  'home.value.3.title': 'Seus dados, só seus',
-  'home.value.3.text':
-    'Os dados de cada oficina ficam separados dos de todas as outras, com a separação garantida pelo próprio banco de dados em cada requisição.',
 
-  'home.features.title': 'Tudo em um só lugar',
-  'home.features.lead': 'O que o ASP faz hoje e o que vem a seguir.',
 
   'feature.checkin.title': 'Check-in por placa ou VIN',
   'feature.checkin.text':
@@ -119,7 +107,7 @@ export const ptBR: Record<MessageKey, string> = {
   'feature.payments.title': 'Multibanco e MB WAY',
   'feature.payments.text': 'Pagamentos dos clientes por Multibanco e MB WAY (Portugal).',
   'feature.shop.title': 'Loja online',
-  'feature.shop.text': 'Produtos na sua página, pagos no balcão.',
+  'feature.shop.text': 'Produtos na sua página. Os clientes reservam online e pagam no balcão.',
 
   'home.onboarding.title': 'Como começar',
   'home.onboarding.lead':
@@ -150,7 +138,8 @@ export const ptBR: Record<MessageKey, string> = {
   'home.faq.5.a':
     'Ainda não. A faturação certificada em Portugal, por um provedor certificado pela AT, e os pagamentos por Multibanco e MB WAY chegam em breve. A emissão fiscal brasileira virá depois.',
   'home.faq.6.q': 'Quanto custa?',
-  'home.faq.6.a': 'Depende do plano certo para a sua oficina. Peça uma proposta e respondemos com os detalhes.',
+  'home.faq.6.a':
+    'Os preços dependem do plano: veja a página de preços. Peça uma proposta e respondemos com os detalhes.',
   'home.faq.7.q': 'Serve para oficinas de motos?',
   'home.faq.7.a':
     'Sim. O mesmo check-in, ordens de serviço, quadro, catálogo, estoque e agendamento funcionam para carros e motos.',
@@ -251,7 +240,7 @@ export const ptBR: Record<MessageKey, string> = {
   'form.vehicle.MOTORCYCLE': 'Motos',
   'form.vehicle.BOTH': 'Carros e motos',
   'form.message': 'Mensagem',
-  'form.messageHint': 'Por exemplo, quantos elevadores ou oficinas você tem. Até 2000 caracteres.',
+  'form.messageHint': 'Por exemplo, quantos elevadores ou oficinas você tem. Até {max} caracteres.',
   'form.privacy.before': 'Li a',
   'form.privacy.link': 'política de privacidade',
   'form.privacy.after': 'e aceito que meus dados sejam usados para responder a este pedido.',
@@ -268,7 +257,7 @@ export const ptBR: Record<MessageKey, string> = {
   'form.error.email': 'Informe um e-mail válido (até 254 caracteres).',
   'form.error.contact': 'Informe um telefone ou um e-mail.',
   'form.error.vehicleType': 'Escolha uma opção.',
-  'form.error.message': 'Até 2000 caracteres.',
+  'form.error.message': 'Até {max} caracteres.',
   'form.error.privacy': 'Marque esta caixa para enviar o pedido.',
   'form.error.rateLimited': 'Muitos pedidos a partir desta conexão. Tente de novo daqui a cerca de {minutes} min.',
   'form.error.rateLimitedLater': 'Muitos pedidos a partir desta conexão. Tente de novo mais tarde.',
@@ -330,4 +319,308 @@ export const ptBR: Record<MessageKey, string> = {
   'notFound.title': 'Página não encontrada',
   'notFound.text': 'A página que você procura não existe ou mudou de endereço.',
   'notFound.home': 'Voltar para a página inicial',
+
+  'nav.pricing': 'Preços',
+  'nav.migration': 'Migração de dados',
+  'nav.about': 'Sobre nós',
+  'nav.blog': 'Blog',
+  'nav.demo': 'Agendar demonstração',
+  'footer.company': 'Empresa',
+  'cta.demo': 'Agendar uma demonstração',
+  'cta.migration': 'Ver como funciona a migração',
+  'meta.pricing.title': 'Planos e preços | ASP',
+  'meta.pricing.description':
+    'Três planos do ASP com tudo para o dia a dia de uma oficina. Peça uma proposta para o plano que serve para você.',
+  'meta.migration.title': 'Migração de dados | ASP',
+  'meta.migration.description':
+    'Leve seus clientes, veículos, produtos e serviços para o ASP. Você envia os arquivos, nós preparamos, e você confere tudo antes de começar.',
+  'meta.about.title': 'Sobre o ASP',
+  'meta.about.description':
+    'O ASP – Automotive Service Platform é um software feito só para oficinas de carros e de motos. O que construímos e como trabalhamos.',
+  'meta.demo.title': 'Agendar uma demonstração | ASP',
+  'meta.demo.description':
+    'Veja o ASP pensando na sua oficina. Diga como falar com você e combinamos uma demonstração, sem compromisso.',
+  'meta.blog.title': 'Blog | ASP',
+  'meta.blog.description':
+    'Notas práticas para gerenciar uma oficina de carros ou de motos: check-in, orçamentos, estoque.',
+  'home.hero.badge.label': 'Para começar',
+  'home.segments.title': 'Para todo tipo de oficina',
+  'home.segments.lead':
+    'O que quer que você conserte, o trabalho segue o mesmo caminho: receber o veículo, orçar, consertar, entregar. O ASP acompanha esse caminho.',
+  'seg.car.title': 'Oficinas de carros',
+  'seg.car.text': 'Check-in por placa ou VIN, ordens de serviço, quadro de serviços e peças do estoque.',
+  'seg.moto.title': 'Oficinas de motos',
+  'seg.moto.text': 'O mesmo caminho para motos: check-in rápido, pacotes de serviços e agendamento online.',
+  'seg.tyres.title': 'Pneus',
+  'seg.tyres.text':
+    'Serviços rápidos, uma linha por serviço e os pneus cadastrados como produtos, com o seu estoque.',
+  'seg.body.title': 'Funilaria e pintura',
+  'seg.body.text':
+    'Registre as avarias no check-in, envie um orçamento claro e acompanhe cada serviço no quadro.',
+  'seg.glass.title': 'Vidros e para-brisas',
+  'seg.glass.text': 'Serviços curtos a preço fixo: coloque no catálogo e adicione em um só passo.',
+  'seg.diag.title': 'Diagnóstico e elétrica',
+  'seg.diag.text':
+    'Anote a reclamação, calcule o diagnóstico por horas padrão e deixe o cliente aprovar antes do serviço.',
+  'seg.dealer.title': 'Revendas e seminovos',
+  'seg.dealer.text': 'Prepare veículos, acompanhe cada serviço por placa e guarde o histórico de cada carro.',
+  'seg.special.title': 'Oficinas especializadas',
+  'seg.special.text': 'Câmbio, escapamento, ar-condicionado: seus próprios serviços e preços, com a sua marca.',
+  'home.blocks.title': 'Veja o ASP em ação',
+  'home.blocks.lead': 'Três momentos de um dia de oficina, como aparecem na tela.',
+  'home.block.1.eyebrow': 'Orçamentos',
+  'home.block.1.title': 'O cliente aprova o orçamento no celular',
+  'home.block.1.text':
+    'Envie o orçamento com um link privado. O cliente lê as linhas e o total e aprova ou recusa sem ligar para a recepção.',
+  'home.block.1.b1': 'Válido pelos dias que você definir, e substituído se as linhas mudarem.',
+  'home.block.1.b2': 'Aprovações por telefone registradas pela recepção, com uma nota.',
+  'home.block.1.b3': 'Um orçamento aprovado leva o serviço para as peças ou para o elevador.',
+  'home.block.2.eyebrow': 'Agendamento online',
+  'home.block.2.title': 'Os agendamentos chegam prontos para analisar',
+  'home.block.2.text':
+    'Os clientes escolhem serviços e um horário livre na sua página. Você vê cada pedido com a placa e os serviços pedidos, e confirma, muda ou recusa.',
+  'home.block.2.b1': 'Seu horário de funcionamento, a duração do horário e os carros por horário.',
+  'home.block.2.b2': 'O cliente acompanha o pedido em um link privado.',
+  'home.block.2.b3': 'Faça o check-in do carro a partir do agendamento, em um só passo.',
+  'home.block.3.eyebrow': 'Estoque',
+  'home.block.3.title': 'Saiba o que está acabando antes de parar um serviço',
+  'home.block.3.text':
+    'As peças ficam reservadas na ordem de serviço, então o “disponível” já desconta o que está prometido. Abaixo do mínimo, o produto entra na lista de estoque baixo.',
+  'home.block.3.b1': 'SKU, local e estoque mínimo para cada produto.',
+  'home.block.3.b2': 'Todas as movimentações registradas, ajustes com motivo.',
+  'home.block.3.b3': 'Pedidos de compra, de rascunho a recebido.',
+  'mock.sample': 'Dados de exemplo',
+  'mock.quote.figure': 'Exemplo de um orçamento aprovado, com placa, veículo, linhas e total (dados de exemplo)',
+  'mock.quote.title': 'Orçamento nº 42',
+  'mock.quote.status': 'Aprovado',
+  'mock.quote.line.1': 'Pastilhas de freio (dianteiras)',
+  'mock.quote.line.2': 'Discos de freio (par)',
+  'mock.quote.line.3': 'Mão de obra, 1,5 h',
+  'mock.quote.total': 'Total, imposto incluído',
+  'mock.quote.via': 'Aprovado pelo cliente no link',
+  'mock.booking.figure': 'Exemplo de um novo agendamento online aguardando confirmação (dados de exemplo)',
+  'mock.booking.title': 'Novo agendamento online',
+  'mock.booking.status': 'A confirmar',
+  'mock.booking.customer': 'Cliente de exemplo',
+  'mock.booking.service.label': 'Serviço',
+  'mock.booking.service': 'Troca de óleo e filtros',
+  'mock.booking.slot.label': 'Horário',
+  'mock.booking.slot': 'Terça-feira, 09:30',
+  'mock.booking.confirm': 'Confirmar',
+  'mock.booking.move': 'Mover',
+  'mock.booking.decline': 'Recusar',
+  'mock.stock.figure': 'Exemplo de um alerta de estoque baixo para um filtro de óleo (dados de exemplo)',
+  'mock.stock.title': 'Alerta de estoque',
+  'mock.stock.status': 'Abaixo do mínimo',
+  'mock.stock.product': 'Filtro de óleo',
+  'mock.stock.bin': 'local',
+  'mock.stock.onHand': 'Em estoque',
+  'mock.stock.reserved': 'Reservado',
+  'mock.stock.available': 'Disponível',
+  'mock.stock.minimum': 'Mínimo',
+  'mock.stock.order': 'Ver estoque baixo',
+  'mock.stock.reservedBy': 'Reservado em 2 ordens de serviço abertas',
+  'home.diff.title': 'O que distingue o ASP',
+  'home.diff.1.title': 'Cada perfil vê só a sua tela',
+  'home.diff.1.text':
+    'O dono e a recepção veem preços e clientes. Os mecânicos veem os seus serviços no celular, nunca preços nem dados pessoais. A regra é aplicada no servidor, não apenas escondida na tela.',
+  'home.diff.2.title': 'Seus dados, separados pelo banco de dados',
+  'home.diff.2.text':
+    'Os dados de cada oficina são separados no próprio banco de dados e verificados em cada requisição, então outra oficina nunca pode ver nem alterar os seus.',
+  'home.diff.3.title': 'Regras portuguesas de origem',
+  'home.diff.3.text':
+    'Placas nos formatos portugueses, busca por VIN, dígito verificador do NIF e imposto em cada linha: pronto desde o primeiro check-in.',
+  'home.migration.eyebrow': 'Migração de dados',
+  'home.migration.title': 'Leve seus clientes e veículos com você',
+  'home.migration.text':
+    'Você não começa do zero. Envie suas planilhas ou a exportação do programa que usa hoje e nós carregamos para você.',
+  'home.migration.b1': 'Clientes, com NIF e contatos',
+  'home.migration.b2': 'Veículos, com placa ou VIN e quilometragem',
+  'home.migration.b3': 'Produtos, com SKU, preços e níveis de estoque',
+  'home.migration.b4': 'Serviços e preços para o seu catálogo',
+  'home.faq.8.q': 'Posso levar meus dados atuais?',
+  'home.faq.8.a':
+    'Sim. Envie suas planilhas ou a exportação do programa atual. Preparamos e carregamos clientes, veículos, produtos e serviços, e você confere tudo antes de começar a usar.',
+  'testimonials.title': 'O que as oficinas dizem',
+  'logos.title': 'Oficinas que usam o ASP',
+  'feature.quotes.title': 'Orçamentos com aprovação online',
+  'feature.quotes.text':
+    'Envie um orçamento com um link privado. O cliente aprova ou recusa online, ou a recepção registra uma decisão por telefone.',
+  'features.quotes.1':
+    'O orçamento copia as linhas e os totais da ordem de serviço no momento em que você o envia.',
+  'features.quotes.2': 'Um link privado para o cliente, válido pelos dias que você definir.',
+  'features.quotes.3':
+    'O cliente aprova com o seu nome ou recusa com um motivo; a recepção pode registrar uma decisão por telefone, com uma nota.',
+  'features.quotes.4':
+    'Mudar as linhas substitui o orçamento em aberto, e um orçamento aprovado faz o serviço avançar.',
+  'features.shop.1':
+    'Os produtos que você escolher aparecem na sua página, com um nível simples de disponibilidade em vez de um número.',
+  'features.shop.2': 'O cliente faz o pedido e todas as linhas ficam reservadas de imediato.',
+  'features.shop.3': 'Acompanha em um link privado e pode cancelar enquanto o pedido ainda é novo.',
+  'features.shop.4':
+    'A recepção marca como pronto e entrega no balcão com a forma de pagamento; só então o estoque é consumido.',
+  'features.shop.addon': 'A loja online é um adicional, ativada para a sua oficina a pedido.',
+  'pricing.title': 'Planos e preços',
+  'pricing.lead': 'Três planos, um só produto. Todos os planos têm o dia a dia completo de uma oficina.',
+  'pricing.billing.label': 'Periodicidade de cobrança',
+  'pricing.billing.monthly': 'Mensal',
+  'pricing.billing.annual': 'Anual',
+  'pricing.tier.1.name': 'Starter',
+  'pricing.tier.2.name': 'Pro',
+  'pricing.tier.3.name': 'Enterprise',
+  'pricing.tier.1.for': 'Para a oficina que está começando.',
+  'pricing.tier.2.for': 'Para a oficina com equipe e muito movimento.',
+  'pricing.tier.3.for': 'Para oficinas maiores, com necessidades especiais.',
+  'pricing.price.placeholder': '€ <preço>',
+  'pricing.per.month': 'por mês',
+  'pricing.per.year': 'por ano',
+  'pricing.annualNote': 'Desconto anual: a definir com a tabela de preços.',
+  'pricing.core.title': 'Incluído em todos os planos',
+  'pricing.core.1': 'Check-in por placa ou VIN e ordens de serviço',
+  'pricing.core.2': 'Quadro de serviços e app do mecânico no celular',
+  'pricing.core.3': 'Catálogo de serviços e pacotes',
+  'pricing.core.4': 'Orçamentos com aprovação online',
+  'pricing.core.5': 'Estoque, reservas e pedidos de compra',
+  'pricing.core.6': 'Sua marca, três idiomas, dados separados',
+  'pricing.addons.text':
+    'O agendamento online e a loja online são adicionais: ativamos na sua oficina, qualquer que seja o plano.',
+  'pricing.table.title': 'Compare os planos',
+  'pricing.table.lead':
+    'Todas as funcionalidades abaixo estão nos três planos hoje. O que distingue os planos ainda está sendo definido e está sinalizado.',
+  'pricing.table.feature': 'Funcionalidade',
+  'pricing.cell.yes': 'Incluído',
+  'pricing.cell.addon': 'Adicional',
+  'pricing.cell.tbd': '<a definir>',
+  'pricing.row.migration': 'Ajuda na migração de dados',
+  'pricing.row.users': 'Usuários',
+  'pricing.row.support': 'Suporte',
+  'pricing.table.soon':
+    'A emissão de notas fiscais certificadas e os pagamentos por Multibanco e MB WAY chegam em breve e serão acrescentados a esta tabela.',
+  'pricing.faq.1.q': 'O agendamento online e a loja estão incluídos?',
+  'pricing.faq.1.a':
+    'São adicionais, ativados na sua oficina qualquer que seja o plano. Diga isso no pedido de proposta se quiser.',
+  'pricing.faq.2.q': 'Como começo?',
+  'pricing.faq.2.a':
+    'Peça uma proposta ou uma demonstração. Quando combinarmos o plano, registramos a sua oficina e você recebe um link de ativação para escolher a senha.',
+  'pricing.faq.3.q': 'Ao que um pedido de proposta me obriga?',
+  'pricing.faq.3.a': 'A nada. Um pedido de proposta não é uma compra: respondemos com os detalhes e você decide.',
+  'migration.eyebrow': 'Migração de dados',
+  'migration.title': 'Mude sem começar do zero',
+  'migration.lead': 'Você envia o que tem, nós preparamos, você confere, e só depois começa a trabalhar.',
+  'migration.what.title': 'O que podemos trazer',
+  'migration.what.lead': 'Planilhas, ou a exportação do programa que você usa hoje.',
+  'migration.what.1': 'Clientes, com NIF, telefone e e-mail',
+  'migration.what.2': 'Veículos, com placa ou VIN e quilometragem',
+  'migration.what.3': 'Produtos, com SKU, preços e níveis de estoque',
+  'migration.what.4': 'Serviços e seus preços, para o catálogo',
+  'migration.what.5': 'Serviços antigos: diga o que você tem e dizemos o que pode ser guardado.',
+  'migration.steps.title': 'Como funciona',
+  'migration.step.1.title': 'Você envia seus arquivos',
+  'migration.step.1.text': 'Excel, CSV ou a exportação do programa atual. Diga o que há neles.',
+  'migration.step.2.title': 'Nós preparamos os dados',
+  'migration.step.2.text': 'Associamos as colunas, arrumamos os dados e carregamos na sua oficina.',
+  'migration.step.3.title': 'Você confere',
+  'migration.step.3.text': 'Veja os clientes, veículos e produtos no ASP e diga o que corrigir.',
+  'migration.step.4.title': 'Você começa a usar',
+  'migration.step.4.text': 'Quando estiver satisfeito, a equipe começa a usar o ASP. Ajudamos nos primeiros dias.',
+  'migration.checks':
+    'No caminho conferimos os dados: as placas são normalizadas e precisam ser únicas, e o dígito verificador do NIF é conferido. O que não conseguirmos carregar fica em uma lista para você, não some em silêncio.',
+  'migration.faq.1.q': 'Quais arquivos vocês aceitam?',
+  'migration.faq.1.a':
+    'Arquivos Excel e CSV, ou a exportação do programa atual. Se você não tem certeza do que tem, envie mesmo assim e dizemos o que dá para aproveitar.',
+  'migration.faq.2.q': 'Quanto tempo leva?',
+  'migration.faq.2.a':
+    'Depende da quantidade de dados e do quão organizados estão. Damos uma estimativa assim que virmos os arquivos.',
+  'migration.faq.3.q': 'O que preciso informar?',
+  'migration.faq.3.a':
+    'Qual programa você usa hoje e, aproximadamente, quantos clientes, veículos e produtos tem. Informe no pedido de proposta e a proposta cobre a migração.',
+  'about.eyebrow': 'Sobre o ASP',
+  'about.title': 'Software feito só para oficinas',
+  'about.lead':
+    'O ASP – Automotive Service Platform ajuda as oficinas de carros e de motos a gerenciar o dia, desde o veículo na porta até a entrega.',
+  'about.mission.title': 'O que estamos construindo',
+  'about.mission.text':
+    'Uma oficina não precisa de um ERP feito para tudo. Precisa receber um veículo, anotar o que está errado, orçar, consertar, pedir peças e entregar, sem perder tempo com o software.',
+  'about.mission.text2':
+    'O ASP começa em Portugal, com placas, NIF e imposto portugueses e três idiomas, e é construído para que outros países possam seguir.',
+  'about.principles.title': 'Como trabalhamos',
+  'about.p.1.title': 'Feito só para oficinas',
+  'about.p.1.text': 'Cada tela nasce do jeito que uma oficina trabalha, não de um modelo genérico.',
+  'about.p.2.title': 'Honestos sobre o que existe',
+  'about.p.2.text':
+    'Este site lista o que funciona hoje. O que ainda não está pronto está sinalizado como “Em breve”.',
+  'about.p.3.title': 'Seus dados são seus',
+  'about.p.3.text':
+    'Os dados de cada oficina ficam separados dos de todas as outras, e os mecânicos nunca veem preços nem dados pessoais dos clientes.',
+  'about.p.4.title': 'Sem rastreamento',
+  'about.p.4.text': 'Este site não usa cookies nem faz análise de visitas.',
+  'about.status.title': 'Em que ponto estamos',
+  'about.status.text':
+    'O ASP está em desenvolvimento ativo. O check-in, o quadro de serviços, o catálogo, os orçamentos, o estoque, o agendamento online e a loja online funcionam hoje. A emissão de notas fiscais certificadas e os pagamentos por Multibanco e MB WAY são os próximos passos.',
+  'about.company.title': 'Empresa',
+  'demo.title': 'Agendar uma demonstração',
+  'demo.lead':
+    'Veja o ASP pensando na sua oficina. Diga como falar com você e combinamos uma demonstração, sem compromisso.',
+  'demo.what.title': 'O que mostramos a você',
+  'demo.what.1': 'Receber um veículo e abrir uma ordem de serviço',
+  'demo.what.2': 'O quadro de serviços e a visão do mecânico no celular',
+  'demo.what.3': 'Orçamentos, estoque e agendamento online',
+  'demo.what.4': 'Como seus dados atuais seriam trazidos',
+  'form.submitDemo': 'Solicitar a demonstração',
+  'blog.title': 'Blog',
+  'blog.lead': 'Notas práticas para gerenciar uma oficina.',
+  'blog.read': 'Ler o artigo',
+  'blog.back': 'Voltar ao blog',
+  'blog.post1.title': 'O que registrar no check-in para não haver discussão depois',
+  'blog.post1.summary':
+    'Quilometragem, combustível, reclamação e avarias: uma rotina curta de check-in que protege a oficina e o cliente.',
+  'blog.post1.p0':
+    'Os primeiros cinco minutos com um veículo decidem como o resto vai correr. Um check-in curto e repetível protege o cliente, que sabe o que ficou combinado, e a oficina, que sabe o que recebeu.',
+  'blog.post1.h1': 'O veículo e a quilometragem',
+  'blog.post1.p1':
+    'Identifique o veículo pela placa ou pelo VIN, não pelo que o cliente lembra. Anote a quilometragem com o cliente presente. De uma visita para a seguinte ela só sobe, então um valor que desce é um erro de digitação que vale a pena pegar na hora.',
+  'blog.post1.h2': 'Nível de combustível e objetos pessoais',
+  'blog.post1.p2':
+    'Anote o nível de combustível, por exemplo em uma escala de 0 a 8, e tudo o que for de valor e ficar lá dentro. Duas linhas na ordem de serviço resolvem a maior parte das conversas que começam com “tinha mais combustível do que isso”.',
+  'blog.post1.h3': 'A reclamação e as avarias',
+  'blog.post1.p3':
+    'Escreva a reclamação com as palavras do cliente e acrescente o que você vê: riscos, amassados, luzes de aviso. Registre as avarias antes de começar qualquer serviço, para ficar claro o que havia quando o veículo chegou.',
+  'blog.post1.p4':
+    'No ASP a tela de check-in tem um lugar para cada um desses pontos: placa ou VIN, quilometragem, combustível, reclamação e notas de avarias. Seja qual for a ferramenta, faça a rotina igual para todos os veículos.',
+  'blog.post2.title': 'Como escrever um orçamento que o cliente aprova rápido',
+  'blog.post2.summary': 'Linhas claras, um total com imposto e um prazo: o que faz o cliente dizer sim sem ligar.',
+  'blog.post2.p0':
+    'Um orçamento que levanta dúvidas volta como uma ligação. Um orçamento que as responde volta como um sim. A diferença está principalmente na forma como é escrito.',
+  'blog.post2.h1': 'Separe a mão de obra das peças',
+  'blog.post2.p1':
+    'Liste a mão de obra e as peças em linhas diferentes, cada uma com seu preço, desconto e imposto. O cliente aceita um número que consegue acompanhar, e uma alteração posterior é fácil de explicar.',
+  'blog.post2.h2': 'Mostre o total que realmente vão pagar',
+  'blog.post2.p2':
+    'Dê o total com imposto incluído, em um só lugar. Se um pacote custa menos do que os serviços comprados separados, mostre a economia em vez de deixar o cliente fazer as contas.',
+  'blog.post2.h3': 'Dê um prazo e uma forma fácil de responder',
+  'blog.post2.p3':
+    'Um orçamento que nunca expira é um orçamento sobre o qual ninguém decide. Defina uma validade de alguns dias e deixe o cliente responder no celular, em um link, sem ligar para a recepção.',
+  'blog.post2.p4':
+    'O ASP envia o orçamento com um link privado de aprovação e registra quem aprovou e como. Se as linhas mudarem, o orçamento em aberto é substituído, para ninguém aprovar valores desatualizados.',
+  'blog.post3.title': 'Estoque em uma oficina pequena: mínimos, locais e reservas',
+  'blog.post3.summary': 'Três hábitos que mantêm as peças certas na prateleira sem prender dinheiro.',
+  'blog.post3.p0':
+    'Uma oficina pequena não pode ter tudo, mas também não pode ficar esperando por um filtro. A resposta não é ter mais estoque, é saber o que tem, onde está e o que já está prometido.',
+  'blog.post3.h1': 'Dê um lugar a cada peça',
+  'blog.post3.p1':
+    'Um código de local em cada produto poupa a procura. Acrescente também um SKU, para o mesmo filtro de óleo não ser cadastrado duas vezes com dois nomes.',
+  'blog.post3.h2': 'Defina um mínimo para o que você usa toda semana',
+  'blog.post3.p2':
+    'Para o que gira rápido, como óleo, filtros, pastilhas e lâmpadas, escolha um mínimo abaixo do qual você volta a pedir. Deixe as peças raras em zero e peça quando um serviço precisar.',
+  'blog.post3.h3': 'Conte o que está prometido, não só o que está na prateleira',
+  'blog.post3.p3':
+    'Seis filtros na prateleira não são seis disponíveis se quatro vão para serviços já abertos. Reserve as peças na ordem de serviço e olhe para o número disponível, não para a contagem da prateleira.',
+  'blog.post3.p4':
+    'O ASP faz isso por você: local, SKU e mínimo por produto, reservas na ordem de serviço, lista de estoque baixo e pedidos de compra de rascunho a recebido.',
+
+  'offer.trial': '{days} dias grátis',
+  'offer.noLockIn': 'Sem fidelidade',
+  'offer.migration': 'Migração incluída',
+  'offer.todo': '<oferta a confirmar>',
+
 };

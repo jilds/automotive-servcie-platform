@@ -23,7 +23,17 @@ const t = useT(lang);
         <li><a href={href('auto', lang)}>{t('nav.auto')}</a></li>
         <li><a href={href('moto', lang)}>{t('nav.moto')}</a></li>
         <li><a href={href('features', lang)}>{t('nav.features')}</a></li>
+        <li><a href={href('pricing', lang)}>{t('nav.pricing')}</a></li>
+        <li><a href={href('migration', lang)}>{t('nav.migration')}</a></li>
+        <li><a href={href('demo', lang)}>{t('nav.demo')}</a></li>
         <li><a href={href('proposal', lang)}>{t('nav.proposal')}</a></li>
+      </ul>
+    </nav>
+    <nav aria-labelledby="footer-company">
+      <h2 id="footer-company">{t('footer.company')}</h2>
+      <ul>
+        <li><a href={href('about', lang)}>{t('nav.about')}</a></li>
+        <li><a href={href('blog', lang)}>{t('nav.blog')}</a></li>
       </ul>
     </nav>
     <nav aria-labelledby="footer-legal">

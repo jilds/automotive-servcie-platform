@@ -1,8 +1,13 @@
 ---
 // Every page in every language comes from the route table in src/i18n/routes.ts.
+import About from '../components/pages/About.astro';
+import Blog from '../components/pages/Blog.astro';
 import Cookies from '../components/pages/Cookies.astro';
 import Features from '../components/pages/Features.astro';
 import Home from '../components/pages/Home.astro';
+import Migration from '../components/pages/Migration.astro';
+import Post from '../components/pages/Post.astro';
+import Pricing from '../components/pages/Pricing.astro';
 import Privacy from '../components/pages/Privacy.astro';
 import Proposal from '../components/pages/Proposal.astro';
 import Segment from '../components/pages/Segment.astro';
@@ -24,11 +29,20 @@ interface Props {
 }
 
 const { lang, page } = Astro.props;
+// A blog post uses its own title and summary as the page title and description.
 const meta: Record<PageId, { title: MessageKey; description: MessageKey }> = {
   home: { title: 'meta.home.title', description: 'meta.home.description' },
   auto: { title: 'meta.auto.title', description: 'meta.auto.description' },
   moto: { title: 'meta.moto.title', description: 'meta.moto.description' },
   features: { title: 'meta.features.title', description: 'meta.features.description' },
+  pricing: { title: 'meta.pricing.title', description: 'meta.pricing.description' },
+  migration: { title: 'meta.migration.title', description: 'meta.migration.description' },
+  about: { title: 'meta.about.title', description: 'meta.about.description' },
+  demo: { title: 'meta.demo.title', description: 'meta.demo.description' },
+  blog: { title: 'meta.blog.title', description: 'meta.blog.description' },
+  post1: { title: 'blog.post1.title', description: 'blog.post1.summary' },
+  post2: { title: 'blog.post2.title', description: 'blog.post2.summary' },
+  post3: { title: 'blog.post3.title', description: 'blog.post3.summary' },
   proposal: { title: 'meta.proposal.title', description: 'meta.proposal.description' },
   privacy: { title: 'meta.privacy.title', description: 'meta.privacy.description' },
   terms: { title: 'meta.terms.title', description: 'meta.terms.description' },
@@ -41,6 +55,12 @@ const meta: Record<PageId, { title: MessageKey; description: MessageKey }> = {
   {page === 'auto' && <Segment lang={lang} segment="auto" />}
   {page === 'moto' && <Segment lang={lang} segment="moto" />}
   {page === 'features' && <Features lang={lang} />}
+  {page === 'pricing' && <Pricing lang={lang} />}
+  {page === 'migration' && <Migration lang={lang} />}
+  {page === 'about' && <About lang={lang} />}
+  {page === 'demo' && <Proposal lang={lang} intent="demo" />}
+  {page === 'blog' && <Blog lang={lang} />}
+  {(page === 'post1' || page === 'post2' || page === 'post3') && <Post lang={lang} post={page} />}
   {page === 'proposal' && <Proposal lang={lang} />}
   {page === 'privacy' && <Privacy lang={lang} />}
   {page === 'terms' && <Terms lang={lang} />}

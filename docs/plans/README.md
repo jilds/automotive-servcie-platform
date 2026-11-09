@@ -22,3 +22,4 @@ Rules:
 | [08-reports.md](08-reports.md): cost vs quote, mechanic productivity | planned | |
 | [09-mechanic-offline.md](09-mechanic-offline.md): offline mode for the mechanic app | planned | |
 | [10-leftovers.md](10-leftovers.md): composite FKs, OnPush, GDPR tools, shared stores | planned | |
+| [11-landing-site-v2.md](11-landing-site-v2.md): pricing, FAQ, migration, about, demo, blog, richer home | done | |

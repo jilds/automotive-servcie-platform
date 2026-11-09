@@ -1,0 +1,49 @@
+---
+// A small picture of an approved quote, in HTML so its texts follow the language. Sample data, not a real customer.
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const money = new Intl.NumberFormat(lang, { style: 'currency', currency: 'EUR' });
+// Sample amounts in cents, VAT included (data, not text).
+const lines = [
+  { text: t('mock.quote.line.1'), cents: 8900 },
+  { text: t('mock.quote.line.2'), cents: 15600 },
+  { text: t('mock.quote.line.3'), cents: 9000 },
+];
+const total = lines.reduce((sum, line) => sum + line.cents, 0);
+---
+
+<figure class="mock" role="img" aria-label={t('mock.quote.figure')}>
+  <div aria-hidden="true">
+    <div class="mock-head">
+      <span class="mock-title">{t('mock.quote.title')}</span>
+      <span class="status status-ok">{t('mock.quote.status')}</span>
+    </div>
+    <div class="mock-vehicle">
+      <span class="plate"><span class="plate-text">AB-12-CD</span></span>
+      <span>Renault Clio 1.5 dCi</span>
+    </div>
+    <ul class="mock-lines">
+      {
+        lines.map((line) => (
+          <li>
+            <span>{line.text}</span>
+            <span class="num">{money.format(line.cents / 100)}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="mock-total">
+      <span>{t('mock.quote.total')}</span>
+      <span class="num">{money.format(total / 100)}</span>
+    </div>
+    <p class="mock-foot">{t('mock.quote.via')}</p>
+    <p class="mock-sample">{t('mock.sample')}</p>
+  </div>
+</figure>

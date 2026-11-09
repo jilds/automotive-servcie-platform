@@ -1,0 +1,186 @@
+---
+// Pricing: three tiers, monthly / annual presentation, comparison table. The amounts are marked placeholders
+// (Todo) until the owner gives the price list (plan 11). The billing switch is two radio buttons and CSS only.
+import CtaBand from '../CtaBand.astro';
+import FaqList from '../FaqList.astro';
+import OfferBadges from '../OfferBadges.astro';
+import Todo from '../Todo.astro';
+import { type MessageKey, useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+import { offer, pricesKnown } from '../../offer';
+
+interface Props {
+  lang: Lang;
+}
+
+type Cell = 'yes' | 'addon' | 'tbd';
+interface Row {
+  label: MessageKey;
+  cells: readonly [Cell, Cell, Cell];
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+
+const tiers = [
+  { id: 'starter', name: 'pricing.tier.1.name', audience: 'pricing.tier.1.for' },
+  { id: 'pro', name: 'pricing.tier.2.name', audience: 'pricing.tier.2.for', featured: true },
+  { id: 'premium', name: 'pricing.tier.3.name', audience: 'pricing.tier.3.for' },
+] as const;
+
+const core: readonly MessageKey[] = [
+  'pricing.core.1',
+  'pricing.core.2',
+  'pricing.core.3',
+  'pricing.core.4',
+  'pricing.core.5',
+  'pricing.core.6',
+];
+
+const yes: readonly [Cell, Cell, Cell] = ['yes', 'yes', 'yes'];
+const addon: readonly [Cell, Cell, Cell] = ['addon', 'addon', 'addon'];
+const tbd: readonly [Cell, Cell, Cell] = ['tbd', 'tbd', 'tbd'];
+// Plans are labels today (ADR 0003): every feature is the same on all three. What differs between plans
+// (users, support) is a product decision still open, so those rows stay marked.
+const rows: readonly Row[] = [
+  { label: 'feature.checkin.title', cells: yes },
+  { label: 'feature.board.title', cells: yes },
+  { label: 'feature.catalogue.title', cells: yes },
+  { label: 'feature.quotes.title', cells: yes },
+  { label: 'feature.stock.title', cells: yes },
+  { label: 'feature.branding.title', cells: yes },
+  { label: 'feature.languages.title', cells: yes },
+  { label: 'feature.booking.title', cells: addon },
+  { label: 'feature.shop.title', cells: addon },
+  // Migration is free only when the owner says so (src/offer.ts); until then it is a marked placeholder.
+  { label: 'pricing.row.migration', cells: offer.migrationIncluded === true ? yes : tbd },
+  { label: 'pricing.row.users', cells: tbd },
+  { label: 'pricing.row.support', cells: tbd },
+];
+
+const faq = [
+  { q: 'pricing.faq.1.q', a: 'pricing.faq.1.a' },
+  { q: 'pricing.faq.2.q', a: 'pricing.faq.2.a' },
+  { q: 'pricing.faq.3.q', a: 'pricing.faq.3.a' },
+] as const;
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <h1 id="page-title">{t('pricing.title')}</h1>
+    <p class="lead">{t('pricing.lead')}</p>
+    <OfferBadges lang={lang} light />
+  </div>
+</section>
+
+<div class="section pricing">
+  <div class="container">
+    {pricesKnown && (
+    <fieldset class="billing">
+      <legend class="visually-hidden">{t('pricing.billing.label')}</legend>
+      <input class="visually-hidden" type="radio" name="billing" id="bill-monthly" value="monthly" checked />
+      <label for="bill-monthly">{t('pricing.billing.monthly')}</label>
+      <input class="visually-hidden" type="radio" name="billing" id="bill-annual" value="annual" />
+      <label for="bill-annual">{t('pricing.billing.annual')}</label>
+    </fieldset>
+    )}
+
+    <div class="tiers">
+      {
+        tiers.map((tier) => (
+          <article class:list={['tier', 'card', { 'tier-featured': 'featured' in tier }]} aria-labelledby={`tier-${tier.id}`}>
+            <h2 id={`tier-${tier.id}`}>{t(tier.name)}</h2>
+            <p class="tier-for">{t(tier.audience)}</p>
+            <p class="tier-price price-monthly">
+              <Todo lang={lang} />
+              <span class="tier-amount">{t('pricing.price.placeholder')}</span>
+              <span class="tier-per">{t('pricing.per.month')}</span>
+            </p>
+            {pricesKnown && (
+              <>
+                <p class="tier-price price-annual">
+                  <Todo lang={lang} />
+                  <span class="tier-amount">{t('pricing.price.placeholder')}</span>
+                  <span class="tier-per">{t('pricing.per.year')}</span>
+                </p>
+                <p class="hint price-annual">
+                  <Todo lang={lang} />
+                  {t('pricing.annualNote')}
+                </p>
+              </>
+            )}
+            <a class:list={['btn', 'tier-cta', 'featured' in tier ? 'btn-primary' : 'btn-secondary']} href={href('proposal', lang)}>
+              {t('cta.proposal')}
+            </a>
+            {offer.trialDays !== null && <p class="hint">{t('offer.trial', { days: offer.trialDays })}</p>}
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="pricing-included">
+      <h2>{t('pricing.core.title')}</h2>
+      <ul class="check-list columns">
+        {core.map((item) => <li>{t(item)}</li>)}
+      </ul>
+      <p class="note">{t('pricing.addons.text')}</p>
+    </div>
+  </div>
+</div>
+
+<section class="section section-alt" aria-labelledby="compare-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="compare-title">{t('pricing.table.title')}</h2>
+      <p class="lead">{t('pricing.table.lead')}</p>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-labelledby="compare-title">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">{t('pricing.table.feature')}</span></th>
+            {tiers.map((tier) => <th scope="col">{t(tier.name)}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map((row) => (
+              <tr>
+                <th scope="row">{t(row.label)}</th>
+                {row.cells.map((cell) => (
+                  <td>
+                    {cell === 'yes' && (
+                      <span class="cell-yes">
+                        <span aria-hidden="true">✓</span>
+                        <span class="visually-hidden">{t('pricing.cell.yes')}</span>
+                      </span>
+                    )}
+                    {cell === 'addon' && <span class="cell-addon">{t('pricing.cell.addon')}</span>}
+                    {cell === 'tbd' && (
+                      <span>
+                        <Todo lang={lang} />
+                        {t('pricing.cell.tbd')}
+                      </span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">{t('pricing.table.soon')}</p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="pricing-faq-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="pricing-faq-title">{t('home.faq.title')}</h2>
+    </div>
+    <FaqList lang={lang} items={faq} />
+  </div>
+</section>
+
+<CtaBand lang={lang} />

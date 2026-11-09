@@ -1,11 +1,17 @@
 ---
 import BoardMock from '../BoardMock.astro';
+import BookingMock from '../BookingMock.astro';
 import CtaBand from '../CtaBand.astro';
-import FeatureCard from '../FeatureCard.astro';
+import FaqList from '../FaqList.astro';
+import FeatureBlock from '../FeatureBlock.astro';
 import Icon from '../Icon.astro';
+import OfferBadges from '../OfferBadges.astro';
+import QuoteMock from '../QuoteMock.astro';
+import Segments from '../Segments.astro';
+import StockMock from '../StockMock.astro';
+import Testimonials from '../Testimonials.astro';
 import { useT } from '../../i18n';
 import { type Lang, href } from '../../i18n/routes';
-import { available, comingSoon } from './features';
 
 interface Props {
   lang: Lang;
@@ -13,10 +19,10 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useT(lang);
-const values = [
-  { icon: 'wrench', title: 'home.value.1.title', text: 'home.value.1.text' },
-  { icon: 'phone', title: 'home.value.2.title', text: 'home.value.2.text' },
-  { icon: 'shield', title: 'home.value.3.title', text: 'home.value.3.text' },
+const differentiators = [
+  { icon: 'team', title: 'home.diff.1.title', text: 'home.diff.1.text' },
+  { icon: 'shield', title: 'home.diff.2.title', text: 'home.diff.2.text' },
+  { icon: 'receipt', title: 'home.diff.3.title', text: 'home.diff.3.text' },
 ] as const;
 const steps = [
   { title: 'home.onboarding.1.title', text: 'home.onboarding.1.text' },
@@ -32,36 +38,87 @@ const faq = [
   { q: 'home.faq.5.q', a: 'home.faq.5.a' },
   { q: 'home.faq.6.q', a: 'home.faq.6.a' },
   { q: 'home.faq.7.q', a: 'home.faq.7.a' },
+  { q: 'home.faq.8.q', a: 'home.faq.8.a' },
 ] as const;
 ---
 
 <section class="hero on-chrome" aria-labelledby="hero-title">
   <div class="container hero-grid">
     <div>
-      <p class="eyebrow">{t('home.hero.eyebrow')}</p>
+      <OfferBadges lang={lang} />
       <h1 id="hero-title">{t('home.hero.title')}</h1>
       <p class="lead">{t('home.hero.lead')}</p>
       <div class="btn-row">
         <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
-        <a class="btn btn-secondary" href={href('features', lang)}>{t('cta.features')}</a>
+        <a class="btn btn-secondary" href={href('demo', lang)}>{t('cta.demo')}</a>
       </div>
     </div>
     <BoardMock lang={lang} />
   </div>
 </section>
 
-<section class="section" aria-labelledby="value-title">
+<section class="section" aria-labelledby="segments-title">
   <div class="container">
     <div class="section-head">
-      <h2 id="value-title">{t('home.value.title')}</h2>
+      <h2 id="segments-title">{t('home.segments.title')}</h2>
+      <p class="lead">{t('home.segments.lead')}</p>
+    </div>
+    <Segments lang={lang} />
+  </div>
+</section>
+
+<div class="section-alt blocks" role="group" aria-labelledby="blocks-title">
+  <div class="container blocks-head">
+    <h2 id="blocks-title">{t('home.blocks.title')}</h2>
+    <p class="lead">{t('home.blocks.lead')}</p>
+  </div>
+  <FeatureBlock
+    lang={lang}
+    id="quote"
+    eyebrow="home.block.1.eyebrow"
+    title="home.block.1.title"
+    text="home.block.1.text"
+    points={['home.block.1.b1', 'home.block.1.b2', 'home.block.1.b3']}
+  >
+    <QuoteMock lang={lang} />
+  </FeatureBlock>
+  <FeatureBlock
+    lang={lang}
+    id="booking"
+    eyebrow="home.block.2.eyebrow"
+    title="home.block.2.title"
+    text="home.block.2.text"
+    points={['home.block.2.b1', 'home.block.2.b2', 'home.block.2.b3']}
+  >
+    <BookingMock lang={lang} />
+  </FeatureBlock>
+  <FeatureBlock
+    lang={lang}
+    id="stock"
+    eyebrow="home.block.3.eyebrow"
+    title="home.block.3.title"
+    text="home.block.3.text"
+    points={['home.block.3.b1', 'home.block.3.b2', 'home.block.3.b3']}
+  >
+    <StockMock lang={lang} />
+  </FeatureBlock>
+  <div class="container blocks-more">
+    <a class="btn btn-secondary" href={href('features', lang)}>{t('cta.features')}</a>
+  </div>
+</div>
+
+<section class="section" aria-labelledby="diff-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="diff-title">{t('home.diff.title')}</h2>
     </div>
     <div class="grid">
       {
-        values.map((value) => (
+        differentiators.map((item) => (
           <article class="card">
-            <Icon name={value.icon} class="card-icon" />
-            <h3>{t(value.title)}</h3>
-            <p>{t(value.text)}</p>
+            <Icon name={item.icon} class="card-icon" />
+            <h3>{t(item.title)}</h3>
+            <p>{t(item.text)}</p>
           </article>
         ))
       }
@@ -69,16 +126,20 @@ const faq = [
   </div>
 </section>
 
-<section class="section section-alt" aria-labelledby="features-title">
-  <div class="container">
-    <div class="section-head">
-      <h2 id="features-title">{t('home.features.title')}</h2>
-      <p class="lead">{t('home.features.lead')}</p>
+<section class="section section-alt" aria-labelledby="migration-title">
+  <div class="container split">
+    <div>
+      <p class="eyebrow">{t('home.migration.eyebrow')}</p>
+      <h2 id="migration-title">{t('home.migration.title')}</h2>
+      <p class="lead">{t('home.migration.text')}</p>
+      <a class="btn btn-secondary" href={href('migration', lang)}>{t('cta.migration')}</a>
     </div>
-    <div class="grid">
-      {available.map((f) => <FeatureCard lang={lang} icon={f.icon} title={f.title} text={f.text} />)}
-      {comingSoon.map((f) => <FeatureCard lang={lang} icon={f.icon} title={f.title} text={f.text} soon />)}
-    </div>
+    <ul class="check-list">
+      <li>{t('home.migration.b1')}</li>
+      <li>{t('home.migration.b2')}</li>
+      <li>{t('home.migration.b3')}</li>
+      <li>{t('home.migration.b4')}</li>
+    </ul>
   </div>
 </section>
 
@@ -101,25 +162,14 @@ const faq = [
   </div>
 </section>
 
+<Testimonials lang={lang} />
+
 <section class="section section-alt" aria-labelledby="faq-title">
   <div class="container">
     <div class="section-head">
       <h2 id="faq-title">{t('home.faq.title')}</h2>
     </div>
-    <div class="faq">
-      {
-        faq.map((item) => (
-          <details>
-            <summary>
-              {t(item.q)}
-            </summary>
-            <div>
-              <p>{t(item.a)}</p>
-            </div>
-          </details>
-        ))
-      }
-    </div>
+    <FaqList lang={lang} items={faq} />
   </div>
 </section>
 

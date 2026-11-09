@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "astro dev",
     "check": "astro check",
-    "build": "astro check && vitest run && astro build",
+    "build": "astro check && vitest run && astro build && node scripts/dist-check.mjs",
     "preview": "astro preview",
     "test": "vitest run"
   },

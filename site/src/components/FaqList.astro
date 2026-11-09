@@ -1,0 +1,25 @@
+---
+import { type MessageKey, useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  items: readonly { q: MessageKey; a: MessageKey }[];
+}
+
+const { lang, items } = Astro.props;
+const t = useT(lang);
+---
+
+<div class="faq">
+  {
+    items.map((item) => (
+      <details>
+        <summary>{t(item.q)}</summary>
+        <div>
+          <p>{t(item.a)}</p>
+        </div>
+      </details>
+    ))
+  }
+</div>

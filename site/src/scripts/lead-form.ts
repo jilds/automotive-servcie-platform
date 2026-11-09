@@ -7,10 +7,12 @@ import {
   type LeadField,
   type LeadInput,
   type LeadPayload,
+  type LeadIntent,
   fromServerErrors,
   retryAfterMinutes,
   toPayload,
   validate,
+  withIntent,
 } from './lead-validation';
 
 type Messages = Record<FieldRule, string> & {
@@ -33,6 +35,7 @@ const ENDPOINT = `${API_ORIGIN}/api/v1/public-site/leads`;
 
 function setup(form: HTMLFormElement): void {
   const messages = JSON.parse(form.dataset['messages'] ?? '{}') as Messages;
+  const intent: LeadIntent = form.dataset['intent'] === 'demo' ? 'demo' : 'proposal';
   const summary = form.querySelector<HTMLElement>('[data-lead-summary]');
   const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
   const submitLabel = submit?.querySelector<HTMLElement>('[data-label]') ?? null;
@@ -144,7 +147,7 @@ function setup(form: HTMLFormElement): void {
     if (submit.disabled) return;
     clear();
     const payload = toPayload(read());
-    const errors = validate(payload);
+    const errors = validate(payload, intent);
     if (Object.keys(errors).length > 0) {
       showErrors(errors);
       return;
@@ -155,7 +158,7 @@ function setup(form: HTMLFormElement): void {
         const response = await fetch(ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/problem+json, application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(withIntent(payload, intent)),
           credentials: 'omit',
           referrerPolicy: 'no-referrer',
         });

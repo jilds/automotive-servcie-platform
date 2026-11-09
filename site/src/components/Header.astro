@@ -14,11 +14,13 @@ interface Props {
 const { lang, page } = Astro.props;
 const t = useT(lang);
 const links = [
-  { page: 'auto', label: t('nav.auto') },
-  { page: 'moto', label: t('nav.moto') },
   { page: 'features', label: t('nav.features') },
+  { page: 'pricing', label: t('nav.pricing') },
+  { page: 'blog', label: t('nav.blog') },
+  { page: 'about', label: t('nav.about') },
   { page: 'proposal', label: t('nav.proposal') },
 ] as const;
+const isCurrent = (link: PageId) => link === page || (link === 'blog' && page.startsWith('post'));
 ---
 
 <header class="site-header">
@@ -36,7 +38,7 @@ const links = [
           {
             links.map((link) => (
               <li>
-                <a href={href(link.page, lang)} aria-current={link.page === page ? 'page' : undefined}>
+                <a href={href(link.page, lang)} aria-current={isCurrent(link.page) ? 'page' : undefined}>
                   {link.label}
                 </a>
               </li>
@@ -58,7 +60,7 @@ const links = [
             {
               links.map((link) => (
                 <li>
-                  <a href={href(link.page, lang)} aria-current={link.page === page ? 'page' : undefined}>
+                  <a href={href(link.page, lang)} aria-current={isCurrent(link.page) ? 'page' : undefined}>
                     {link.label}
                   </a>
                 </li>

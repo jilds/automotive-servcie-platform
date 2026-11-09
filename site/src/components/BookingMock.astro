@@ -1,0 +1,40 @@
+---
+// A small picture of a new online booking waiting for the front desk, in HTML so its texts follow the language.
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const t = useT(Astro.props.lang);
+---
+
+<figure class="mock" role="img" aria-label={t('mock.booking.figure')}>
+  <div aria-hidden="true">
+    <div class="mock-head">
+      <span class="mock-title">{t('mock.booking.title')}</span>
+      <span class="status status-new">{t('mock.booking.status')}</span>
+    </div>
+    <div class="mock-vehicle">
+      <span class="plate"><span class="plate-text">34-XZ-56</span></span>
+      <span>{t('mock.booking.customer')}</span>
+    </div>
+    <dl class="mock-facts">
+      <div>
+        <dt>{t('mock.booking.service.label')}</dt>
+        <dd>{t('mock.booking.service')}</dd>
+      </div>
+      <div>
+        <dt>{t('mock.booking.slot.label')}</dt>
+        <dd>{t('mock.booking.slot')}</dd>
+      </div>
+    </dl>
+    <div class="mock-actions">
+      <span class="mock-btn mock-btn-primary">{t('mock.booking.confirm')}</span>
+      <span class="mock-btn">{t('mock.booking.move')}</span>
+      <span class="mock-btn">{t('mock.booking.decline')}</span>
+    </div>
+    <p class="mock-sample">{t('mock.sample')}</p>
+  </div>
+</figure>

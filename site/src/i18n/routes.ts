@@ -4,7 +4,24 @@ export const langs = ['pt-PT', 'en', 'pt-BR'] as const;
 export type Lang = (typeof langs)[number];
 export const defaultLang: Lang = 'pt-PT';
 
-export const pageIds = ['home', 'auto', 'moto', 'features', 'proposal', 'privacy', 'terms', 'cookies'] as const;
+export const pageIds = [
+  'home',
+  'auto',
+  'moto',
+  'features',
+  'pricing',
+  'migration',
+  'about',
+  'demo',
+  'blog',
+  'post1',
+  'post2',
+  'post3',
+  'proposal',
+  'privacy',
+  'terms',
+  'cookies',
+] as const;
 export type PageId = (typeof pageIds)[number];
 
 const prefixes: Record<Lang, string> = { 'pt-PT': '', en: 'en/', 'pt-BR': 'br/' };
@@ -14,6 +31,18 @@ const slugs: Record<PageId, Record<Lang, string>> = {
   auto: { 'pt-PT': 'oficinas-auto', en: 'car-workshops', 'pt-BR': 'oficinas-carros' },
   moto: { 'pt-PT': 'oficinas-motas', en: 'motorcycle-workshops', 'pt-BR': 'oficinas-motos' },
   features: { 'pt-PT': 'funcionalidades', en: 'features', 'pt-BR': 'funcionalidades' },
+  pricing: { 'pt-PT': 'precos', en: 'pricing', 'pt-BR': 'precos' },
+  migration: { 'pt-PT': 'migracao', en: 'data-migration', 'pt-BR': 'migracao' },
+  about: { 'pt-PT': 'sobre', en: 'about', 'pt-BR': 'sobre' },
+  demo: { 'pt-PT': 'demo', en: 'book-a-demo', 'pt-BR': 'demo' },
+  blog: { 'pt-PT': 'blog', en: 'blog', 'pt-BR': 'blog' },
+  post1: { 'pt-PT': 'blog/check-in-na-oficina', en: 'blog/workshop-check-in', 'pt-BR': 'blog/recepcao-do-veiculo' },
+  post2: {
+    'pt-PT': 'blog/orcamento-que-o-cliente-aprova',
+    en: 'blog/quotes-customers-approve',
+    'pt-BR': 'blog/orcamento-que-o-cliente-aprova',
+  },
+  post3: { 'pt-PT': 'blog/stock-da-oficina', en: 'blog/workshop-stock', 'pt-BR': 'blog/estoque-da-oficina' },
   proposal: { 'pt-PT': 'pedir-proposta', en: 'request-a-proposal', 'pt-BR': 'pedir-proposta' },
   privacy: { 'pt-PT': 'privacidade', en: 'privacy', 'pt-BR': 'privacidade' },
   terms: { 'pt-PT': 'termos', en: 'terms', 'pt-BR': 'termos' },

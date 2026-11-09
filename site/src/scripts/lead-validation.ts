@@ -60,7 +60,13 @@ const MAX_NAME = 120;
 const MAX_DISTRICT = 60;
 const MAX_PHONE = 30;
 const MAX_EMAIL = 254;
-const MAX_MESSAGE = 2000;
+export const MAX_MESSAGE = 2000;
+
+/** The demo page uses the same endpoint (it has no intent field); the message starts with this marker instead. */
+export type LeadIntent = 'proposal' | 'demo';
+export const DEMO_MARKER = '[DEMO]';
+/** Room left for the visitor's text once the marker and a space are added. */
+export const MAX_DEMO_MESSAGE = MAX_MESSAGE - DEMO_MARKER.length - 1;
 
 // Same as the server's ONE_LINE_NO_LINK: no "://", no "www." (any case), no control characters (C0, C1),
 // no line or paragraph separators, no < or >.
@@ -94,7 +100,7 @@ function checkName(value: string): FieldRule | undefined {
   return undefined;
 }
 
-export function validate(payload: LeadPayload): LeadErrors {
+export function validate(payload: LeadPayload, intent: LeadIntent = 'proposal'): LeadErrors {
   const errors: LeadErrors = {};
   const name = checkName(payload.name);
   if (name) errors.name = name;
@@ -110,9 +116,15 @@ export function validate(payload: LeadPayload): LeadErrors {
 
   if (payload.district.length > MAX_DISTRICT || !isOneLineNoLink(payload.district)) errors.district = 'district';
   if (!(VEHICLE_TYPES as readonly string[]).includes(payload.vehicleType)) errors.vehicleType = 'vehicleType';
-  if (payload.message.length > MAX_MESSAGE) errors.message = 'message';
+  if (payload.message.length > (intent === 'demo' ? MAX_DEMO_MESSAGE : MAX_MESSAGE)) errors.message = 'message';
   if (!payload.privacyAccepted) errors.privacyAccepted = 'privacy';
   return errors;
+}
+
+/** The body to send: for the demo page the message is marked, so the admin console tells the two requests apart. */
+export function withIntent(payload: LeadPayload, intent: LeadIntent): LeadPayload {
+  if (intent !== 'demo') return payload;
+  return { ...payload, message: payload.message === '' ? DEMO_MARKER : `${DEMO_MARKER} ${payload.message}` };
 }
 
 /** Maps the `errors` of a 400 `validation` answer to the form's own translated rules. Unknown keys are dropped. */

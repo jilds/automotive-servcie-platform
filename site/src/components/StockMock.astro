@@ -1,0 +1,52 @@
+---
+// A small picture of a low-stock alert, in HTML so its texts follow the language. Sample data.
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const t = useT(Astro.props.lang);
+// Sample numbers (data, not text).
+const onHand = 6;
+const reserved = 4;
+const minimum = 5;
+const available = onHand - reserved;
+---
+
+<figure class="mock" role="img" aria-label={t('mock.stock.figure')}>
+  <div aria-hidden="true">
+    <div class="mock-head">
+      <span class="mock-title">{t('mock.stock.title')}</span>
+      <span class="status status-warn">{t('mock.stock.status')}</span>
+    </div>
+    <p class="mock-product">
+      <strong>{t('mock.stock.product')}</strong>
+      <span class="mock-sku">FLT-0412 · {t('mock.stock.bin')} B-03</span>
+    </p>
+    <div class="mock-stats">
+      <div>
+        <span class="num">{onHand}</span>
+        <span>{t('mock.stock.onHand')}</span>
+      </div>
+      <div>
+        <span class="num">{reserved}</span>
+        <span>{t('mock.stock.reserved')}</span>
+      </div>
+      <div class="mock-stat-low">
+        <span class="num">{available}</span>
+        <span>{t('mock.stock.available')}</span>
+      </div>
+      <div>
+        <span class="num">{minimum}</span>
+        <span>{t('mock.stock.minimum')}</span>
+      </div>
+    </div>
+    <div class="mock-actions">
+      <span class="mock-btn mock-btn-primary">{t('mock.stock.order')}</span>
+    </div>
+    <p class="mock-foot">{t('mock.stock.reservedBy')}</p>
+    <p class="mock-sample">{t('mock.sample')}</p>
+  </div>
+</figure>

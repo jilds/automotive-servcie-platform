@@ -1039,7 +1039,7 @@ textarea:focus-visible {
 
 @media (min-width: 768px) {
   .footer-grid {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
   }
 }
 
@@ -1082,4 +1082,533 @@ textarea:focus-visible {
 
 main:focus {
   outline: none;
+}
+
+/* ---------- Plan 11: landing site v2 ---------- */
+
+/* Trial / migration promise chips */
+.badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.badge-list li {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #6b5414;
+  border-radius: 999px;
+  background: rgba(242, 178, 0, 0.14);
+  color: #ffd966;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.badge-list-light {
+  margin: 1.25rem 0 0;
+}
+
+.badge-list-light li {
+  border-color: var(--asp-primary-border);
+  background: var(--asp-primary-subtle);
+  color: var(--asp-primary-emphasis);
+}
+
+/* Workshop types */
+.segments {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-link:hover {
+  color: var(--asp-link);
+  text-decoration: underline;
+}
+
+/* Alternating feature blocks with a mock-UI card */
+.blocks {
+  padding-block: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+}
+
+.blocks-head > * {
+  max-width: 46rem;
+}
+
+.blocks-head {
+  margin-bottom: 1rem;
+}
+
+.feature-block {
+  padding-block: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+}
+
+.feature-block-grid {
+  display: grid;
+  gap: 1.75rem;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .feature-block-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
+  }
+
+  .blocks > .feature-block:nth-of-type(even) .feature-block-mock {
+    order: -1;
+  }
+}
+
+.feature-block-title {
+  font-size: clamp(1.375rem, 1.15rem + 1vw, 1.75rem);
+}
+
+.feature-block .lead {
+  margin-bottom: 1rem;
+}
+
+.blocks-more {
+  margin-top: 1rem;
+}
+
+.mock {
+  margin: 0;
+  max-width: 30rem;
+  margin-inline: auto;
+  padding: 1rem;
+  background: var(--asp-bg);
+  border: 1px solid var(--asp-border);
+  border-top: 4px solid var(--asp-primary);
+  border-radius: var(--asp-radius-lg);
+  box-shadow: var(--asp-shadow);
+  font-size: 0.9375rem;
+}
+
+.mock-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.mock-title {
+  font-weight: 650;
+  color: var(--asp-text-emphasis);
+}
+
+.status {
+  padding: 0.125rem 0.625rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-ok {
+  background: var(--asp-success-subtle);
+  border-color: var(--asp-success-border);
+  color: var(--asp-success-emphasis);
+}
+
+.status-new {
+  background: var(--asp-primary-subtle);
+  border-color: var(--asp-primary-border);
+  color: var(--asp-primary-emphasis);
+}
+
+.status-warn {
+  background: var(--asp-danger-subtle);
+  border-color: var(--asp-danger-border);
+  color: var(--asp-danger-emphasis);
+}
+
+.mock-vehicle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
+}
+
+.mock .plate {
+  font-size: 0.9375rem;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.mock-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-block: 1px solid var(--asp-border);
+}
+
+.mock-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.5rem;
+}
+
+.mock-lines li + li {
+  border-top: 1px dashed var(--asp-border);
+}
+
+.mock-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.75rem;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  color: var(--asp-text-emphasis);
+}
+
+.mock-foot {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--asp-success-emphasis);
+  font-weight: 600;
+}
+
+.mock-sample {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--asp-muted);
+  text-align: right;
+}
+
+.mock-facts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.mock-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--asp-border);
+}
+
+.mock-facts dt {
+  color: var(--asp-muted);
+}
+
+.mock-facts dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+.mock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mock-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--asp-border-strong);
+  border-radius: var(--asp-radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.mock-btn-primary {
+  background: var(--asp-primary);
+  border-color: var(--asp-primary);
+  color: var(--asp-on-primary);
+}
+
+.mock-product {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 0.875rem;
+}
+
+.mock-sku {
+  font-size: 0.8125rem;
+  color: var(--asp-muted);
+}
+
+.mock-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.mock-stats div {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  background: var(--asp-surface);
+  border: 1px solid var(--asp-border);
+  border-radius: var(--asp-radius);
+  font-size: 0.75rem;
+  color: var(--asp-muted);
+}
+
+.mock-stats .num {
+  font-size: 1.25rem;
+  color: var(--asp-text-emphasis);
+}
+
+.mock-stats .mock-stat-low {
+  border-color: var(--asp-danger-border);
+  background: var(--asp-danger-subtle);
+}
+
+.mock-stats .mock-stat-low .num {
+  color: var(--asp-danger-emphasis);
+}
+
+@media (max-width: 420px) {
+  .mock-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.mock,
+.mock-stats div {
+  overflow-wrap: anywhere;
+}
+
+/* Two columns: text and a list */
+.split {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
+  }
+}
+
+.columns {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
+  }
+}
+
+.side-title {
+  font-size: 1.125rem;
+  margin-top: 1.5rem;
+}
+
+/* Pricing */
+.billing {
+  position: relative;
+  display: inline-flex;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: 1px solid var(--asp-border-strong);
+  border-radius: var(--asp-radius);
+  overflow: hidden;
+}
+
+.billing label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.25rem 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.billing label + input + label {
+  border-left: 1px solid var(--asp-border-strong);
+}
+
+.billing input:checked + label {
+  background: var(--asp-primary);
+  color: var(--asp-on-primary);
+}
+
+.billing input:focus-visible + label {
+  outline: 3px solid var(--asp-focus);
+  outline-offset: -3px;
+}
+
+.pricing:not(:has(#bill-annual:checked)) .price-annual,
+.pricing:has(#bill-annual:checked) .price-monthly {
+  display: none;
+}
+
+.tiers {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  align-items: stretch;
+}
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tier h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tier-featured {
+  border-color: var(--asp-primary);
+  border-width: 2px;
+  box-shadow: var(--asp-shadow);
+}
+
+.tier-for {
+  color: var(--asp-muted);
+  min-height: 3em;
+}
+
+.tier-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.tier-amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-stretch: 87.5%;
+  color: var(--asp-text-emphasis);
+}
+
+.tier-per {
+  font-size: 0.875rem;
+  color: var(--asp-muted);
+}
+
+.tier-cta {
+  margin-top: auto;
+}
+
+.tier .hint {
+  margin-top: 0.5rem;
+}
+
+.pricing-included {
+  margin-top: 2.5rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--asp-border);
+  border-radius: var(--asp-radius-lg);
+  background: var(--asp-bg);
+}
+
+.compare {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+}
+
+.compare th,
+.compare td {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--asp-border);
+}
+
+.compare tbody th {
+  text-align: left;
+  font-weight: 500;
+}
+
+.compare thead th {
+  color: var(--asp-text-emphasis);
+  font-weight: 650;
+}
+
+.compare tr:last-child > * {
+  border-bottom: 0;
+}
+
+.cell-yes {
+  color: var(--asp-success-emphasis);
+  font-weight: 700;
+}
+
+.cell-addon {
+  color: var(--asp-primary-emphasis);
+  font-weight: 600;
+}
+
+.table-wrap + .hint {
+  margin-top: 0.75rem;
+}
+
+/* Blog */
+.posts {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+}
+
+.post-title {
+  font-size: 1.25rem;
+}
+
+.post h2 {
+  font-size: 1.375rem;
+  margin-top: 2rem;
+}
+
+/* Testimonials and customer logos (rendered only when there is real data) */
+.quote blockquote {
+  margin: 0 0 1rem;
+}
+
+.quote figcaption {
+  color: var(--asp-muted);
+  font-size: 0.9375rem;
+}
+
+.logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }

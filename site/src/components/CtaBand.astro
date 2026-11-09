@@ -14,6 +14,9 @@ const t = useT(lang);
   <div class="container">
     <h2 id="cta-title">{t('cta.band.title')}</h2>
     <p>{t('cta.band.text')}</p>
-    <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
+    <div class="btn-row">
+      <a class="btn btn-primary" href={href('proposal', lang)}>{t('cta.proposal')}</a>
+      <a class="btn btn-secondary" href={href('demo', lang)}>{t('cta.demo')}</a>
+    </div>
   </div>
 </section>

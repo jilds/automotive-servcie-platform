@@ -43,7 +43,7 @@ export const en = {
 
   'meta.home.title': 'ASP – Automotive Service Platform | Workshop management software',
   'meta.home.description':
-    'Online software for car and motorcycle workshops: check-in by plate or VIN, job board, mechanic phone app, service catalogue, stock and online booking.',
+    'Online software for car and motorcycle workshops: check-in by plate or VIN, job board, quotes approved online, stock, online booking and shop.',
   'meta.auto.title': 'Software for car workshops | ASP',
   'meta.auto.description':
     'Check-in by plate or VIN, work orders, job board, parts from stock and online booking for car workshops.',
@@ -52,7 +52,7 @@ export const en = {
     'Check-in, service packages, parts in stock and online booking for motorcycle workshops, on a computer or a phone.',
   'meta.features.title': 'Features | ASP',
   'meta.features.description':
-    'Everything ASP does today: check-in, job board, mechanic app, catalogue and packages, stock, online booking, branding, three languages.',
+    'Everything ASP does today: check-in, job board, mechanic app, catalogue and packages, quotes, stock, online booking, online shop, branding, three languages.',
   'meta.proposal.title': 'Request a proposal | ASP',
   'meta.proposal.description':
     'Tell us about your workshop and get a proposal for the ASP plan that fits it. No obligation.',
@@ -67,7 +67,7 @@ export const en = {
   'home.hero.eyebrow': 'Workshop management software',
   'home.hero.title': 'Run your workshop from check-in to delivery.',
   'home.hero.lead':
-    'ASP – Automotive Service Platform is online software for car and motorcycle workshops: check-in by plate or VIN, a job board, a service catalogue, stock and online booking. It works on a computer and on a phone.',
+    'ASP – Automotive Service Platform is online software for car and motorcycle workshops: check-in by plate or VIN, a job board, quotes the customer approves online, stock and online booking. It works on a computer and on a phone.',
   'home.hero.figure': 'Example of the job board with three jobs',
   'board.col.open': 'Checked in',
   'board.col.progress': 'In progress',
@@ -76,19 +76,7 @@ export const en = {
   'board.card.2': 'Brake noise at the front',
   'board.card.3': 'Annual service',
 
-  'home.value.title': 'What ASP does for your workshop',
-  'home.value.1.title': 'One work order, from start to finish',
-  'home.value.1.text':
-    'Mileage, fuel level, complaint and damage notes at check-in; labour and parts with discount and VAT; totals worked out for you; the service history stays with the vehicle.',
-  'home.value.2.title': 'Made for the workshop floor',
-  'home.value.2.text':
-    'Mechanics see their own jobs on their phone. They never see prices or customer personal data.',
-  'home.value.3.title': 'Your data, only yours',
-  'home.value.3.text':
-    "Each workshop's data is kept apart from every other workshop, enforced by the database itself on every request.",
 
-  'home.features.title': 'Everything in one place',
-  'home.features.lead': 'What ASP does today, and what is coming next.',
 
   'feature.checkin.title': 'Check-in by plate or VIN',
   'feature.checkin.text':
@@ -118,7 +106,7 @@ export const en = {
   'feature.payments.title': 'Multibanco and MB WAY',
   'feature.payments.text': 'Customer payments by Multibanco and MB WAY.',
   'feature.shop.title': 'Online shop',
-  'feature.shop.text': 'Products on your page, paid at the counter.',
+  'feature.shop.text': 'Products on your page. Customers reserve them online and pay at the counter.',
 
   'home.onboarding.title': 'How getting started works',
   'home.onboarding.lead':
@@ -150,7 +138,7 @@ export const en = {
     'Not yet. Certified invoicing through an AT-certified provider, and Multibanco and MB WAY payments, are coming soon.',
   'home.faq.6.q': 'How much does it cost?',
   'home.faq.6.a':
-    'It depends on the plan that fits your workshop. Request a proposal and we will reply with the details.',
+    'Prices depend on the plan: see the pricing page. Request a proposal and we reply with the details.',
   'home.faq.7.q': 'Does it work for motorcycle workshops?',
   'home.faq.7.a':
     'Yes. The same check-in, work orders, board, catalogue, stock and booking work for cars and motorcycles.',
@@ -250,7 +238,7 @@ export const en = {
   'form.vehicle.MOTORCYCLE': 'Motorcycles',
   'form.vehicle.BOTH': 'Cars and motorcycles',
   'form.message': 'Message',
-  'form.messageHint': 'For example how many bays or workshops you have. Up to 2000 characters.',
+  'form.messageHint': 'For example how many bays or workshops you have. Up to {max} characters.',
   'form.privacy.before': 'I have read the',
   'form.privacy.link': 'privacy policy',
   'form.privacy.after': 'and agree that my data is used to answer this request.',
@@ -267,7 +255,7 @@ export const en = {
   'form.error.email': 'Enter a valid e-mail address (up to 254 characters).',
   'form.error.contact': 'Give a phone or an e-mail.',
   'form.error.vehicleType': 'Choose an option.',
-  'form.error.message': 'Up to 2000 characters.',
+  'form.error.message': 'Up to {max} characters.',
   'form.error.privacy': 'Tick this box to send the request.',
   'form.error.rateLimited': 'Too many requests from this connection. Try again in about {minutes} min.',
   'form.error.rateLimitedLater': 'Too many requests from this connection. Please try again later.',
@@ -329,6 +317,305 @@ export const en = {
   'notFound.title': 'Page not found',
   'notFound.text': 'The page you are looking for does not exist or has moved.',
   'notFound.home': 'Back to the home page',
+
+  'nav.pricing': 'Pricing',
+  'nav.migration': 'Data migration',
+  'nav.about': 'About',
+  'nav.blog': 'Blog',
+  'nav.demo': 'Book a demo',
+  'footer.company': 'Company',
+  'cta.demo': 'Book a demo',
+  'cta.migration': 'See how migration works',
+  'meta.pricing.title': 'Plans and pricing | ASP',
+  'meta.pricing.description':
+    'Three ASP plans with everything for the daily flow of a workshop. Request a proposal for the plan that fits.',
+  'meta.migration.title': 'Data migration | ASP',
+  'meta.migration.description':
+    'Bring your customers, vehicles, products and services to ASP. You send the files, we prepare them, you check them before going live.',
+  'meta.about.title': 'About ASP',
+  'meta.about.description':
+    'ASP – Automotive Service Platform is software made only for car and motorcycle workshops. What we build and how we work.',
+  'meta.demo.title': 'Book a demo | ASP',
+  'meta.demo.description':
+    'See ASP with your own kind of workshop in mind. Tell us how to reach you and we arrange a walkthrough, with no obligation.',
+  'meta.blog.title': 'Blog | ASP',
+  'meta.blog.description': 'Practical notes for running a car or motorcycle workshop: check-in, quotes, stock.',
+  'home.hero.badge.label': 'Getting started',
+  'home.segments.title': 'Made for every kind of workshop',
+  'home.segments.lead':
+    'Whatever you repair, the work follows the same path: receive the vehicle, quote, repair, deliver. ASP follows that path.',
+  'seg.car.title': 'Car workshops',
+  'seg.car.text': 'Check-in by plate or VIN, work orders, the job board and parts from stock.',
+  'seg.moto.title': 'Motorcycle workshops',
+  'seg.moto.text': 'The same flow for bikes: quick check-in, service packages and online booking.',
+  'seg.tyres.title': 'Tyre fitters',
+  'seg.tyres.text': 'Quick jobs, one line per service, and tyres kept as products with their stock.',
+  'seg.body.title': 'Body and paint',
+  'seg.body.text': 'Record the damage at check-in, send a clear quote and follow each job on the board.',
+  'seg.glass.title': 'Glass and windscreens',
+  'seg.glass.text': 'Short jobs at a set price: put them in the catalogue and add them in one step.',
+  'seg.diag.title': 'Diagnostics and electrical',
+  'seg.diag.text':
+    'Note the complaint, price the diagnosis by standard hours and let the customer approve before the work.',
+  'seg.dealer.title': 'Dealers and used cars',
+  'seg.dealer.text': 'Prepare vehicles, follow every job by plate and keep each car\'s history.',
+  'seg.special.title': 'Specialist workshops',
+  'seg.special.text': 'Gearboxes, exhausts, air conditioning: your own services and prices, under your own brand.',
+  'home.blocks.title': 'See ASP at work',
+  'home.blocks.lead': 'Three moments of a workshop day, as they look on screen.',
+  'home.block.1.eyebrow': 'Quotes',
+  'home.block.1.title': 'Customers approve the quote from their phone',
+  'home.block.1.text':
+    'Send the quote with a private link. The customer reads the lines and the total, then approves or rejects it without calling the front desk.',
+  'home.block.1.b1': 'Valid for the number of days you set, and replaced if the lines change.',
+  'home.block.1.b2': 'Phone approvals recorded by the front desk, with a note.',
+  'home.block.1.b3': 'An approved quote moves the job on to parts or to the bay.',
+  'home.block.2.eyebrow': 'Online booking',
+  'home.block.2.title': 'Bookings arrive ready to review',
+  'home.block.2.text':
+    'Customers choose services and a free slot on your page. You see each request with the plate and the services asked for, and confirm, move or decline it.',
+  'home.block.2.b1': 'Your opening hours, slot length and cars per slot.',
+  'home.block.2.b2': 'The customer follows the request on a private link.',
+  'home.block.2.b3': 'Check the car in from the booking, in one step.',
+  'home.block.3.eyebrow': 'Stock',
+  'home.block.3.title': 'Know what is running low before it stops a job',
+  'home.block.3.text':
+    'Parts are reserved on the work order, so “available” already discounts what is promised. Below the minimum, the product joins the low-stock list.',
+  'home.block.3.b1': 'SKU, bin and minimum stock for every product.',
+  'home.block.3.b2': 'Every movement recorded, adjustments with a reason.',
+  'home.block.3.b3': 'Purchase orders from draft to received.',
+  'mock.sample': 'Sample data',
+  'mock.quote.figure': 'Example of an approved quote with plate, vehicle, lines and total (sample data)',
+  'mock.quote.title': 'Quote #42',
+  'mock.quote.status': 'Approved',
+  'mock.quote.line.1': 'Front brake pads',
+  'mock.quote.line.2': 'Front brake discs (pair)',
+  'mock.quote.line.3': 'Labour, 1.5 h',
+  'mock.quote.total': 'Total, VAT included',
+  'mock.quote.via': 'Approved by the customer on the link',
+  'mock.booking.figure': 'Example of a new online booking waiting to be confirmed (sample data)',
+  'mock.booking.title': 'New online booking',
+  'mock.booking.status': 'To confirm',
+  'mock.booking.customer': 'Sample customer',
+  'mock.booking.service.label': 'Service',
+  'mock.booking.service': 'Oil change and filters',
+  'mock.booking.slot.label': 'Slot',
+  'mock.booking.slot': 'Tuesday, 09:30',
+  'mock.booking.confirm': 'Confirm',
+  'mock.booking.move': 'Move',
+  'mock.booking.decline': 'Decline',
+  'mock.stock.figure': 'Example of a low-stock alert for an oil filter (sample data)',
+  'mock.stock.title': 'Stock alert',
+  'mock.stock.status': 'Below minimum',
+  'mock.stock.product': 'Oil filter',
+  'mock.stock.bin': 'bin',
+  'mock.stock.onHand': 'On hand',
+  'mock.stock.reserved': 'Reserved',
+  'mock.stock.available': 'Available',
+  'mock.stock.minimum': 'Minimum',
+  'mock.stock.order': 'See low stock',
+  'mock.stock.reservedBy': 'Reserved on 2 open work orders',
+  'home.diff.title': 'What makes ASP different',
+  'home.diff.1.title': 'Each role sees only its own screen',
+  'home.diff.1.text':
+    'Owner and front desk see prices and customers. Mechanics see their own jobs on the phone, never prices or personal data. The rule is enforced on the server, not just hidden on screen.',
+  'home.diff.2.title': 'Your data, kept apart by the database',
+  'home.diff.2.text':
+    'Every workshop\'s data is separated inside the database itself and checked on every request, so another workshop can never see or change yours.',
+  'home.diff.3.title': 'Portuguese rules built in',
+  'home.diff.3.text':
+    'Plates in the Portuguese formats, VIN look-up, the NIF check digit and VAT on every line: ready from the first check-in.',
+  'home.migration.eyebrow': 'Data migration',
+  'home.migration.title': 'Bring your customers and vehicles with you',
+  'home.migration.text':
+    'You do not start from zero. Send us your spreadsheets or the export of the program you use today, and we load them for you.',
+  'home.migration.b1': 'Customers, with NIF and contacts',
+  'home.migration.b2': 'Vehicles, with plate or VIN and mileage',
+  'home.migration.b3': 'Products, with SKU, prices and stock levels',
+  'home.migration.b4': 'Services and prices for your catalogue',
+  'home.faq.8.q': 'Can I bring my current data?',
+  'home.faq.8.a':
+    'Yes. Send us your spreadsheets or the export of your current program. We prepare and load customers, vehicles, products and services, and you review them before you go live.',
+  'testimonials.title': 'What workshops say',
+  'logos.title': 'Workshops using ASP',
+  'feature.quotes.title': 'Quotes with online approval',
+  'feature.quotes.text':
+    'Send a quote with a private link. The customer approves or rejects it online, or the front desk records a phone decision.',
+  'features.quotes.1': 'The quote copies the lines and totals of the work order at the moment you send it.',
+  'features.quotes.2': 'A private link for the customer, valid for the number of days you set.',
+  'features.quotes.3':
+    'The customer approves with their name or rejects with a reason; the front desk can record a phone decision with a note.',
+  'features.quotes.4': 'Changing the lines replaces the open quote, and an approved quote moves the job on.',
+  'features.shop.1':
+    'The products you choose are listed on your page, with a simple availability level instead of a number.',
+  'features.shop.2': 'The customer places an order and every line is reserved at once.',
+  'features.shop.3': 'They follow it on a private link and can cancel while it is still new.',
+  'features.shop.4':
+    'The front desk marks it ready and collects it at the counter with the payment method; stock is used up then.',
+  'features.shop.addon': 'The online shop is an add-on, switched on for your workshop on request.',
+  'pricing.title': 'Plans and pricing',
+  'pricing.lead': 'Three plans, one product. Every plan has the whole daily flow of a workshop.',
+  'pricing.billing.label': 'Billing period',
+  'pricing.billing.monthly': 'Monthly',
+  'pricing.billing.annual': 'Annual',
+  'pricing.tier.1.name': 'Starter',
+  'pricing.tier.2.name': 'Pro',
+  'pricing.tier.3.name': 'Enterprise',
+  'pricing.tier.1.for': 'For a workshop that is getting started.',
+  'pricing.tier.2.for': 'For a workshop with a team and a busy day.',
+  'pricing.tier.3.for': 'For larger workshops with special needs.',
+  'pricing.price.placeholder': '€ <price>',
+  'pricing.per.month': 'per month',
+  'pricing.per.year': 'per year',
+  'pricing.annualNote': 'Annual discount: to be defined with the price list.',
+  'pricing.core.title': 'Included in every plan',
+  'pricing.core.1': 'Check-in by plate or VIN and work orders',
+  'pricing.core.2': 'Job board and the mechanic phone app',
+  'pricing.core.3': 'Service catalogue and packages',
+  'pricing.core.4': 'Quotes with online approval',
+  'pricing.core.5': 'Stock, reservations and purchase orders',
+  'pricing.core.6': 'Your brand, three languages, data kept apart',
+  'pricing.addons.text':
+    'Online booking and the online shop are add-ons: we switch them on for your workshop, whatever the plan.',
+  'pricing.table.title': 'Compare the plans',
+  'pricing.table.lead':
+    'Every feature below is in all three plans today. What differs between plans is still being defined, and is marked.',
+  'pricing.table.feature': 'Feature',
+  'pricing.cell.yes': 'Included',
+  'pricing.cell.addon': 'Add-on',
+  'pricing.cell.tbd': '<to be defined>',
+  'pricing.row.migration': 'Data migration help',
+  'pricing.row.users': 'Users',
+  'pricing.row.support': 'Support',
+  'pricing.table.soon':
+    'Certified invoicing and Multibanco / MB WAY payments are coming soon and will be added to this table.',
+  'pricing.faq.1.q': 'Are online booking and the shop included?',
+  'pricing.faq.1.a':
+    'They are add-ons, switched on for your workshop whatever the plan. Say so in your proposal request if you want them.',
+  'pricing.faq.2.q': 'How do I get started?',
+  'pricing.faq.2.a':
+    'Request a proposal or a demo. When you agree on a plan, we register your workshop and you receive an activation link to choose your password.',
+  'pricing.faq.3.q': 'What does a proposal commit me to?',
+  'pricing.faq.3.a': 'Nothing. A proposal request is not a purchase: we reply with the details and you decide.',
+  'migration.eyebrow': 'Data migration',
+  'migration.title': 'Switch without starting from zero',
+  'migration.lead': 'You send what you have, we prepare it, you check it, and only then do you go live.',
+  'migration.what.title': 'What we can bring over',
+  'migration.what.lead': 'Spreadsheets, or the export of the program you use today.',
+  'migration.what.1': 'Customers, with NIF, phone and e-mail',
+  'migration.what.2': 'Vehicles, with plate or VIN and mileage',
+  'migration.what.3': 'Products, with SKU, prices and stock levels',
+  'migration.what.4': 'Services and their prices, for the catalogue',
+  'migration.what.5': 'Past jobs: tell us what you have and we say what can be kept.',
+  'migration.steps.title': 'How it works',
+  'migration.step.1.title': 'You send your files',
+  'migration.step.1.text': 'Excel, CSV or the export of your current program. Tell us what is in them.',
+  'migration.step.2.title': 'We prepare the data',
+  'migration.step.2.text': 'We match the columns, tidy the data and load it into your workshop.',
+  'migration.step.3.title': 'You check it',
+  'migration.step.3.text': 'Look at customers, vehicles and products in ASP and tell us what to fix.',
+  'migration.step.4.title': 'You go live',
+  'migration.step.4.text': 'When you are happy, your team starts using ASP. We help during the first days.',
+  'migration.checks':
+    'Along the way we check the data: plates are normalised and must be unique, and the NIF check digit is verified. Whatever we cannot load is listed for you, not dropped silently.',
+  'migration.faq.1.q': 'Which files do you accept?',
+  'migration.faq.1.a':
+    'Excel and CSV files, or the export of your current program. If you are not sure what you have, send it anyway and we tell you what can be used.',
+  'migration.faq.2.q': 'How long does it take?',
+  'migration.faq.2.a':
+    'It depends on how much data you have and how tidy it is. We give you an estimate as soon as we see the files.',
+  'migration.faq.3.q': 'What do I need to tell you?',
+  'migration.faq.3.a':
+    'Which program you use today and roughly how many customers, vehicles and products you have. Put it in your proposal request and the proposal covers the migration.',
+  'about.eyebrow': 'About ASP',
+  'about.title': 'Software made only for workshops',
+  'about.lead':
+    'ASP – Automotive Service Platform helps car and motorcycle workshops run the day, from the vehicle at the door to the delivery.',
+  'about.mission.title': 'What we are building',
+  'about.mission.text':
+    'A workshop does not need an ERP made for everything. It needs to receive a vehicle, write down what is wrong, quote, repair, order parts and deliver, without losing time to the software.',
+  'about.mission.text2':
+    'ASP starts in Portugal, with Portuguese plates, NIF and VAT and three languages, and is built so that other countries can follow.',
+  'about.principles.title': 'How we work',
+  'about.p.1.title': 'Built only for workshops',
+  'about.p.1.text': 'Every screen comes from how a workshop works, not from a generic template.',
+  'about.p.2.title': 'Honest about what exists',
+  'about.p.2.text': 'This site lists what works today. What is not ready is marked “Coming soon”.',
+  'about.p.3.title': 'Your data is yours',
+  'about.p.3.text':
+    'Each workshop\'s data is kept apart from every other workshop, and mechanics never see prices or customer personal data.',
+  'about.p.4.title': 'No tracking',
+  'about.p.4.text': 'This site sets no cookies and does no analytics.',
+  'about.status.title': 'Where we are',
+  'about.status.text':
+    'ASP is in active development. Check-in, the job board, the catalogue, quotes, stock, online booking and the online shop work today. Certified invoicing and Multibanco / MB WAY payments are next.',
+  'about.company.title': 'Company',
+  'demo.title': 'Book a demo',
+  'demo.lead':
+    'See ASP with your own kind of workshop in mind. Tell us how to reach you and we arrange a walkthrough, with no obligation.',
+  'demo.what.title': 'What we show you',
+  'demo.what.1': 'Checking a vehicle in and opening a work order',
+  'demo.what.2': 'The job board and the mechanic\'s phone view',
+  'demo.what.3': 'Quotes, stock and online booking',
+  'demo.what.4': 'How your current data would come across',
+  'form.submitDemo': 'Request the demo',
+  'blog.title': 'Blog',
+  'blog.lead': 'Practical notes for running a workshop.',
+  'blog.read': 'Read the article',
+  'blog.back': 'Back to the blog',
+  'blog.post1.title': 'What to write down at check-in, so nothing is disputed later',
+  'blog.post1.summary':
+    'Mileage, fuel, complaint and damage: a short check-in routine that protects the workshop and the customer.',
+  'blog.post1.p0':
+    'The first five minutes with a vehicle decide how smooth the rest goes. A short, repeatable check-in protects the customer, who knows what was agreed, and the workshop, which knows what it received.',
+  'blog.post1.h1': 'The vehicle and its mileage',
+  'blog.post1.p1':
+    'Identify the vehicle by plate or VIN, not by what the customer remembers. Write down the mileage with the customer present. From one visit to the next it only goes up, so a figure that drops is a typing error worth catching on the spot.',
+  'blog.post1.h2': 'Fuel level and personal items',
+  'blog.post1.p2':
+    'Note the fuel level, for example on a scale from 0 to 8, and anything valuable left inside. Two lines on the work order settle most conversations that start with “it had more fuel than that”.',
+  'blog.post1.h3': 'The complaint and any damage',
+  'blog.post1.p3':
+    'Write the complaint in the customer\'s own words, then add what you see: scratches, dents, warning lights. Record damage before any work starts, so it is clear what was there when the vehicle arrived.',
+  'blog.post1.p4':
+    'In ASP the check-in screen has a place for each of these: plate or VIN, mileage, fuel level, complaint and damage notes. Whatever tool you use, make the routine the same for every vehicle.',
+  'blog.post2.title': 'How to write a quote the customer approves quickly',
+  'blog.post2.summary':
+    'Clear lines, a total with VAT and a deadline: what makes a customer say yes without calling.',
+  'blog.post2.p0':
+    'A quote that raises questions comes back as a phone call. A quote that answers them comes back as a yes. The difference is mostly in how it is written.',
+  'blog.post2.h1': 'Separate labour from parts',
+  'blog.post2.p1':
+    'List labour and parts as different lines, each with its price, discount and VAT. Customers accept a number they can follow, and a later change is easy to explain.',
+  'blog.post2.h2': 'Show the total they will actually pay',
+  'blog.post2.p2':
+    'Give the total with VAT included, in one place. If a package costs less than its services bought separately, show the saving instead of leaving the customer to work it out.',
+  'blog.post2.h3': 'Give it a deadline and an easy way to answer',
+  'blog.post2.p3':
+    'A quote that never expires is a quote nobody decides on. Set a validity of a few days, and let the customer answer from their phone, on a link, without calling the front desk.',
+  'blog.post2.p4':
+    'ASP sends the quote with a private approval link and records who approved it and how. If the lines change, the open quote is replaced so nobody approves outdated numbers.',
+  'blog.post3.title': 'Stock for a small workshop: minimums, bins and reservations',
+  'blog.post3.summary': 'Three habits that keep the right parts on the shelf without tying up money.',
+  'blog.post3.p0':
+    'A small workshop cannot keep everything, and cannot afford to wait for a filter either. The answer is not more stock, but knowing what you have, where it is and what is already promised.',
+  'blog.post3.h1': 'Give every part a place',
+  'blog.post3.p1':
+    'A bin code on each product saves the search. Add a SKU too, so the same oil filter is not entered twice under two names.',
+  'blog.post3.h2': 'Set a minimum for what you use every week',
+  'blog.post3.p2':
+    'For fast movers such as oil, filters, brake pads and bulbs, choose a minimum below which you reorder. Leave rare parts at zero and order them when a job needs them.',
+  'blog.post3.h3': 'Count what is promised, not only what is on the shelf',
+  'blog.post3.p3':
+    'Six filters on the shelf are not six available if four are going into jobs already open. Reserve parts on the work order and look at the available number, not the shelf count.',
+  'blog.post3.p4':
+    'ASP does this for you: bin, SKU and minimum per product, reservations on the work order, a low-stock list and purchase orders from draft to received.',
+
+  'offer.trial': '{days} days free',
+  'offer.noLockIn': 'No lock-in',
+  'offer.migration': 'Migration included',
+  'offer.todo': '<offer to be confirmed>',
+
 } as const;
 
 export type MessageKey = keyof typeof en;

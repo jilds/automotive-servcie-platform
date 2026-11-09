@@ -1,0 +1,53 @@
+---
+// Renders nothing while there are no approved testimonials and no customer logos (no invented social proof).
+import { customerLogos, testimonials } from './testimonials';
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+{
+  testimonials.length > 0 && (
+    <section class="section" aria-labelledby="testimonials-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="testimonials-title">{t('testimonials.title')}</h2>
+        </div>
+        <div class="grid">
+          {testimonials.map((item) => (
+            <figure class="card quote">
+              <blockquote>
+                <p>{item.quote[lang]}</p>
+              </blockquote>
+              <figcaption>
+                <strong>{item.author}</strong>, {item.role[lang]} · {item.workshop}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+{
+  customerLogos.length > 0 && (
+    <section class="section section-alt" aria-labelledby="logos-title">
+      <div class="container">
+        <h2 id="logos-title">{t('logos.title')}</h2>
+        <ul class="logos">
+          {customerLogos.map((logo) => (
+            <li>
+              <img src={logo.src} alt={logo.name} height="40" loading="lazy" />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}

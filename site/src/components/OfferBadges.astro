@@ -1,0 +1,31 @@
+---
+// The commercial offer as chips. Each chip appears only when the owner has set it in src/offer.ts; while any part
+// is undecided a marked TODO placeholder shows where it would be.
+import Todo from './Todo.astro';
+import { useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+import { offer } from '../offer';
+
+interface Props {
+  lang: Lang;
+  light?: boolean;
+}
+
+const { lang, light = false } = Astro.props;
+const t = useT(lang);
+const undecided = offer.trialDays === null || offer.noLockIn === null || offer.migrationIncluded === null;
+---
+
+<ul class:list={['badge-list', { 'badge-list-light': light }]} aria-label={t('home.hero.badge.label')}>
+  {offer.trialDays !== null && <li>{t('offer.trial', { days: offer.trialDays })}</li>}
+  {offer.noLockIn === true && <li>{t('offer.noLockIn')}</li>}
+  {offer.migrationIncluded === true && <li>{t('offer.migration')}</li>}
+  {
+    undecided && (
+      <li>
+        <Todo lang={lang} />
+        {t('offer.todo')}
+      </li>
+    )
+  }
+</ul>

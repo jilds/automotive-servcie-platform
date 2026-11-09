@@ -1,0 +1,37 @@
+---
+import CtaBand from '../CtaBand.astro';
+import { type PostId, postKeys, posts } from './blog';
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  post: PostId;
+}
+
+const { lang, post } = Astro.props;
+const t = useT(lang);
+const keys = postKeys(post);
+const published = posts.find((p) => p.id === post)?.published ?? '';
+const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long', timeZone: 'UTC' });
+---
+
+<div class="section">
+  <article class="container prose post">
+    <p><a href={href('blog', lang)}>{t('blog.back')}</a></p>
+    <h1>{t(keys.title)}</h1>
+    <p class="hint"><time datetime={published}>{date.format(new Date(published))}</time></p>
+    <p class="lead">{t(keys.intro)}</p>
+    {
+      keys.sections.map((section) => (
+        <>
+          <h2>{t(section.heading)}</h2>
+          <p>{t(section.text)}</p>
+        </>
+      ))
+    }
+    <p>{t(keys.closing)}</p>
+  </article>
+</div>
+
+<CtaBand lang={lang} />

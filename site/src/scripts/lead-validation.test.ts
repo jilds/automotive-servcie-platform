@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DEMO_MARKER,
+  MAX_DEMO_MESSAGE,
+  MAX_MESSAGE,
   fromServerErrors,
   isOneLineNoLink,
   retryAfterMinutes,
   toPayload,
   validate,
+  withIntent,
   type LeadInput,
   type LeadPayload,
 } from './lead-validation';
@@ -89,6 +93,26 @@ describe('validate', () => {
       vehicleType: 'vehicleType',
       privacyAccepted: 'privacy',
     });
+  });
+});
+
+describe('demo intent', () => {
+  it('leaves room for the marker in the message limit', () => {
+    expect(MAX_DEMO_MESSAGE + DEMO_MARKER.length + 1).toBe(MAX_MESSAGE);
+    expect(validate(payload({ message: 'm'.repeat(MAX_DEMO_MESSAGE) }), 'demo').message).toBeUndefined();
+    expect(validate(payload({ message: 'm'.repeat(MAX_DEMO_MESSAGE + 1) }), 'demo').message).toBe('message');
+    expect(validate(payload({ message: 'm'.repeat(MAX_DEMO_MESSAGE + 1) })).message).toBeUndefined();
+  });
+
+  it('marks the message of a demo request and never exceeds the server limit', () => {
+    expect(withIntent(payload({ message: 'Two bays' }), 'demo').message).toBe('[DEMO] Two bays');
+    expect(withIntent(payload(), 'demo').message).toBe('[DEMO]');
+    expect(withIntent(payload({ message: 'm'.repeat(MAX_DEMO_MESSAGE) }), 'demo').message).toHaveLength(MAX_MESSAGE);
+  });
+
+  it('leaves a proposal request as it is', () => {
+    const p = payload({ message: 'Two bays' });
+    expect(withIntent(p, 'proposal')).toBe(p);
   });
 });
 

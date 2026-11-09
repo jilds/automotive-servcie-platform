@@ -1,0 +1,33 @@
+---
+// One feature block of the home page: text on one side, a mock-UI card (the slot) on the other.
+import { type MessageKey, useT } from '../i18n';
+import type { Lang } from '../i18n/routes';
+
+interface Props {
+  lang: Lang;
+  id: string;
+  eyebrow: MessageKey;
+  title: MessageKey;
+  text: MessageKey;
+  points: readonly MessageKey[];
+}
+
+const { lang, id, eyebrow, title, text, points } = Astro.props;
+const t = useT(lang);
+---
+
+<section class="feature-block" aria-labelledby={`block-${id}`}>
+  <div class="container feature-block-grid">
+    <div class="feature-block-text">
+      <p class="eyebrow">{t(eyebrow)}</p>
+      <h3 id={`block-${id}`} class="feature-block-title">{t(title)}</h3>
+      <p class="lead">{t(text)}</p>
+      <ul class="check-list">
+        {points.map((point) => <li>{t(point)}</li>)}
+      </ul>
+    </div>
+    <div class="feature-block-mock">
+      <slot />
+    </div>
+  </div>
+</section>

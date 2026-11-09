@@ -1,0 +1,68 @@
+---
+import CtaBand from '../CtaBand.astro';
+import LegalEntity from '../LegalEntity.astro';
+import Todo from '../Todo.astro';
+import { useT } from '../../i18n';
+import { type Lang, href } from '../../i18n/routes';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const principles = [
+  { title: 'about.p.1.title', text: 'about.p.1.text' },
+  { title: 'about.p.2.title', text: 'about.p.2.text' },
+  { title: 'about.p.3.title', text: 'about.p.3.text' },
+  { title: 'about.p.4.title', text: 'about.p.4.text' },
+] as const;
+---
+
+<section class="page-hero" aria-labelledby="page-title">
+  <div class="container">
+    <p class="eyebrow">{t('about.eyebrow')}</p>
+    <h1 id="page-title">{t('about.title')}</h1>
+    <p class="lead">{t('about.lead')}</p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="mission-title">
+  <div class="container prose">
+    <h2 id="mission-title">{t('about.mission.title')}</h2>
+    <p>{t('about.mission.text')}</p>
+    <p>{t('about.mission.text2')}</p>
+  </div>
+</section>
+
+<section class="section section-alt" aria-labelledby="principles-title">
+  <div class="container">
+    <div class="section-head">
+      <h2 id="principles-title">{t('about.principles.title')}</h2>
+    </div>
+    <ul class="points">
+      {
+        principles.map((item) => (
+          <li class="card">
+            <h3>{t(item.title)}</h3>
+            <p>{t(item.text)}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="status-title">
+  <div class="container prose">
+    <h2 id="status-title">{t('about.status.title')}</h2>
+    <p>{t('about.status.text')}</p>
+    <p><a class="btn btn-secondary" href={href('features', lang)}>{t('cta.features')}</a></p>
+
+    <h2>{t('about.company.title')}</h2>
+    <p class="note"><Todo lang={lang} />{t('legal.todoNote')}</p>
+    <LegalEntity lang={lang} />
+  </div>
+</section>
+
+<CtaBand lang={lang} />

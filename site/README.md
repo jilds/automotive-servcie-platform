@@ -69,6 +69,17 @@ Open http://localhost:4321/pedir-proposta/ and send the form. A request is liste
 | Theme: applied before first paint, and the light / dark / automatic buttons | `public/theme-init.js`, `src/scripts/theme-toggle.ts` |
 | `robots.txt` (sitemap URL from `PUBLIC_SITE_URL`) | `src/pages/robots.txt.ts` |
 
+Pages (plan 11, `docs/plans/11-landing-site-v2.md`): home, car and motorcycle workshops, features, pricing (`/precos`), data migration (`/migracao`), about (`/sobre`), demo (`/demo`), blog index and three posts, proposal, privacy, terms, cookies; each in the three languages.
+
+- **Offer** (free trial days, no lock-in, free migration): set `src/offer.ts`; while a value is `null` the hero and pricing page show a TODO placeholder and make no promise. `pricesKnown` there turns on the monthly / annual switch.
+- **Build gate**: `npm run build` ends with `scripts/dist-check.mjs`, which fails when a page still has a TODO marker, except for `CI=true` builds and builds for the placeholder `asp.example` URL.
+- **Prices** are marked placeholders (`Todo.astro`) until the price list is decided; the monthly / annual switch on the pricing page is CSS only (two radio buttons and `:has()`), no script.
+- **Testimonials and customer logos**: add real, approved entries to `src/components/testimonials.ts`; the component renders nothing while the lists are empty. Never add invented ones.
+- **Demo page**: the same form and endpoint as the proposal; the backend has no intent field, so the script starts the message with `[DEMO]` (`withIntent` in `lead-validation.ts`, message limit 1993 characters).
+- **Blog**: posts are listed in `src/components/pages/blog.ts` with their texts in the dictionaries (`blog.postN.*`); a new post needs a page id and paths in `routes.ts`.
+- **Mock-UI cards** (`QuoteMock`, `BookingMock`, `StockMock`) show sample data and say so on the card.
+- `public/og.png` (1200x630) is the Open Graph image.
+
 Rules:
 
 - Never hard-code visible text in a component: add the key to `en.ts`, then to `pt-PT.ts` and `pt-BR.ts`.
@@ -110,4 +121,4 @@ Cross-origin, the browser only lets the script read `Retry-After` when the backe
 - Legal pages: replace `<Empresa, Lda.>`, NIF, address, contact, legal basis, retention period, liability, law and
   dates (all marked **TODO** on `/privacidade`, `/termos`, `/cookies`), and have them reviewed.
 - Set `PUBLIC_SITE_URL` and `PUBLIC_API_ORIGIN` for production, and `ASP_SITE_ORIGIN` on the backend.
-- Add an Open Graph image (`og:image`) if wanted; there is none yet.
+- Fill the pricing placeholders, set `src/offer.ts` (the trial, no-lock-in and migration promises), and replace `public/og.png` if a designed image exists.

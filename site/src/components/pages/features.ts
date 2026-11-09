@@ -7,13 +7,15 @@ export interface Feature {
   text: MessageKey;
 }
 
-/** What ASP does today (home page and features page). */
+/** What ASP does today (features page and pricing table). */
 export const available: readonly Feature[] = [
   { icon: 'car', title: 'feature.checkin.title', text: 'feature.checkin.text' },
   { icon: 'board', title: 'feature.board.title', text: 'feature.board.text' },
   { icon: 'list', title: 'feature.catalogue.title', text: 'feature.catalogue.text' },
+  { icon: 'check', title: 'feature.quotes.title', text: 'feature.quotes.text' },
   { icon: 'box', title: 'feature.stock.title', text: 'feature.stock.text' },
   { icon: 'calendar', title: 'feature.booking.title', text: 'feature.booking.text' },
+  { icon: 'cart', title: 'feature.shop.title', text: 'feature.shop.text' },
   { icon: 'palette', title: 'feature.branding.title', text: 'feature.branding.text' },
   { icon: 'globe', title: 'feature.languages.title', text: 'feature.languages.text' },
   { icon: 'shield', title: 'feature.isolation.title', text: 'feature.isolation.text' },
@@ -24,5 +26,4 @@ export const available: readonly Feature[] = [
 export const comingSoon: readonly Feature[] = [
   { icon: 'receipt', title: 'feature.invoicing.title', text: 'feature.invoicing.text' },
   { icon: 'card', title: 'feature.payments.title', text: 'feature.payments.text' },
-  { icon: 'cart', title: 'feature.shop.title', text: 'feature.shop.text' },
 ];
