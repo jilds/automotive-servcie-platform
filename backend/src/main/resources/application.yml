@@ -27,6 +27,12 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  # Photos of a work order (step 06): one file of at most 5 MB per request (the other parts are small). A larger file
+  # is refused by the container and answered as 413 upload-too-large (GlobalExceptionHandler).
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   # spring-boot-docker-compose picks up compose.yaml from the working directory, which is the
   # repository root both in the IDE and for spring-boot:run (see backend/pom.xml)
 
@@ -92,6 +98,11 @@ app:
   # and run the jobs directly.
   scheduling:
     enabled: ${ASP_SCHEDULING_ENABLED:true}
+  # Photos of work orders (step 06): the bytes one workshop may keep (deleted photos count until purged), and the days a
+  # deleted photo keeps its bytes before the nightly purge drops them (03:30 UTC, app.photos.purge-cron).
+  photos:
+    max-bytes-per-workshop: ${ASP_PHOTOS_MAX_BYTES_PER_WORKSHOP:5368709120}
+    deleted-retention-days: ${ASP_PHOTOS_DELETED_RETENTION_DAYS:30}
   shop:
     # Shop orders past their hold time expire at the top of every hour (UTC, Spring cron).
     expiry-cron: "0 0 * * * *"

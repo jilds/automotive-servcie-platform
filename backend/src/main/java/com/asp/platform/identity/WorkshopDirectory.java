@@ -25,6 +25,10 @@ public interface WorkshopDirectory {
     /// Days a quote sent to a customer of the workshop stays open (1 to 90), from its settings.
     int quoteValidDays(UUID tenantId);
 
+    /// Whether a work order of the workshop can be delivered only once the required items of its delivery checklist
+    /// are answered, from its settings.
+    boolean deliveryChecklistRequired(UUID tenantId);
+
     /// Active mechanics of the workshop, by name.
     List<TeamMember> activeMechanics(UUID tenantId);
 
@@ -43,4 +47,9 @@ public interface WorkshopDirectory {
     /// The ids of every workshop whose subscription lets it sign in, oldest first. For jobs that run per workshop
     /// inside a [com.asp.platform.shared.TenantScope].
     List<UUID> openWorkshops();
+
+    /// The ids of every workshop whatever its subscription (suspended, expired and cancelled included), oldest first.
+    /// For jobs that must also reach closed workshops, such as dropping the stored bytes of deleted photos; run each
+    /// inside a [com.asp.platform.shared.TenantScope] like the others.
+    List<UUID> allWorkshops();
 }

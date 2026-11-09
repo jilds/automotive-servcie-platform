@@ -7,6 +7,7 @@ import { provideRouter } from '@angular/router';
 import { WorkOrder } from '../core/api/models';
 import { AuthService } from '../core/auth/auth.service';
 import { I18nService } from '../core/i18n/i18n.service';
+import { flushFloor } from './floor-test-utils';
 import { WorkOrderDetail } from './work-order-detail';
 
 const order: WorkOrder = {
@@ -27,7 +28,7 @@ describe('WorkOrderDetail approval hint', () => {
       // ignore
     }
     // A role that sees no prices and no front-office panels keeps the page small; the hint does not depend on the role.
-    const auth = { user: signal(null), hasRole: () => false, canSeePrices: () => false };
+    const auth = { user: signal(null), account: signal(null), hasRole: () => false, canSeePrices: () => false };
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: AuthService, useValue: auth }],
     });
@@ -38,6 +39,7 @@ describe('WorkOrderDetail approval hint', () => {
     fixture.detectChanges();
     http.expectOne('/api/v1/work-orders/w1').flush(w);
     fixture.detectChanges();
+    flushFloor(http);
     current = fixture;
     return fixture.nativeElement as HTMLElement;
   }

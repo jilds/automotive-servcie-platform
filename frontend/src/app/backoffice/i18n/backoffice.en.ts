@@ -79,6 +79,28 @@ export const backofficeEn = {
   'backoffice.settings.stay': 'Keep editing',
   'backoffice.settings.leave': 'Leave',
 
+  'backoffice.tab.checklists': 'Checklists',
+  'backoffice.settings.deliveryChecklist': 'Require the delivery checklist',
+  'backoffice.settings.deliveryChecklistHelp': 'A car can only be marked as delivered once every required item of its delivery checklist is answered.',
+  'backoffice.checklists.title': 'Checklists',
+  'backoffice.checklists.subtitle': 'The items mechanics and the front desk go through at check-in and at delivery',
+  'backoffice.checklists.kind.CHECK_IN': 'Check-in checklist',
+  'backoffice.checklists.kind.DELIVERY': 'Delivery checklist',
+  'backoffice.checklists.default': 'This is the built-in list. Save it, with or without changes, to make it your own. Checklists already started keep the items they were started with.',
+  'backoffice.checklists.count': '{count} of {max} items',
+  'backoffice.checklists.itemLabel': 'Item {n}',
+  'backoffice.checklists.labelPlaceholder': 'For example: Keys received',
+  'backoffice.checklists.required': 'Required',
+  'backoffice.checklists.moveUp': 'Move item {n} up',
+  'backoffice.checklists.moveDown': 'Move item {n} down',
+  'backoffice.checklists.remove': 'Remove item {n}',
+  'backoffice.checklists.add': 'Add item',
+  'backoffice.checklists.save': 'Save checklist',
+  'backoffice.checklists.saved': 'Checklist saved.',
+  'backoffice.checklists.labelRequired': 'Write the item or remove it.',
+  'backoffice.checklists.labelTooLong': 'An item can have at most 120 characters.',
+  'backoffice.checklists.itemsRequired': 'Add at least one item.',
+  'backoffice.checklists.itemsTooMany': 'A checklist can have at most 30 items.',
 } as const;
 
 export type BackofficeKey = keyof typeof backofficeEn;

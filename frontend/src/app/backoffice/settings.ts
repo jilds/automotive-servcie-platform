@@ -111,6 +111,13 @@ import { HasUnsavedChanges } from './unsaved-changes.guard';
                 <div class="form-text">{{ 'backoffice.settings.quoteValidDaysHelp' | t }}</div>
               }
             </div>
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input id="ws-delivery-checklist" class="form-check-input" type="checkbox" role="switch" formControlName="deliveryChecklistRequired" aria-describedby="ws-delivery-checklist-help" />
+                <label class="form-check-label" for="ws-delivery-checklist">{{ 'backoffice.settings.deliveryChecklist' | t }}</label>
+              </div>
+              <div class="form-text" id="ws-delivery-checklist-help">{{ 'backoffice.settings.deliveryChecklistHelp' | t }}</div>
+            </div>
             <div class="col-12 d-flex flex-wrap justify-content-end gap-2">
               <button type="button" class="btn btn-outline-secondary" [disabled]="!dirty() || busy()" (click)="discard()">{{ 'backoffice.settings.discard' | t }}</button>
               <button type="submit" class="btn btn-primary" [disabled]="!dirty() || busy()" [attr.aria-busy]="busy()">

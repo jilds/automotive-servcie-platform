@@ -34,6 +34,7 @@ class SpaForwardingController {
             "/backoffice/settings",
             "/backoffice/booking",
             "/backoffice/shop",
+            "/backoffice/checklists",
             "/bookings",
             "/shop-orders"
     })

@@ -55,6 +55,11 @@ class JpaTenantRepository implements TenantRepository {
                 .stream().map(TenantEntity::toDomain).toList();
     }
 
+    @Override
+    public List<UUID> allIds() {
+        return jpa.findAllIds();
+    }
+
     /// Three queries whatever the number of workshops: tenants, user counts per tenant, owners by creation time.
     @Override
     public List<WorkshopOverview> overview() {

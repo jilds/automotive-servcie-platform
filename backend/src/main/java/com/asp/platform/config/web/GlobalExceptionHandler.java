@@ -80,6 +80,29 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, body, headers, status, request);
     }
 
+    /// A multipart upload over the container's `spring.servlet.multipart` limit (5 MB per file): 413 with a neutral
+    /// code. A feature with a tighter rule of its own (a logo, a photo) answers with its own code when the file
+    /// reaches it.
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        ProblemDetail body = problem(HttpStatus.CONTENT_TOO_LARGE, "upload-too-large", "The file is too large");
+        return handleExceptionInternal(ex, body, headers, HttpStatus.CONTENT_TOO_LARGE, request);
+    }
+
+    /// A path or query value of the wrong type, for example an enum name that does not exist: 400 `validation` with
+    /// the parameter in `errors`.
+    @Override
+    protected @Nullable ResponseEntity<Object> handleTypeMismatch(org.springframework.beans.TypeMismatchException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "validation", "Some fields are not valid");
+        String name = ex instanceof org.springframework.web.method.annotation.MethodArgumentTypeMismatchException m
+                ? m.getName() : String.valueOf(ex.getPropertyName());
+        body.setProperty("errors", Map.of(name, "Not a valid value"));
+        return handleExceptionInternal(ex, body, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
     static ProblemDetail problem(HttpStatus status, String code, @Nullable String detail) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setType(URI.create("/problems/" + code));

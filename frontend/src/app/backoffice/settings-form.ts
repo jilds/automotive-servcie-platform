@@ -77,6 +77,7 @@ export function settingsForm() {
     timezone: new FormControl('Europe/Lisbon', { nonNullable: true, validators: [Validators.required, notBlank] }),
     defaultVatRate: new FormControl<number | null>(23, [Validators.required, Validators.min(0), Validators.max(100), maxDecimals(2)]),
     labourRateEuros: new FormControl<number | null>(0, [Validators.required, Validators.min(0), maxDecimals(2)]),
+    deliveryChecklistRequired: new FormControl(false, { nonNullable: true }),
     quoteValidDays: new FormControl<number | null>(QUOTE_VALID_DAYS_DEFAULT, [
       Validators.required,
       Validators.min(QUOTE_VALID_DAYS_MIN),
@@ -100,6 +101,7 @@ export const FIELD_CONTROL: Record<Exclude<keyof WorkshopSettings, 'version'>, k
   defaultVatRate: 'defaultVatRate',
   labourRateCents: 'labourRateEuros',
   quoteValidDays: 'quoteValidDays',
+  deliveryChecklistRequired: 'deliveryChecklistRequired',
 };
 
 export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
@@ -111,6 +113,7 @@ export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
     defaultVatRate: s.defaultVatRate,
     labourRateEuros: s.labourRateCents / 100,
     quoteValidDays: s.quoteValidDays ?? QUOTE_VALID_DAYS_DEFAULT,
+    deliveryChecklistRequired: s.deliveryChecklistRequired ?? false,
   };
 }
 
@@ -126,6 +129,7 @@ export function toSettings(form: SettingsForm, version: number): WorkshopSetting
     defaultVatRate: Number(v.defaultVatRate),
     labourRateCents: Math.round(Number(v.labourRateEuros) * 100),
     quoteValidDays: Number(v.quoteValidDays),
+    deliveryChecklistRequired: v.deliveryChecklistRequired,
     version,
   };
 }

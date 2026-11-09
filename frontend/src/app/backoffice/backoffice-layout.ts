@@ -23,6 +23,9 @@ import { Toasts } from './toasts';
       <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/services" routerLinkActive="active" ariaCurrentWhenActive="page">
         <app-icon name="inbox" [size]="16" />{{ 'catalogue.tab' | t }}
       </a>
+      <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/checklists" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <app-icon name="check-in" [size]="16" />{{ 'backoffice.tab.checklists' | t }}
+      </a>
       @if (bookingOn()) {
         <a class="nav-link d-inline-flex align-items-center gap-2 text-nowrap" routerLink="/backoffice/booking" routerLinkActive="active" ariaCurrentWhenActive="page">
           <app-icon name="clock" [size]="16" />{{ 'booking.settings.tab' | t }}

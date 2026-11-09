@@ -54,6 +54,8 @@ export interface WorkshopSettings {
   labourRateCents: number;
   /** Days a sent quote stays open, 1..90 (default 15). */
   quoteValidDays: number;
+  /** READY to DELIVERED needs the delivery checklist complete. Left out of a PUT (or null) keeps the stored value. */
+  deliveryChecklistRequired?: boolean;
   /** Workshop version (shared with the theme); a newer save answers 409 `stale-data`. */
   version: number;
 }

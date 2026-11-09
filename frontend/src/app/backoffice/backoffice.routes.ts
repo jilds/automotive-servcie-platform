@@ -25,6 +25,7 @@ export const BACKOFFICE_ROUTES: Routes = [
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () => import('../shop/shop-settings').then((m) => m.ShopSettingsPage),
       },
+      { path: 'checklists', loadComponent: () => import('./checklist-templates').then((m) => m.ChecklistTemplates) },
       {
         path: 'settings',
         canDeactivate: [unsavedChangesGuard],

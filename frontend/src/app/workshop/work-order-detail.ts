@@ -1,12 +1,13 @@
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ApiService } from '../core/api/api.service';
 import { AuthService } from '../core/auth/auth.service';
 import { LineType, WorkOrder, WorkOrderStatus } from '../core/api/models';
+import { problemCode } from '../core/api/problem';
 import { I18nService, statusKey } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
@@ -20,15 +21,23 @@ import { StockPicker } from '../stock/stock-picker';
 import { MechanicCard } from './mechanic-card';
 import { QUOTE_BADGE, quoteBadgeKey } from './quote-logic';
 import { QuotePanel } from './quote-panel';
+import { ChecklistPanel } from './checklist-panel';
+import { PhotoPanel } from './photo-panel';
+import { TimePanel } from './time-panel';
 
 @Component({
   selector: 'app-work-order-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker, QuotePanel],
+  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker, QuotePanel, TimePanel, PhotoPanel, ChecklistPanel],
   template: `
     <a routerLink="/board" class="d-inline-block mb-2 small fw-medium text-body-secondary text-decoration-none">{{ 'workOrder.back' | t }}</a>
     @if (error()) {
       <app-alert>{{ error() }}</app-alert>
+    }
+    @if (gateRefused()) {
+      <div class="mb-3">
+        <button type="button" class="btn btn-sm btn-warning" data-test="open-checklist" (click)="openChecklist()">{{ 'floor.check.open' | t }}</button>
+      </div>
     }
     @if (wo(); as w) {
       <header class="d-flex flex-wrap align-items-end gap-3 mb-4">
@@ -203,6 +212,10 @@ import { QuotePanel } from './quote-panel';
           </div>
         </form>
       }
+
+      <app-time-panel [workOrder]="w" />
+      <app-photo-panel [workOrder]="w" />
+      <app-checklist-panel [workOrder]="w" [gateRefused]="gateRefused()" />
     }
     <app-check-in-edit-dialog #checkInDialog (saved)="checkInSaved($event)" (conflict)="checkInConflict()" />
   `,
@@ -219,6 +232,9 @@ export class WorkOrderDetail implements OnInit {
   protected readonly error = signal<string | null>(null);
   /** Warning shown after the order was reloaded because a check-in edit hit a conflict. */
   protected readonly notice = signal<string | null>(null);
+  /** The last move to Delivered was refused because the delivery checklist is incomplete. */
+  protected readonly gateRefused = signal(false);
+  private readonly checklistPanel = viewChild(ChecklistPanel);
   /** Same rule as the backend: front office only, and only while the order is still open for changes. */
   protected readonly canEditCheckIn = computed(() => {
     const w = this.wo();
@@ -280,8 +296,13 @@ export class WorkOrderDetail implements OnInit {
     this.update(this.api.removeLine(this.id(), lineId));
   }
 
+  protected openChecklist(): void {
+    this.checklistPanel()?.reveal();
+  }
+
   private update(call: ReturnType<ApiService['workOrder']>, done?: () => void): void {
     this.error.set(null);
+    this.gateRefused.set(false);
     call.subscribe({
       next: (w) => {
         this.wo.set(w);
@@ -289,6 +310,10 @@ export class WorkOrderDetail implements OnInit {
       },
       error: (e) => {
         this.error.set(this.i18n.error(e));
+        if (problemCode(e) === 'checklist-incomplete') {
+          this.gateRefused.set(true);
+          this.checklistPanel()?.reload();
+        }
         // A conflict means this screen is out of date (for example a new quote was sent): reload, keep the message.
         if (e instanceof HttpErrorResponse && e.status === 409) this.reload();
       },

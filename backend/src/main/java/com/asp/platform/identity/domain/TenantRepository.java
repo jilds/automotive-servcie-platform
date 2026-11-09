@@ -20,6 +20,9 @@ public interface TenantRepository {
     /// not checked here: see [Tenant#allowsSignIn].
     List<Tenant> withStatusAllowingSignIn();
 
+    /// The ids of every workshop whatever its status, oldest first (jobs that must also reach closed workshops).
+    List<UUID> allIds();
+
     /// Every workshop with its owner and user count, newest first. For the platform admin only.
     List<WorkshopOverview> overview();
 }

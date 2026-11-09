@@ -8,6 +8,7 @@ import { Icon } from './icon';
 import { LanguageSelect } from './language-select';
 import { IdentityApi } from '../identity/identity-api.service';
 import { TenantThemeService } from './theme.service';
+import { RunningTimerBanner } from '../workshop/running-timer';
 import { ThemeToggle } from './theme-toggle';
 
 const NO_ADD_ONS: AddOns = { booking: false, shop: false };
@@ -18,7 +19,7 @@ const NO_ADD_ONS: AddOns = { booking: false, shop: false };
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageSelect, ThemeToggle, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageSelect, ThemeToggle, Icon, RunningTimerBanner],
   host: { '(document:keydown.escape)': 'menuOpen.set(false)' },
   template: `
     <div class="app-layout">
@@ -100,6 +101,7 @@ const NO_ADD_ONS: AddOns = { booking: false, shop: false };
       </div>
 
       <main class="app-content w-100 mx-auto">
+        <app-running-timer-banner />
         <router-outlet />
       </main>
     </div>

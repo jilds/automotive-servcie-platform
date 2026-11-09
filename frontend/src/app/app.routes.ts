@@ -73,7 +73,7 @@ export const routes: Routes = [
       { path: 'vehicles/:id', loadComponent: () => import('./workshop/vehicle-history').then((m) => m.VehicleHistory) },
       {
         path: 'work-orders/:id',
-        resolve: { texts: textsFor('catalogue', 'quote') },
+        resolve: { texts: textsFor('catalogue', 'quote', 'floor') },
         loadComponent: () => import('./workshop/work-order-detail').then((m) => m.WorkOrderDetail),
       },
       {

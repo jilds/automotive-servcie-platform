@@ -64,6 +64,8 @@ public class WorkOrderService {
     private final MechanicChangeRepository mechanicChanges;
     private final QuoteRepository quotes;
     private final QuoteService quoteService;
+    private final TimeTrackingService timeTracking;
+    private final ChecklistService checklists;
     private final CatalogueLookup catalogue;
     private final StockReservations stock;
     private final CustomerManagement customers;
@@ -72,12 +74,15 @@ public class WorkOrderService {
     private final Clock clock;
 
     WorkOrderService(WorkOrderRepository orders, MechanicChangeRepository mechanicChanges, QuoteRepository quotes,
-            QuoteService quoteService, CatalogueLookup catalogue, StockReservations stock,
+            QuoteService quoteService, TimeTrackingService timeTracking, ChecklistService checklists,
+            CatalogueLookup catalogue, StockReservations stock,
             CustomerManagement customers, WorkshopDirectory directory, BookingCheckIns bookings, Clock clock) {
         this.orders = orders;
         this.mechanicChanges = mechanicChanges;
         this.quotes = quotes;
         this.quoteService = quoteService;
+        this.timeTracking = timeTracking;
+        this.checklists = checklists;
         this.catalogue = catalogue;
         this.stock = stock;
         this.customers = customers;
@@ -225,7 +230,15 @@ public class WorkOrderService {
             throw new AccessDeniedException("Mechanics cannot move a work order to " + target);
         }
         requireApprovalAnswered(order, target, user);
-        order.moveTo(target, clock.instant());
+        if (target == WorkOrderStatus.DELIVERED && order.status().canMoveTo(target)) {
+            checklists.requireDeliveryReady(user.tenantId(), order.id());
+        }
+        Instant now = clock.instant();
+        order.moveTo(target, now);
+        if (target == WorkOrderStatus.READY || target == WorkOrderStatus.DELIVERED
+                || target == WorkOrderStatus.CANCELLED) {
+            timeTracking.stopRunning(order.id(), now);
+        }
         if (order.lines().stream().map(WorkOrderLine::productId).anyMatch(Objects::nonNull)) {
             if (target == WorkOrderStatus.DELIVERED) {
                 stock.consumeAll(ReservationSource.WORK_ORDER, order.id(), user.userId());
@@ -277,8 +290,12 @@ public class WorkOrderService {
     public WorkOrderView assign(CurrentUser user, UUID id, @Nullable UUID mechanicId, @Nullable String reason) {
         requireMechanic(user.tenantId(), mechanicId, ASSIGN_MECHANIC_FIELD);
         WorkOrder order = lockedOrder(id);
-        order.reassign(mechanicId, reason, user.userId(), UUID.randomUUID(), clock.instant())
-                .ifPresent(mechanicChanges::save);
+        Instant now = clock.instant();
+        order.reassign(mechanicId, reason, user.userId(), UUID.randomUUID(), now).ifPresent(change -> {
+            mechanicChanges.save(change);
+            // The old mechanic's timer does not follow the order to the new one.
+            timeTracking.stopRunning(order.id(), now);
+        });
         return view(orders.save(order));
     }
 

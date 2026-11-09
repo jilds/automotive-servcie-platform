@@ -90,6 +90,16 @@ class DashboardServiceTests {
             }
 
             @Override
+            public List<UUID> allWorkshops() {
+                return List.of();
+            }
+
+            @Override
+            public boolean deliveryChecklistRequired(UUID tenantId) {
+                return false;
+            }
+
+            @Override
             public List<TeamMember> activeMechanics(UUID tenantId) {
                 return List.of(new TeamMember(RUI, "Rui"), new TeamMember(ZE, "Zé"));
             }

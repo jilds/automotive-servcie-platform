@@ -30,13 +30,16 @@ record WorkshopSettingsRequest(
         @NotNull @PositiveOrZero Long labourRateCents,
         @Nullable @Min(WorkshopSettings.MIN_QUOTE_VALID_DAYS) @Max(WorkshopSettings.MAX_QUOTE_VALID_DAYS)
         Integer quoteValidDays,
+        @Nullable Boolean deliveryChecklistRequired,
         @NotNull Long version) implements ValidNif.Subject {
 
     /// @param stored the workshop's current settings, for the fields the request leaves out
     WorkshopSettings toSettings(WorkshopSettings stored) {
         Integer days = quoteValidDays;
+        Boolean gate = deliveryChecklistRequired;
         return new WorkshopSettings(name, nif, country, timezone, defaultVatRate, labourRateCents,
-                days == null ? stored.quoteValidDays() : days);
+                days == null ? stored.quoteValidDays() : days,
+                gate == null ? stored.deliveryChecklistRequired() : gate);
     }
 
     @Override

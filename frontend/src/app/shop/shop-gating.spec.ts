@@ -53,6 +53,7 @@ describe('online shop menu, tab and tile', () => {
     const f = TestBed.createComponent(Shell);
     f.detectChanges();
     http.expectOne('/api/v1/branding').flush(branding(shop));
+    if (role === 'MECHANIC') http.expectOne('/api/v1/time/running').flush({ entry: null, workOrderNumber: null, plateDisplay: null });
     f.detectChanges();
     return f.nativeElement.querySelector('a[href="/shop-orders"]') as HTMLAnchorElement | null;
   }

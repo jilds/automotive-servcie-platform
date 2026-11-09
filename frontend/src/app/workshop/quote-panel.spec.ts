@@ -13,6 +13,7 @@ import { Board } from './board';
 import { boardQuoteStatus, canSendQuote, copyText, decisionForm, needsNewQuote, quoteLink, toDecisionRequest } from './quote-logic';
 import { QuotePanel } from './quote-panel';
 import { Quote, SentQuote } from './quote.models';
+import { flushFloor } from './floor-test-utils';
 import { WorkOrderDetail } from './work-order-detail';
 
 const LINE = { id: 'l1', position: 1, type: 'LABOR' as const, description: 'Mudança de óleo', quantity: 1, unitPriceCents: 4000, discountPercent: 0, vatRate: 23, netCents: 4000 };
@@ -208,7 +209,7 @@ describe('QuotePanel', () => {
 
 describe('Quote status for mechanics', () => {
   function mechanicAuth() {
-    return { hasRole: (...roles: string[]) => roles.includes('MECHANIC'), canSeePrices: signal(false), user: signal({ id: 'm1', role: 'MECHANIC' }) };
+    return { hasRole: (...roles: string[]) => roles.includes('MECHANIC'), canSeePrices: signal(false), user: signal({ id: 'm1', role: 'MECHANIC' }), account: signal({ id: 'm1', role: 'MECHANIC' }) };
   }
 
   it('shows only the badge on the work order: no panel, no amounts', () => {
@@ -223,6 +224,7 @@ describe('Quote status for mechanics', () => {
     const q = quote({ status: 'APPROVED' });
     http.expectOne('/api/v1/work-orders/w1').flush(order({ status: 'IN_PROGRESS', assignedMechanicId: 'm1', netCents: null, vatCents: null, totalCents: null, lines: [{ ...LINE, unitPriceCents: null, netCents: null, vatRate: null, discountPercent: null }], quote: summary(q) }));
     f.detectChanges();
+    flushFloor(http);
     expect(el(f, '[data-test="quote-badge"]')!.textContent).toContain('Quote approved');
     expect(el(f, 'app-quote-panel')).toBeNull();
     expect(text(f)).not.toMatch(/€/);

@@ -20,8 +20,16 @@ import com.asp.platform.shared.PortugueseNif;
 /// @param labourRateCents hourly labour rate in cents, suggested for new labour lines
 /// @param quoteValidDays  days a quote sent to a customer stays open, [#MIN_QUOTE_VALID_DAYS] to
 ///                        [#MAX_QUOTE_VALID_DAYS]
+/// @param deliveryChecklistRequired when on, a work order cannot be delivered while required items of its delivery
+///                        checklist are open
 public record WorkshopSettings(String name, @Nullable String nif, String country, String timezone,
-        BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays) {
+        BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays, boolean deliveryChecklistRequired) {
+
+    /// Settings without the delivery checklist gate (off).
+    public WorkshopSettings(String name, @Nullable String nif, String country, String timezone,
+            BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays) {
+        this(name, nif, country, timezone, defaultVatRate, labourRateCents, quoteValidDays, false);
+    }
 
     public static final int MIN_QUOTE_VALID_DAYS = 1;
     public static final int MAX_QUOTE_VALID_DAYS = 90;

@@ -74,6 +74,12 @@ class WorkshopDirectoryService implements WorkshopDirectory {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean deliveryChecklistRequired(UUID tenantId) {
+        return tenant(tenantId).settings().deliveryChecklistRequired();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<TeamMember> activeMechanics(UUID tenantId) {
         return users.findByTenant(tenantId).stream()
                 .filter(WorkshopDirectoryService::isActiveMechanic)
@@ -110,6 +116,12 @@ class WorkshopDirectoryService implements WorkshopDirectory {
         return tenants.findBySlug(new Slug(slug))
                 .filter(subscriptions::allowsSignIn)
                 .map(WorkshopDirectoryService::publicWorkshop);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> allWorkshops() {
+        return tenants.allIds();
     }
 
     @Override

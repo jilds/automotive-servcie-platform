@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import { WorkOrder, WorkOrderStatus } from '../core/api/models';
 import { I18nService } from '../core/i18n/i18n.service';
 import { CheckInEditDialog } from './check-in-edit-dialog';
+import { flushFloor } from './floor-test-utils';
 import { WorkOrderDetail } from './work-order-detail';
 
 beforeAll(() => {
@@ -126,6 +127,7 @@ describe('WorkOrderDetail check-in edit action', () => {
     fixture.detectChanges();
     http.expectOne('/api/v1/work-orders/w1').flush(order(status));
     fixture.detectChanges();
+    flushFloor(http);
     return { http, fixture, canEdit: editButton(fixture.nativeElement) !== undefined };
   }
 
@@ -161,6 +163,8 @@ describe('WorkOrderDetail check-in edit action', () => {
     http.match((r) => r.url.startsWith('/api/v1/stock/')).forEach((r) => r.flush([]));
     // ...and the quote panel loads the order's quotes.
     http.match('/api/v1/work-orders/w1/quotes').forEach((r) => r.flush([]));
+    // ...and the time panel reads the time again, since the order's status changed.
+    http.match('/api/v1/work-orders/w1/time').forEach((r) => r.flush({ now: '2026-11-09T08:00:00Z', totalSeconds: 0, unassignedSeconds: 0, byLine: [], running: null, entries: [] }));
     http.verify();
   });
 });
