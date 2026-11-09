@@ -16,4 +16,9 @@ public record QuoteHeadline(UUID id, UUID workOrderId, int number, QuoteStatus s
     public QuoteStatus statusAt(Instant now) {
         return Quote.effectiveStatus(status, validUntil, now);
     }
+
+    /// True when the quote was approved or rejected (see [QuoteStatus#isAnswered]); a stored answer never expires.
+    public boolean isAnswered() {
+        return status.isAnswered();
+    }
 }

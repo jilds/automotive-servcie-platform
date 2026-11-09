@@ -197,6 +197,14 @@ a private link and approves or rejects it, or tells the front desk by phone, who
   (`PESSIMISTIC_WRITE`, 3 s → 409 `try-again`), so an approval racing a line change gives one winner: either the quote
   is approved with the old lines and the line change then supersedes nothing (the quote is no longer SENT), or the
   quote is superseded first and the approval answers 409 `quote-not-open`.
+- **Leaving AWAITING_APPROVAL by hand (move rule):** only the OWNER may move an order out of AWAITING_APPROVAL (any
+  target, CANCELLED included) before the order's latest quote is answered. Answered = APPROVED or REJECTED, by the
+  customer on the link or by a phone decision of the front desk; SENT, EXPIRED (also a SENT quote past `validUntil`),
+  SUPERSEDED or no quote at all is not an answer. FRONT_DESK and MECHANIC get 409 `approval-pending` on
+  `PATCH /work-orders/{id}/status` until then (a mechanic's forbidden target stays 403); after any answer, also a
+  rejection, they move it freely. A new quote after a rejected one makes the latest quote unanswered again. The check
+  runs under the work order row lock, so an answer racing a hand move gives one consistent result. The automatic move
+  on approval is not affected.
 - **Mechanics** get 403 on every quote endpoint. They see only `quote.status` on the work order and `quoteStatus` on
   the board card (no amounts, no lines).
 - Quote numbers count per workshop from 1 (`(tenant_id, number)` unique; a race across two orders answers 409
@@ -244,6 +252,9 @@ A different stored `version` answers 409 `stale-data`.
 - `WorkOrderResponse` gets `quote`: the latest quote of the order, or null:
   `{ "id": "…", "number": 4, "status": "APPROVED", "validUntil": "…", "decidedAt": "…", "decidedChannel": "CUSTOMER" }`
   (no amounts; mechanics get it too). `status` is `EXPIRED` for a SENT quote past `validUntil`.
+- `WorkOrderResponse` gets `approvalPending` (boolean): true only when `status` is AWAITING_APPROVAL, the caller is not
+  the OWNER, could otherwise move the order (not `readOnly`) and the latest quote is not answered (see the move rule). In that case `allowedNext` is empty for the
+  caller; for the OWNER, and in every other status, `approvalPending` is false and `allowedNext` is unchanged.
 - Board `Card` gets `quoteStatus` (latest quote's status, same rule, or null).
 - Line endpoints answer as before; when they supersede a quote, the returned `quote.status` is `SUPERSEDED`.
 
@@ -295,6 +306,7 @@ workshop country's language (PT → pt-PT, BR → pt-BR, else en). After the com
 | 409 | `quote-not-open` | The quote is not SENT (decided, superseded or expired) |
 | 409 | `quote-expired` | The quote is SENT but past `validUntil` |
 | 409 | `work-order-not-quotable` | Send outside DIAGNOSTICS / AWAITING_APPROVAL, or the order has no lines |
+| 409 | `approval-pending` | A non-owner moves an order out of AWAITING_APPROVAL while the latest quote is not APPROVED or REJECTED |
 | 400 | `decision-note-required` | Staff decision without a note |
 
 Reused: `work-order-not-found`, `try-again`, `stale-data`, `validation`, `too-many-requests`, `workshop-not-found`.

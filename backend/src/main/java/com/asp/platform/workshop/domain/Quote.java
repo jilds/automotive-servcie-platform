@@ -95,6 +95,11 @@ public final class Quote {
         return effectiveStatus(status, validUntil, now);
     }
 
+    /// True when the customer or the staff approved or rejected it (see [QuoteStatus#isAnswered]).
+    public boolean isAnswered() {
+        return status.isAnswered();
+    }
+
     /// True while the customer or the staff may still approve or reject it.
     public boolean canDecide(Instant now) {
         return statusAt(now) == QuoteStatus.SENT;

@@ -11,5 +11,7 @@ export const quoteCorePtBR: Record<QuoteCoreKey, string> = {
   'error.quote-not-open': 'Este orçamento já foi decidido ou substituído e não pode mais ser alterado.',
   'error.quote-expired': 'Este orçamento venceu.',
   'error.work-order-not-quotable': 'Só é possível enviar um orçamento em Diagnóstico ou Aguardando aprovação, com pelo menos uma linha.',
+  'error.approval-pending': 'Esta ordem não pode sair de Aguardando aprovação antes de o cliente responder ao orçamento. Só o proprietário pode ignorar essa regra.',
+  'workOrder.approvalPending': 'Aguardando a resposta do cliente ao orçamento. Só o proprietário pode mover esta ordem antes disso.',
   'error.decision-note-required': 'Adicione uma observação dizendo como o cliente decidiu.',
 };

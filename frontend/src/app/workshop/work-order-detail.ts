@@ -1,4 +1,5 @@
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -60,6 +61,9 @@ import { QuotePanel } from './quote-panel';
       </header>
       @if (w.readOnly) {
         <app-alert tone="info">{{ 'workOrder.readOnly' | t }}</app-alert>
+      }
+      @if (w.approvalPending && !w.readOnly) {
+        <app-alert tone="info">{{ 'workOrder.approvalPending' | t }}</app-alert>
       }
       @if (notice()) {
         <app-alert tone="warning">{{ notice() }}</app-alert>
@@ -283,7 +287,11 @@ export class WorkOrderDetail implements OnInit {
         this.wo.set(w);
         done?.();
       },
-      error: (e) => this.error.set(this.i18n.error(e)),
+      error: (e) => {
+        this.error.set(this.i18n.error(e));
+        // A conflict means this screen is out of date (for example a new quote was sent): reload, keep the message.
+        if (e instanceof HttpErrorResponse && e.status === 409) this.reload();
+      },
     });
   }
 }

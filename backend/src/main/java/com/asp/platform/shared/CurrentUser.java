@@ -9,6 +9,10 @@ import java.util.UUID;
 /// @param role     what the user may see and do
 public record CurrentUser(UUID userId, UUID tenantId, Role role) {
 
+    public boolean isOwner() {
+        return role == Role.OWNER;
+    }
+
     public boolean isMechanic() {
         return role == Role.MECHANIC;
     }

@@ -14,7 +14,7 @@ import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { Plate } from '../shared/plate';
 import { boardQuoteStatus, QUOTE_BADGE, quoteBadgeKey } from './quote-logic';
-import { allowedDropTargets, allowedMoves, BOARD_COLUMNS, canMoveCard, Mover } from './board-moves';
+import { allowedDropTargets, allowedMoves, approvalPending, BOARD_COLUMNS, canMoveCard, Mover } from './board-moves';
 
 /** A touch has to rest this long before a card lifts, so a swipe still scrolls the board. */
 const START_DELAY: DragStartDelay = { touch: 200, mouse: 0 };
@@ -73,11 +73,11 @@ interface Dragging {
                 class="card wo-card"
                 cdkDrag
                 [cdkDragData]="card"
-                [cdkDragDisabled]="!canDrag(card) || pending().has(card.id)"
+                [cdkDragDisabled]="!canDrag(card, col) || pending().has(card.id)"
                 [cdkDragStartDelay]="startDelay"
                 (cdkDragStarted)="dragging.set({ card, from: col })"
                 (cdkDragEnded)="dragging.set(null)"
-                [class.is-movable]="canDrag(card)"
+                [class.is-movable]="canDrag(card, col)"
                 [class.is-pending]="pending().has(card.id)"
                 [attr.aria-busy]="pending().has(card.id)"
               >
@@ -145,13 +145,13 @@ export class Board implements OnInit {
   /** Columns the card being dragged may be dropped in. */
   protected readonly dropTargets = computed(() => {
     const d = this.dragging();
-    return d ? allowedDropTargets(d.from, this.mover(), d.card.assignedMechanicId) : [];
+    return d ? allowedDropTargets(d.from, this.mover(), d.card.assignedMechanicId, d.card.quoteStatus) : [];
   });
 
   /** CDK enter predicate: the card's own column (to put it back) or an allowed target. */
   readonly canEnter = (drag: CdkDrag<BoardCard>, drop: CdkDropList<WorkOrderStatus>): boolean => {
     const from = drag.dropContainer.data as WorkOrderStatus;
-    return drop.data === from || allowedDropTargets(from, this.mover(), drag.data.assignedMechanicId).includes(drop.data);
+    return drop.data === from || allowedDropTargets(from, this.mover(), drag.data.assignedMechanicId, drag.data.quoteStatus).includes(drop.data);
   };
 
   ngOnInit(): void {
@@ -168,12 +168,12 @@ export class Board implements OnInit {
     });
   }
 
-  protected canDrag(card: BoardCard): boolean {
-    return canMoveCard(this.mover(), card.assignedMechanicId);
+  protected canDrag(card: BoardCard, from: WorkOrderStatus): boolean {
+    return canMoveCard(this.mover(), card.assignedMechanicId) && !approvalPending(from, this.mover(), card.quoteStatus);
   }
 
   protected moves(card: BoardCard, from: WorkOrderStatus): WorkOrderStatus[] {
-    return allowedMoves(from, this.mover(), card.assignedMechanicId);
+    return allowedMoves(from, this.mover(), card.assignedMechanicId, card.quoteStatus);
   }
 
   dropped(event: CdkDragDrop<WorkOrderStatus, WorkOrderStatus, BoardCard>): void {

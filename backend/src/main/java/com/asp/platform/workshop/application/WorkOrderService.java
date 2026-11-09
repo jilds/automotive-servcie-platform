@@ -32,6 +32,8 @@ import com.asp.platform.shared.CurrentUser;
 import com.asp.platform.stock.ReservationSource;
 import com.asp.platform.stock.StockItem;
 import com.asp.platform.stock.StockReservations;
+import com.asp.platform.workshop.domain.ApprovalGate;
+import com.asp.platform.workshop.domain.ApprovalPendingException;
 import com.asp.platform.workshop.domain.CheckInDetails;
 import com.asp.platform.workshop.domain.InvalidMechanicException;
 import com.asp.platform.workshop.domain.LineType;
@@ -222,6 +224,7 @@ public class WorkOrderService {
         if (user.isMechanic() && !MECHANIC_MOVES.contains(target)) {
             throw new AccessDeniedException("Mechanics cannot move a work order to " + target);
         }
+        requireApprovalAnswered(order, target, user);
         order.moveTo(target, clock.instant());
         if (order.lines().stream().map(WorkOrderLine::productId).anyMatch(Objects::nonNull)) {
             if (target == WorkOrderStatus.DELIVERED) {
@@ -235,6 +238,19 @@ public class WorkOrderService {
             supersedeQuote(saved);
         }
         return view(saved);
+    }
+
+    /// Only the owner may leave AWAITING_APPROVAL before the latest quote is answered (approved or rejected, on the
+    /// link or by phone); an expired, superseded or missing quote is not an answer. Called under the order's lock,
+    /// so a quote decision cannot slip in between. The move on approval does not come through here.
+    private void requireApprovalAnswered(WorkOrder order, WorkOrderStatus target, CurrentUser user) {
+        if (target == order.status() || order.status() != WorkOrderStatus.AWAITING_APPROVAL || user.isOwner()) {
+            return; // nothing to look up: not leaving the state, or the owner overrides
+        }
+        QuoteHeadline latest = quotes.latestOf(List.of(order.id())).get(order.id());
+        if (ApprovalGate.blocks(order.status(), user.isOwner(), latest == null ? null : latest.status())) {
+            throw new ApprovalPendingException();
+        }
     }
 
     /// Corrects the check-in data while the order is still editable. A changed odometer reading is also

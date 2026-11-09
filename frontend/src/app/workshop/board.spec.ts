@@ -184,6 +184,60 @@ describe('Board', () => {
     expect(other.querySelector('select')).toBeNull();
   });
 
+  describe('Awaiting approval', () => {
+    const waiting = (quoteStatus: BoardCard['quoteStatus']): BoardCard => ({ ...card('w9', 9), quoteStatus });
+
+    it('blocks front desk drops and the select until the quote is answered, and frees them after', () => {
+      const board = open(user('FRONT_DESK')).componentInstance;
+      for (const q of [undefined, null, 'SENT', 'EXPIRED', 'SUPERSEDED'] as const) {
+        expect(board.canEnter(drag(waiting(q), 'AWAITING_APPROVAL'), list('IN_PROGRESS'))).toBe(false);
+        expect(board.canEnter(drag(waiting(q), 'AWAITING_APPROVAL'), list('AWAITING_APPROVAL'))).toBe(true);
+      }
+      expect(board.canEnter(drag(waiting('APPROVED'), 'AWAITING_APPROVAL'), list('IN_PROGRESS'))).toBe(true);
+      expect(board.canEnter(drag(waiting('REJECTED'), 'AWAITING_APPROVAL'), list('AWAITING_PARTS'))).toBe(true);
+    });
+
+    it('does not make a locked card draggable or movable-styled, and frees it once answered', () => {
+      const fixture = open(user('FRONT_DESK'));
+      const el = fixture.nativeElement as HTMLElement;
+      const cardEl = () => columnOf(el, 'AWAITING_APPROVAL').querySelector('.wo-card') as HTMLElement;
+      const show = (q: BoardCard['quoteStatus']) => {
+        fixture.componentInstance.load();
+        http.expectOne('/api/v1/work-orders/board').flush({ columns: { AWAITING_APPROVAL: [waiting(q)] } });
+        fixture.detectChanges();
+      };
+      show('SENT');
+      expect(cardEl().classList).not.toContain('is-movable');
+      expect(cardEl().classList).toContain('cdk-drag-disabled');
+      expect(cardEl().querySelector('select')).toBeNull();
+      show('APPROVED');
+      expect(cardEl().classList).toContain('is-movable');
+      expect(cardEl().classList).not.toContain('cdk-drag-disabled');
+      expect(cardEl().querySelector('select')).not.toBeNull();
+    });
+
+    it('lets the owner move regardless of the quote', () => {
+      const board = open(user('OWNER')).componentInstance;
+      expect(board.canEnter(drag(waiting('SENT'), 'AWAITING_APPROVAL'), list('IN_PROGRESS'))).toBe(true);
+    });
+
+    it('sends nothing for a blocked front desk move', () => {
+      const board = open(user('FRONT_DESK')).componentInstance;
+      board.move(waiting('SENT'), 'AWAITING_APPROVAL', 'IN_PROGRESS');
+      http.expectNone('/api/v1/work-orders/w9/status');
+    });
+
+    it('rolls back and shows the translated error when the server answers approval-pending', () => {
+      const fixture = open(user('FRONT_DESK'));
+      // The client believed the quote was answered; the server disagrees (it is the authority).
+      fixture.componentInstance.move(waiting('APPROVED'), 'AWAITING_APPROVAL', 'IN_PROGRESS');
+      http.expectOne('/api/v1/work-orders/w9/status').flush({ code: 'approval-pending' }, { status: 409, statusText: 'Conflict' });
+      fixture.detectChanges();
+      expect(text(fixture.nativeElement.querySelector('app-alert')!)).toContain('cannot leave Awaiting approval until the customer has answered the quote');
+      http.expectOne('/api/v1/work-orders/board').flush({ columns: {} });
+    });
+  });
+
   it('takes a delivered or cancelled card off the board', () => {
     const fixture = open(user('FRONT_DESK'));
     fixture.componentInstance.move(card('w2', 2), 'DIAGNOSTICS', 'CANCELLED');

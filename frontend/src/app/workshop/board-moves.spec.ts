@@ -1,5 +1,5 @@
 import { WorkOrderStatus } from '../core/api/models';
-import { allowedDropTargets, allowedMoves, canMoveCard, Mover, nextStatuses } from './board-moves';
+import { allowedDropTargets, allowedMoves, approvalPending, canMoveCard, Mover, nextStatuses } from './board-moves';
 
 const owner: Mover = { role: 'OWNER', userId: 'o1' };
 const frontDesk: Mover = { role: 'FRONT_DESK', userId: 'f1' };
@@ -28,7 +28,7 @@ describe('board moves', () => {
 
   it('limits a mechanic to In progress, Awaiting parts and Ready on their own card', () => {
     expect(allowedMoves('DIAGNOSTICS', mechanic, 'm1')).toEqual(['IN_PROGRESS']);
-    expect(allowedMoves('AWAITING_APPROVAL', mechanic, 'm1')).toEqual(['AWAITING_PARTS', 'IN_PROGRESS']);
+    expect(allowedMoves('AWAITING_APPROVAL', mechanic, 'm1', 'APPROVED')).toEqual(['AWAITING_PARTS', 'IN_PROGRESS']);
     expect(allowedMoves('IN_PROGRESS', mechanic, 'm1')).toEqual(['AWAITING_PARTS', 'READY']);
     expect(allowedMoves('READY', mechanic, 'm1')).toEqual(['IN_PROGRESS']);
   });
@@ -41,6 +41,37 @@ describe('board moves', () => {
 
   it('gives no moves without a signed-in user', () => {
     expect(allowedMoves('DIAGNOSTICS', null, null)).toEqual([]);
+  });
+
+  describe('leaving Awaiting approval', () => {
+    const open = ['AWAITING_PARTS', 'IN_PROGRESS', 'CANCELLED'];
+
+    it.each([undefined, null, 'SENT', 'EXPIRED', 'SUPERSEDED'] as const)('blocks front desk and mechanic while the quote is %s', (q) => {
+      expect(allowedMoves('AWAITING_APPROVAL', frontDesk, null, q)).toEqual([]);
+      expect(allowedMoves('AWAITING_APPROVAL', mechanic, 'm1', q)).toEqual([]);
+      expect(allowedDropTargets('AWAITING_APPROVAL', frontDesk, null, q)).toEqual([]);
+      expect(approvalPending('AWAITING_APPROVAL', frontDesk, q)).toBe(true);
+    });
+
+    it.each(['APPROVED', 'REJECTED'] as const)('frees the front desk once the quote is %s, cancel included', (q) => {
+      expect(allowedMoves('AWAITING_APPROVAL', frontDesk, null, q)).toEqual(open);
+      expect(approvalPending('AWAITING_APPROVAL', frontDesk, q)).toBe(false);
+    });
+
+    it.each([undefined, 'SENT', 'EXPIRED', 'APPROVED'] as const)('always lets the owner move (quote %s)', (q) => {
+      expect(allowedMoves('AWAITING_APPROVAL', owner, null, q)).toEqual(open);
+      expect(approvalPending('AWAITING_APPROVAL', owner, q)).toBe(false);
+    });
+
+    it('does not restrict other statuses', () => {
+      expect(allowedMoves('DIAGNOSTICS', frontDesk, null, 'SENT')).toEqual(['AWAITING_APPROVAL', 'IN_PROGRESS', 'CANCELLED']);
+      expect(allowedMoves('AWAITING_PARTS', frontDesk, null, null)).toEqual(['IN_PROGRESS', 'CANCELLED']);
+      expect(approvalPending('IN_PROGRESS', frontDesk, 'SENT')).toBe(false);
+    });
+
+    it('gives no pending state without a user', () => {
+      expect(approvalPending('AWAITING_APPROVAL', null, 'SENT')).toBe(false);
+    });
   });
 
   it('only offers board columns as drop targets', () => {

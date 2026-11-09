@@ -1,4 +1,4 @@
-import { Role, WorkOrderStatus } from '../core/api/models';
+import { QuoteStatus, Role, WorkOrderStatus } from '../core/api/models';
 
 /** Open statuses, in board column order. Delivered and cancelled orders leave the board. */
 export const BOARD_COLUMNS: readonly WorkOrderStatus[] = ['DIAGNOSTICS', 'AWAITING_APPROVAL', 'AWAITING_PARTS', 'IN_PROGRESS', 'READY'];
@@ -32,14 +32,32 @@ export function canMoveCard(mover: Mover | null, assignedMechanicId: string | nu
   return mover.role !== 'MECHANIC' || assignedMechanicId === mover.userId;
 }
 
+/**
+ * Mirrors `WorkOrderService.move`: nobody but the owner may leave Awaiting approval until the latest quote is answered
+ * (APPROVED or REJECTED). `quoteStatus` is the board card's latest quote status (EXPIRED already applied by the server).
+ */
+export function approvalPending(from: WorkOrderStatus, mover: Mover | null, quoteStatus: QuoteStatus | null | undefined): boolean {
+  return from === 'AWAITING_APPROVAL' && mover !== null && mover.role !== 'OWNER' && quoteStatus !== 'APPROVED' && quoteStatus !== 'REJECTED';
+}
+
 /** Statuses this user may move a card to, in the order of {@link nextStatuses}. */
-export function allowedMoves(from: WorkOrderStatus, mover: Mover | null, assignedMechanicId: string | null): WorkOrderStatus[] {
-  if (!canMoveCard(mover, assignedMechanicId)) return [];
+export function allowedMoves(
+  from: WorkOrderStatus,
+  mover: Mover | null,
+  assignedMechanicId: string | null,
+  quoteStatus?: QuoteStatus | null,
+): WorkOrderStatus[] {
+  if (!canMoveCard(mover, assignedMechanicId) || approvalPending(from, mover, quoteStatus)) return [];
   const next = nextStatuses(from);
   return mover!.role === 'MECHANIC' ? next.filter((s) => MECHANIC_TARGETS.includes(s)) : [...next];
 }
 
 /** The subset of {@link allowedMoves} that is a board column, so a drop target. */
-export function allowedDropTargets(from: WorkOrderStatus, mover: Mover | null, assignedMechanicId: string | null): WorkOrderStatus[] {
-  return allowedMoves(from, mover, assignedMechanicId).filter((s) => BOARD_COLUMNS.includes(s));
+export function allowedDropTargets(
+  from: WorkOrderStatus,
+  mover: Mover | null,
+  assignedMechanicId: string | null,
+  quoteStatus?: QuoteStatus | null,
+): WorkOrderStatus[] {
+  return allowedMoves(from, mover, assignedMechanicId, quoteStatus).filter((s) => BOARD_COLUMNS.includes(s));
 }

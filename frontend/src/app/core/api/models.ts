@@ -194,6 +194,8 @@ export interface WorkOrder extends PlateInfo {
   plate: string | null;
   status: WorkOrderStatus;
   allowedNext: WorkOrderStatus[];
+  /** True while the order waits for the customer's answer to the quote and this user may not move it (only the owner may). */
+  approvalPending?: boolean;
   mileageIn: number | null;
   fuelLevel: number | null;
   complaint: string | null;

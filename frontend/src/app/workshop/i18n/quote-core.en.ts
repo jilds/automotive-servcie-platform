@@ -12,6 +12,8 @@ export const quoteCoreEn = {
   'error.quote-not-open': 'This quote has already been decided or replaced and can no longer change.',
   'error.quote-expired': 'This quote has expired.',
   'error.work-order-not-quotable': 'A quote can only be sent in Diagnostics or Awaiting approval, with at least one line.',
+  'error.approval-pending': 'This job cannot leave Awaiting approval until the customer has answered the quote. Only the owner can override.',
+  'workOrder.approvalPending': "Waiting for the customer's answer to the quote. Only the owner can move this job before then.",
   'error.decision-note-required': 'Add a note saying how the customer decided.',
 } as const;
 

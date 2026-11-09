@@ -104,4 +104,26 @@ class QuoteTests {
         assertThat(send(order(WorkOrderStatus.DIAGNOSTICS, typed)).hasPartsToOrder()).isTrue();
         assertThat(send(order(WorkOrderStatus.DIAGNOSTICS, fromStock, labour(100, "23"))).hasPartsToOrder()).isFalse();
     }
+
+    @Test
+    void should_count_only_an_approved_or_rejected_quote_as_answered() {
+        UUID desk = UUID.randomUUID();
+        Quote approved = send(order(WorkOrderStatus.DIAGNOSTICS, labour(100, "23")));
+        approved.approveByCustomer("Ana", NOW);
+        Quote rejected = send(order(WorkOrderStatus.DIAGNOSTICS, labour(100, "23")));
+        rejected.decideByStaff(QuoteDecision.REJECTED, "Caro", desk, NOW);
+        Quote sent = send(order(WorkOrderStatus.DIAGNOSTICS, labour(100, "23")));
+        Quote superseded = send(order(WorkOrderStatus.DIAGNOSTICS, labour(100, "23")));
+        superseded.supersede(NOW);
+        Quote expired = send(order(WorkOrderStatus.DIAGNOSTICS, labour(100, "23")));
+        expired.expire(NOW.plus(Duration.ofDays(16)));
+
+        assertThat(approved.isAnswered()).isTrue();
+        assertThat(rejected.isAnswered()).isTrue();
+        assertThat(sent.isAnswered()).isFalse();
+        assertThat(superseded.isAnswered()).isFalse();
+        assertThat(expired.isAnswered()).isFalse();
+        assertThat(QuoteStatus.EXPIRED.isAnswered()).isFalse();
+        assertThat(QuoteStatus.APPROVED.isAnswered()).isTrue();
+    }
 }

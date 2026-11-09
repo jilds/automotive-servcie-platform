@@ -97,6 +97,17 @@ order Awaiting parts (typed part), badges on the board and the work order, histo
 public page and the staff screens; settings field; no console errors. Not checked: the 390 px layout in the browser
 (the window could not be resized in this session).
 
+## Move rule (2026-11-09)
+
+Only the owner may move a work order out of AWAITING_APPROVAL (to AWAITING_PARTS, IN_PROGRESS or CANCELLED) before the
+order's latest quote is answered. Answered = APPROVED or REJECTED, by the customer on the link or by a phone decision
+of the front desk; SENT, EXPIRED (also past `validUntil`), SUPERSEDED or no quote is not. FRONT_DESK and MECHANIC get
+409 `approval-pending`; after any answer (a rejection too) they move the order freely. A newer quote makes the latest
+quote unanswered again. The check is in `WorkOrderService.move`, under the order row lock, using
+`QuoteRepository.latestOf` and `QuoteStatus.isAnswered`; the automatic move on approval (`QuoteService.moveOnApproval`)
+does not go through it. `WorkOrderResponse.approvalPending` is true in AWAITING_APPROVAL for a non-owner while the
+quote is unanswered, and `allowedNext` is then empty. Tests: `ApprovalGateApiTests`, `QuoteTests`.
+
 Left for later: quantities show as "1.5" in Portuguese on the public quote and on the work order (Angular `number`
 pipe in the default locale; existing on the work order before this step); a decision on a quote whose order was moved
 by hand to Ready or Delivered is still accepted (contract allows it; product decision); keyset paging in the expiry
