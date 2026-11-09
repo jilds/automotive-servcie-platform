@@ -8,6 +8,9 @@ Missing).
 
 Nothing asks the customer how the job went.
 
+## Owner decisions (2026-11-09)
+- The open points listed below are to be discussed with the owner before implementation starts.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

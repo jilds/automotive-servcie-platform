@@ -9,6 +9,9 @@ Partial; stocktake for Inventory).
 The `stock` module has purchase orders (draft → ordered → received) with a free-text supplier, and adjustments with a
 reason. Nothing is sent to the supplier, supplier invoices are not recorded and there is no count of the whole stock.
 
+## Owner decisions (2026-11-09)
+- The open points listed below are to be discussed with the owner before implementation starts.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

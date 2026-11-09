@@ -9,6 +9,9 @@ Backs the migration promise in `site/src/offer.ts` (`migrationIncluded`, still n
 A new workshop types its customers and vehicles by hand. The landing site may only promise migration once
 `offer.migrationIncluded` is set.
 
+## Owner decisions (2026-11-09)
+- Discuss this plan with the owner before any implementation starts. Open points (re-run updates, async for big files, other sources, paid or free migration) stay open.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

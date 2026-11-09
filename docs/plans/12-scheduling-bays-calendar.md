@@ -10,6 +10,9 @@ Booking ([01-booking.md](01-booking.md)) offers slots from the opening hours wit
 There are no bays, no mechanic calendar and no reminder before the appointment; a booking is not tied to a person or a
 lift.
 
+## Owner decisions (2026-11-09)
+- The open points listed below are to be discussed with the owner before implementation starts.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

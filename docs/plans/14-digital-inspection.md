@@ -9,6 +9,9 @@ Source: [gap-analysis-carbob.md](gap-analysis-carbob.md) (Digital diagnosis phot
 Plan 06 brings checklists (OK / ATTENTION / N/A) and order photos behind `PhotoStore`. There is no rating by urgency,
 no photo on a single item and nothing the customer can see.
 
+## Owner decisions (2026-11-09)
+- Video is undecided: no storage or provider chosen so far. Photos and the report can proceed without it; do not build video until the owner decides.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

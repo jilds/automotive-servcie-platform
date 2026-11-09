@@ -9,6 +9,9 @@ claimed in build order, next free after V21. Source: [gap-analysis-carbob.md](ga
 `notification` sends e-mail only (`Mailer`, SMTP, off when not configured) on events from `identity`, `booking`,
 `shop` and `workshop`. The customer can follow a booking, a shop order and a quote by link, but not the repair itself.
 
+## Owner decisions (2026-11-09)
+- The SMS and WhatsApp providers are not chosen. Collect options (price, sender ID, GDPR, API) for a later decision, and build against the sandbox ports only. No real provider code until then.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

@@ -9,6 +9,9 @@ order, next free after V21. Depends on [13-customer-comms.md](13-customer-comms.
 
 Customers carry `marketing_consent` (a single boolean, no date or source). Nothing sends marketing.
 
+## Owner decisions (2026-11-09)
+- The open points listed below are to be discussed with the owner before implementation starts.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

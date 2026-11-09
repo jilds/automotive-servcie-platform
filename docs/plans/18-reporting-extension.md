@@ -10,6 +10,9 @@ reports, Performance reports).
 Plan 08 adds the `reporting` module (read-only JDBC, owner only), the `work_order_line_amounts` view, cost vs quote and
 mechanic productivity, CSV export. The owner dashboard has a few tiles.
 
+## Owner decisions (2026-11-09)
+- Discuss this plan with the owner before any implementation starts. Open points (revenue source, comeback window) stay open.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |

@@ -9,6 +9,9 @@ Deferred quotes = Missing).
 A quote ([05-quotes.md](05-quotes.md)) is approved or rejected as a whole. Work the customer postpones is lost, and
 nothing tells the workshop when a vehicle is due for its next service.
 
+## Owner decisions (2026-11-09)
+- The open points listed below are to be discussed with the owner before implementation starts.
+
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |
