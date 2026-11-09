@@ -16,6 +16,7 @@ CLAUDE.md §12. The step plans are listed in [README.md](README.md).
 | 2026-10-25 | E-mail goes through **generic SMTP** (Spring Mail), with Mailpit in dev, and is off when not configured. |
 | 2026-10-25 | Initial bundle budget: 520 kB. |
 | 2026-10-25 | Domain, hosting and legal entity are not decided yet: use placeholders (`asp.example`, `<Empresa, Lda.>`), all listed in the checklist. |
+| 2026-11-09 | A feature comparison with a competitor's pricing page ([gap-analysis-carbob.md](gap-analysis-carbob.md)) adds plans 12–21 after step 10, in the order below. External plate / VIN lookup, manufacturer labour times, diagrams and procedures, multi-location and Brazil fiscal stay out. Product decisions are open in each plan; plan 21 is blocked on the pricing tiers. |
 
 ## Order and migrations
 
@@ -31,6 +32,16 @@ CLAUDE.md §12. The step plans are listed in [README.md](README.md).
 | 8 | Reports | `feat(reporting)` | view only, if needed V22 |
 | 9 | Mechanic offline | `feat(pwa)` | idempotency keys, next free number |
 | 10 | Leftovers | several small commits | composite FKs, next free number |
+| 11 | Scheduling: bays, mechanic calendar ([12](12-scheduling-bays-calendar.md)) | `feat(booking)` | next free number |
+| 12 | Customer communication ([13](13-customer-comms.md)) | `feat(notification)` | next free number |
+| 13 | Data import ([16](16-data-import.md)) | `feat(customer)` | next free number |
+| 14 | Digital inspection ([14](14-digital-inspection.md)) | `feat(workshop)` | next free number |
+| 15 | Deferred work and maintenance ([15](15-deferred-quotes-maintenance.md)) | `feat(workshop)` | next free number |
+| 16 | Suppliers and parts ordering ([17](17-suppliers-parts-ordering.md)) | `feat(stock)` | next free number |
+| 17 | Reporting extension ([18](18-reporting-extension.md)) | `feat(reporting)` | next free number, only if needed |
+| 18 | Customer satisfaction ([19](19-customer-satisfaction.md)) | `feat(workshop)` | next free number |
+| 19 | Marketing campaigns ([20](20-marketing-campaigns.md)) | `feat(campaign)` | next free number |
+| 20 | Plan limits and gating ([21](21-plan-limits-gating.md)), blocked on tiers | `feat(identity)` | next free number |
 
 Migration numbers are claimed in this order. If a step moves, it takes the next free number. An applied migration
 is never edited.
