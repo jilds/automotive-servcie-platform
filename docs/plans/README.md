@@ -18,7 +18,7 @@ Rules:
 | [04-shop.md](04-shop.md): online shop, pay at the counter | done | `f295a32`..`5a1dc8f` |
 | [05-quotes.md](05-quotes.md): quotes with a customer approval link | done | `61bb563`..`f593bb8` |
 | [06-workshop-floor.md](06-workshop-floor.md): mechanic time tracking, photos, checklists | done | |
-| [07-invoicing-payments.md](07-invoicing-payments.md): certified invoicing, Multibanco and MB WAY behind provider adapters | planned | |
+| [07-invoicing-payments.md](07-invoicing-payments.md): certified invoicing, Multibanco and MB WAY behind provider adapters | done (sandbox providers; real providers pending) | |
 | [08-reports.md](08-reports.md): cost vs quote, mechanic productivity | planned | |
 | [09-mechanic-offline.md](09-mechanic-offline.md): offline mode for the mechanic app | planned | |
 | [10-leftovers.md](10-leftovers.md): composite FKs, OnPush, GDPR tools, shared stores | planned | |

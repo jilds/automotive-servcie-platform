@@ -575,3 +575,364 @@ for 100 workshops; move the bytes to S3 behind `PhotoStore` at about 100 GB in t
 - Moving to DELIVERED: show `error.checklist-incomplete` and offer the delivery checklist.
 - `/backoffice`: checklist templates (two lists, add / remove / reorder items, required switch) and the "Delivery
   checklist required" switch in the settings.
+
+## Invoicing and payments
+
+Plan step 07 (`docs/plans/07-invoicing-payments.md`), new module `billing`, migrations V20 and V21. Invoices and credit
+notes through a certified-invoicing **provider** (stage 1 ships only the **sandbox**, whose documents are not fiscal
+documents), and payments by Multibanco, MB WAY, cash, card and transfer. Tests that pin this contract:
+`InvoiceIssueApiTests`, `InvoiceRetryApiTests`, `InvoiceCreditVoidApiTests`, `InvoiceTotalsTests`, `PaymentApiTests`,
+`PaymentWebhookApiTests`, `BillingGrantsTests`, `BillingIsolationTests`, `BillingAccessTests`,
+`RowLevelSecurityCatalogueTests`.
+
+General rules:
+
+- **OWNER and FRONT_DESK only.** A MECHANIC gets 403 on every endpoint below (prices, customer data). No token: 401. A
+  platform admin: 403. The only anonymous endpoint is the provider webhook.
+- Money is integer **cents** (EUR). Percentages (`vatRate`, `discountPercent`) and quantities are numbers with at most 2
+  decimals. Timestamps are ISO-8601 UTC instants.
+- A document or payment of another workshop answers 404 like an unknown id.
+- `version` is the optimistic lock (409 `stale-data` when it differs). It is on invoices and payments; send the value
+  you read on void, discard and payment cancel.
+- **Provider.** `GET /billing/settings` tells which provider is active. While `invoicing.sandbox` is true every
+  document carries `"sandbox": true` and **the UI must say it is not a fiscal document** (the PDF says so too). With
+  provider `none` the write endpoints answer 409 `provider-not-configured`.
+- Only a work order in **DELIVERED** with at least one line can be invoiced.
+
+### Invoice resource (`InvoiceResponse`)
+
+Returned by every endpoint that returns "an invoice". Field exact:
+
+```json
+{
+  "id": "uuid",
+  "kind": "INVOICE | CREDIT_NOTE",
+  "status": "PENDING | ISSUED | FAILED | VOIDED | DISCARDED",
+  "workOrderId": "uuid",
+  "workOrderNumber": 12,
+  "creditOfId": "uuid | null",
+  "creditOfNumber": "FT SANDBOX/3 | null",
+  "number": "FT SANDBOX/3 | null",
+  "series": "SANDBOX | null",
+  "sequence": 3,
+  "atcud": "SANDBOX-3 | null",
+  "qrPayload": "string | null",
+  "hashFragment": "string | null",
+  "issuedAt": "instant | null",
+  "provider": "sandbox",
+  "sandbox": true,
+  "issuer": { "name": "string", "nif": "string | null", "country": "PT" },
+  "customer": {
+    "name": "string", "nif": "string | null", "finalConsumer": false,
+    "address": { "street": "string", "detail": "string | null", "postalCode": "1100-053", "locality": "Lisboa", "country": "PT" }
+  },
+  "plate": "AA-00-AA | null",
+  "lines": [ { "id": "uuid", "position": 1, "type": "LABOR | PART", "description": "string", "quantity": 1.00,
+               "unitPriceCents": 4000, "discountPercent": 0.00, "vatRate": 23.00,
+               "netCents": 4000, "vatCents": 920, "totalCents": 4920 } ],
+  "vatSummary": [ { "vatRate": 23.00, "netCents": 4000, "vatCents": 920 } ],
+  "netCents": 4000, "vatCents": 920, "totalCents": 4920,
+  "paidCents": 0, "pendingCents": 0, "balanceCents": 4920, "overpaidCents": 0, "refundDueCents": 0,
+  "paymentStatus": "UNPAID | PARTIALLY_PAID | PAID | CREDITED | null",
+  "payments": [ "PaymentResponse" ],
+  "creditNote": { "id": "uuid", "number": "NC SANDBOX/1 | null", "status": "PENDING | ISSUED | FAILED" },
+  "reason": "string | null",
+  "closedAt": "instant | null",
+  "failure": { "code": "string", "message": "string", "attempts": 2, "lastAttemptAt": "instant" },
+  "createdAt": "instant",
+  "version": 0
+}
+```
+
+- `customer.address` is null when there is none; `customer.nif` is null for a final consumer or a customer without NIF
+  (`finalConsumer` is true only when the request asked for it). `creditNote` is null unless a non-DISCARDED credit note
+  exists on this invoice. `failure` is null unless the last attempt to reach the provider failed (FAILED, or PENDING
+  after a timeout). `reason` is the credit note's reason or the void / discard reason.
+- `number` is the full number the provider assigned (type, series, sequence); null until ISSUED. `sequence`, `series`,
+  `atcud`, `qrPayload`, `hashFragment`, `issuedAt` are null until ISSUED. `creditOfNumber` is the number of the credited
+  invoice (credit notes only).
+- `paymentStatus` is null for credit notes and for documents that are not ISSUED. CREDITED: an ISSUED invoice that has a
+  credit note (a credit note that is still PENDING or FAILED does not credit yet). `refundDueCents` = what was paid on a
+  credited invoice (informational; refunds are not built).
+  `overpaidCents` = paid minus total when positive (a late webhook can cause it); `balanceCents` is never negative and is
+  0 for a credited invoice. `pendingCents` = the PENDING payments.
+- On a credit note: `lines` and totals mirror the invoice (positive numbers; `kind` carries the sign), `payments` is empty
+  and the payment fields are 0.
+- A list item (`InvoiceSummaryResponse`) has: `id, kind, status, number, workOrderId, workOrderNumber, customerName,
+  customerNif, plate, issuedAt, createdAt, totalCents, balanceCents, refundDueCents, paymentStatus, sandbox`.
+
+### Payment resource (`PaymentResponse`)
+
+```json
+{
+  "id": "uuid", "invoiceId": "uuid",
+  "method": "CASH | CARD | MULTIBANCO | MBWAY | TRANSFER",
+  "status": "PENDING | PAID | FAILED | EXPIRED | CANCELLED",
+  "amountCents": 2000,
+  "provider": "sandbox | null",
+  "multibanco": { "entity": "99999", "reference": "123456789" },
+  "mbway": { "phoneMasked": "+351 9** *** 678" },
+  "expiresAt": "instant | null", "paidAt": "instant | null",
+  "failureCode": "string | null", "note": "string | null",
+  "createdAt": "instant", "version": 0
+}
+```
+
+`multibanco` is present only for MULTIBANCO, `mbway` only for MBWAY (null otherwise). `provider` is null for CASH, CARD and
+TRANSFER. Show the reference as `123 456 789`.
+
+### Endpoints
+
+| Method and path | Role | Body | Success | Notes |
+|---|---|---|---|---|
+| `GET /billing/settings` | OWNER, FRONT_DESK | - | 200 `BillingSettingsResponse` | see below |
+| `POST /work-orders/{workOrderId}/invoices` | OWNER, FRONT_DESK | `IssueInvoiceRequest` | **201** new, ISSUED; **200** replay of an ISSUED one; **202** PENDING or FAILED (stored) | `InvoiceResponse` |
+| `GET /work-orders/{workOrderId}/invoices` | OWNER, FRONT_DESK | - | 200 `InvoiceResponse[]` | invoices and credit notes of the order, newest first, DISCARDED included |
+| `GET /invoices` | OWNER, FRONT_DESK | query | 200 `InvoicePage` | see below |
+| `GET /invoices/{id}` | OWNER, FRONT_DESK | - | 200 `InvoiceResponse` | |
+| `GET /invoices/{id}/pdf` | OWNER, FRONT_DESK | - | 200 `application/pdf` | `Content-Disposition: inline`; 409 `invoice-not-issued` unless ISSUED or VOIDED |
+| `POST /invoices/{id}/retry` | OWNER, FRONT_DESK | - | 200 `InvoiceResponse` | PENDING or FAILED only (409 `invoice-not-retryable`); `status` tells the outcome |
+| `POST /invoices/{id}/discard` | OWNER, FRONT_DESK | `{ "reason": "1..500", "version": n }` | 200 `InvoiceResponse` (DISCARDED) | FAILED only (409 `invoice-not-discardable`) |
+| `POST /invoices/{id}/void` | OWNER, FRONT_DESK | `{ "reason": "1..500", "version": n }` | 200 `InvoiceResponse` (VOIDED) | ISSUED invoice only; a VOIDED invoice answers 200 again (safe retry) |
+| `POST /invoices/{id}/credit-notes` | OWNER, FRONT_DESK | `{ "requestId": "uuid", "reason": "1..500" }` | **201** ISSUED; **200** replay ISSUED; **202** PENDING / FAILED | returns the **credit note** as `InvoiceResponse` (`kind` CREDIT_NOTE) |
+| `POST /invoices/{id}/payments` | OWNER, FRONT_DESK | `CreatePaymentRequest` | 201 `PaymentResponse` | |
+| `GET /payments/{id}` | OWNER, FRONT_DESK | - | 200 `PaymentResponse` | for polling an MB WAY request |
+| `POST /payments/{id}/refresh` | OWNER, FRONT_DESK | - | 200 `PaymentResponse` | asks the provider for the status of a PENDING payment and applies it (409 `payment-not-pending` otherwise) |
+| `POST /payments/{id}/cancel` | OWNER, FRONT_DESK | `{ "version": n }` | 200 `PaymentResponse` (CANCELLED) | PENDING only (409 `payment-not-pending`) |
+| `POST /payments/{id}/sandbox/simulate` | OWNER, FRONT_DESK | `{ "outcome": "PAID" \| "FAILED" \| "EXPIRED" }` | 200 `PaymentResponse` | **only while `payments.sandbox` is true**; otherwise the route does not exist (404) |
+| `POST /api/v1/public/{slug}/billing/webhooks/{provider}` | anonymous (signature) | provider's raw body | 200 `{ "result": "APPLIED" \| "DUPLICATE" \| "IGNORED" }` | see Webhook |
+
+**`BillingSettingsResponse`**: `{ "invoicing": { "provider": "sandbox", "configured": true, "sandbox": true },
+"payments": { "provider": "sandbox", "configured": true, "sandbox": true }, "finalConsumerLimitCents": 100000,
+"currency": "EUR", "methods": ["CASH","CARD","TRANSFER","MULTIBANCO","MBWAY"], "multibancoValidDays": 3,
+"mbwayValidMinutes": 5 }`. With provider `none`: `configured` false, `sandbox` false; `methods` always holds
+`CASH`, `CARD`, `TRANSFER` (no provider needed) and adds `MULTIBANCO`, `MBWAY` only when the payments provider is configured.
+
+**`IssueInvoiceRequest`** (invoice for the work order):
+
+```json
+{
+  "requestId": "uuid (required)",
+  "finalConsumer": false,
+  "customer": {
+    "name": "1..120", "nif": "string | null",
+    "address": { "street": "...", "detail": "... | null", "postalCode": "...", "locality": "...", "country": "PT" }
+  }
+}
+```
+
+`finalConsumer` is optional (default false). `customer` is optional: omitted, the vehicle owner's name, NIF and address
+are copied; given, it replaces them completely (`name` required, `nif` and `address` optional; a PT postal code must be
+`NNNN-NNN`, else 400 `validation` with `errors["customer.address.postalCode"]`). `finalConsumer: true` ignores `customer` and
+the owner's data: name "Consumidor final", no NIF, no address. Fiscal rules, in this order:
+
+1. `nif` present and the customer's country (the address country, else the workshop's) is PT: it must pass the NIF check
+   (400 `invalid-nif`, `errors["customer.nif"]`).
+2. `nif` absent and `totalCents` > `finalConsumerLimitCents`: 400 `customer-nif-required` (`errors["customer.nif"]`),
+   also for `finalConsumer: true`.
+3. `address` absent and `totalCents` > `finalConsumerLimitCents`: 400 `customer-address-required`
+   (`errors["customer.address"]`).
+
+**Issue flow and the three outcomes** (also for credit notes):
+
+1. The snapshot is stored as PENDING (lines, totals, customer, issuer) and the request id is claimed.
+2. The provider is called with the document id as its external reference.
+3. Result: ISSUED (**201** first time), FAILED (the provider rejected it: **202**, `failure.code` / `failure.message`), or
+   still PENDING (provider down or timeout, the outcome is unknown: **202**, `failure` holds the error). A 202 body is a
+   normal `InvoiceResponse`; the document is never lost. The UI shows "being issued" for PENDING, offers **Retry**
+   (`POST /invoices/{id}/retry`) for PENDING and FAILED, and **Discard** for FAILED. The server also retries PENDING
+   documents every 5 minutes (up to 5 attempts).
+4. **Replay**: the same `requestId` on the same work order again returns the existing document (**200** when ISSUED,
+   **202** when PENDING / FAILED, after trying to complete it). Another `requestId` while an invoice that is PENDING,
+   ISSUED or FAILED exists answers 409 `already-invoiced` with the extra problem properties `invoiceId` and
+   `invoiceStatus`. After a DISCARDED or VOIDED invoice the work order can be invoiced again.
+
+**Errors of issue**: 404 `work-order-not-found`; 409 `work-order-not-invoiceable` (not DELIVERED; the property `status`
+holds the order status); 409 `already-invoiced`; 409 `provider-not-configured`; 400 as above; 400 `validation`.
+
+**Credit note**: `POST /invoices/{id}/credit-notes` on an ISSUED invoice (a PENDING or FAILED credit note already blocks new payments) (409 `invoice-not-issued` otherwise, also for a
+credit note), full amount, one per invoice: a second request with another `requestId` while the first is PENDING / ISSUED /
+FAILED answers 409 `credit-note-exists`. Same `requestId`: replay. A credit note of an invoice with a PAID payment is
+allowed (`refundDueCents` shows what is owed back). Success also sets the invoice's `creditNote` and `paymentStatus`
+CREDITED and CANCELS its PENDING payments.
+
+**Void**: 409 `invoice-not-voidable` (not an ISSUED invoice, or it has a credit note), 409 `invoice-has-payments` (a PAID
+payment exists: credit it instead), 409 `provider-rejected` (the provider refused; nothing changes), 503
+`provider-unavailable` (nothing changes, retry). Success CANCELS the invoice's PENDING payments.
+
+**`GET /invoices` query** (all optional): `status` (repeatable), `kind`, `paymentStatus` (UNPAID, PARTIALLY_PAID, PAID,
+CREDITED), `from` / `to` (dates `yyyy-MM-dd`, inclusive, on `createdAt` in the workshop's time zone), `q` (at least 2
+characters: matches the number, customer name, customer NIF or plate; case-insensitive), `page` (0-based, default 0),
+`size` (1..100, default 20). Sorted by `createdAt` descending. Response `InvoicePage`:
+`{ "items": [InvoiceSummaryResponse], "page": 0, "size": 20, "total": 134 }`. A bad `size`, date or enum: 400 `validation`.
+
+**`CreatePaymentRequest`**:
+
+```json
+{ "method": "CASH | CARD | MULTIBANCO | MBWAY | TRANSFER", "amountCents": 2000, "phone": "912345678", "note": "0..200" }
+```
+
+- `amountCents` optional: default = what is left (`totalCents - paidCents - pendingCents`). Must be between 1 and what
+  is left (409 `payment-exceeds-balance`; the property `leftCents` tells how much is left).
+- `phone` is required for MBWAY (Portuguese mobile: `9XXXXXXXX`, optionally `+351` or `00351` and spaces; else 400
+  `invalid-phone`, `errors.phone`; also when it is missing) and ignored for the other methods. It is not stored; only
+  `phoneMasked`.
+- CASH, CARD and TRANSFER are recorded as **PAID at once** (`paidAt` now; no provider). MULTIBANCO and MBWAY are
+  PENDING with `expiresAt`; they need the payment provider (409 `provider-not-configured`). The invoice must be an ISSUED
+  invoice without a credit note (409 `invoice-not-issued`). The provider can refuse (409 `payment-failed`, nothing stored,
+  property `reason`) or be down (503 `provider-unavailable`, nothing stored).
+- The invoice row is locked while a payment is created (3 s, then 409 `try-again`).
+
+**Payment state machine**
+
+```
+CASH/CARD/TRANSFER:  (created) -> PAID
+MULTIBANCO/MBWAY:    (created) -> PENDING -> PAID        (webhook, refresh or simulate)
+                                         -> FAILED      (provider says it failed, e.g. MB WAY refused on the phone)
+                                         -> EXPIRED     (expiresAt passed; job or provider)
+                                         -> CANCELLED   (staff, void, credit note)
+                     EXPIRED | CANCELLED -> PAID        (late money: the reference was paid after all)
+PAID, FAILED: final.
+```
+
+**Invoice state machine**
+
+```
+(created) -> PENDING -> ISSUED   -> VOIDED     (invoices only, void)
+                     -> FAILED   -> ISSUED     (retry)
+                                 -> DISCARDED  (discard)
+                     -> PENDING  (provider unavailable; retried by the job or by staff)
+VOIDED, DISCARDED: final.  A CREDIT_NOTE follows the same path without VOIDED.
+```
+
+Invoices can be paid only while ISSUED. `paymentStatus`: UNPAID (nothing paid), PARTIALLY_PAID, PAID (paid >= total), CREDITED.
+
+### Webhook (`POST /api/v1/public/{slug}/billing/webhooks/{provider}`)
+
+Anonymous public chain (ADR 0004): the slug selects the workshop (unknown or closed slug: 404 `workshop-not-found`), the
+workshop is never read from the body. `{provider}` must be the configured payments provider (404
+`unknown-payment-provider`). The provider is configured with this URL per workshop.
+
+- **Sandbox signature**: header `X-ASP-Signature: t=<epoch seconds>,v1=<lower-case hex>` with
+  `v1 = HMAC-SHA256(secret, t + "." + rawBody)`; `secret` = `app.billing.payments.webhook-secret`
+  (`ASP_BILLING_WEBHOOK_SECRET`). Missing or wrong signature, or `t` more than 5 minutes from now: 401
+  `webhook-signature-invalid`, nothing is stored.
+- **Sandbox body**: `{ "eventId": "string 1..100", "paymentId": "sbx-<our payment id>", "status": "PAID | FAILED | EXPIRED",
+  "amountCents": 2000 }`. A real provider has its own body and verification; the contract of the endpoint is the same.
+- Idempotent by `(workshop, provider, eventId)`: a repeat answers 200 `{"result":"DUPLICATE"}` and changes nothing.
+  A new event for a PENDING / EXPIRED / CANCELLED payment of this workshop with the same amount answers `APPLIED`
+  (PAID, FAILED or EXPIRED as the event says; FAILED and EXPIRED apply to PENDING payments only). An unknown payment, a
+  payment of another workshop, an amount that differs or an event that cannot apply: 200 `IGNORED` (stored, logged with
+  ids only, so the provider stops retrying). An unreadable body after a valid signature: 400 `validation`.
+- Rate limit: its own budget, `app.public.rate-limit.webhooks` (600 a minute per address and slug), not the 10 writes
+  an hour of the forms. 429 `too-many-requests` beyond it.
+
+### Events (internal, module `billing`)
+
+`billing.InvoiceIssued(tenantId, invoiceId, workOrderId, number, totalCents)` after an invoice or credit note is ISSUED;
+`billing.PaymentReceived(tenantId, invoiceId, paymentId, method, amountCents, fullyPaid)` after a payment becomes PAID.
+No personal data. No listener yet.
+
+### Error codes added
+
+| Status | `code` | When |
+|---|---|---|
+| 404 | `invoice-not-found` | Unknown id or another workshop's |
+| 404 | `payment-not-found` | Unknown id or another workshop's |
+| 404 | `unknown-payment-provider` | Webhook `{provider}` is not the configured one |
+| 400 | `customer-nif-required` | No NIF above the final consumer limit (`errors["customer.nif"]`) |
+| 400 | `customer-address-required` | No address above the limit (`errors["customer.address"]`) |
+| 400 | `invalid-phone` | MB WAY phone is not a Portuguese mobile (`errors.phone`) |
+| 401 | `webhook-signature-invalid` | Bad, missing or stale webhook signature |
+| 400 | `customer-name-too-long` | Customer name over 120 characters (`errors["customer.name"]`) |
+| 409 | `request-id-reused` | The request id already belongs to a document that is closed (DISCARDED or VOIDED) or to another work order: a request id is used once, make a new one (a replay of an active document is still answered) |
+| 413 | `webhook-too-large` | Webhook body over 16 KB (refused before the signature is looked at) |
+| 409 | `already-invoiced` | The work order has a PENDING, ISSUED or FAILED invoice with another request id (`invoiceId`, `invoiceStatus`) |
+| 409 | `work-order-not-invoiceable` | The order is not DELIVERED, or has no lines (`status`) |
+| 409 | `invoice-not-issued` | PDF of a PENDING / FAILED / DISCARDED document; credit note or payment on a document that is not an ISSUED invoice (or already credited) |
+| 409 | `invoice-not-retryable` | Retry of a document that is not PENDING or FAILED |
+| 409 | `invoice-not-discardable` | Discard of a document that is not FAILED |
+| 409 | `invoice-not-voidable` | Void of anything but an ISSUED invoice without a credit note |
+| 409 | `invoice-has-payments` | Void of an invoice with a PAID payment |
+| 409 | `credit-note-exists` | The invoice already has an active credit note (other request id) |
+| 409 | `payment-exceeds-balance` | Amount above what is left (`leftCents`) |
+| 409 | `payment-not-pending` | Cancel / refresh of a payment that is not PENDING |
+| 409 | `payment-failed` | The payment provider refused the request (`reason`) |
+| 409 | `provider-not-configured` | The needed provider is `none` |
+| 409 | `provider-rejected` | The invoicing provider refused a void |
+| 503 | `provider-unavailable` | Timeout or provider down on void or payment creation (nothing changed; retry) |
+
+Reused: `invalid-nif`, `work-order-not-found`, `stale-data`, `try-again`, `validation`, `too-many-requests`,
+`workshop-not-found`. Every code needs `error.<code>` texts in pt-PT, en and pt-BR except the provider-facing ones
+(`webhook-signature-invalid`, `webhook-too-large` and `unknown-payment-provider`: only a provider sees them). A document that stays PENDING or FAILED shows `failure.message` (English fallback) next to a
+translated hint; `failure.code` values: `sandbox-rejected`, `provider-unavailable`, `provider-total-mismatch`, `provider-invalid-response` (the provider answered with a value that does not fit), `issued-after-discard`.
+
+### Migrations V20 and V21
+
+V20: `invoice` (both kinds; snapshot of issuer, customer, totals; provider result; status; closing columns; `version`),
+`invoice_line` (insert only), `invoicing_sandbox_document` (the sandbox ledger). V21: `payment`, `payment_event` (insert only).
+Each table has `tenant_id` with the V2 default and RLS ENABLE + FORCE with `tenant_isolation`. `asp_app` has no `delete` on
+any of them; `invoice` and `payment` allow `update` on the mutable columns only; a trigger on `invoice` refuses to change the
+issued data once set.
+
+### Screens (for the Angular side)
+
+- **Work order** (DELIVERED, OWNER / FRONT_DESK): an "Invoice" action opens a dialog (customer from the owner, or another
+  customer with name / NIF / address, or final consumer; the form creates one `requestId` per opening and reuses it on a
+  retry) -> `POST /work-orders/{id}/invoices`; below it the order's documents (`GET /work-orders/{id}/invoices`) with status
+  badges, PDF link, payments panel and the actions the state allows.
+- **Payments panel** on an invoice: balance, a list of payments with status badges, buttons Cash / Card / Transfer (amount, note),
+  Multibanco (shows entity, reference and the validity) and MB WAY (phone; then poll `GET /payments/{id}` every 3 s while PENDING).
+- **`/invoices`**: filters (status, kind, payment status, dates, search), table, PDF, detail; credit note and void actions.
+- **Sandbox banner** whenever `sandbox` is true: "Sandbox: not a fiscal document". In sandbox only, a PENDING payment shows a
+  "Simulate" action (`payments.sandbox` from `GET /billing/settings`).
+- New routes (`/invoices`, `/invoices/:id`) also go in `SpaForwardingController` and `SpaForwardingTests`.
+- Mechanics never see any of it (menu hidden; 403 otherwise).
+
+### Round 1 changes (security and database review)
+
+What changed for the Angular side since the first version of this section:
+
+- **Invoice summary** (`GET /invoices` items) has the new field `refundDueCents` (paid money to give back on a credited or
+  voided invoice; 0 otherwise).
+- **Voided invoice with money received.** A payment that arrives late on a voided invoice (its reference was CANCELLED by the
+  void, then paid) becomes PAID. `InvoiceResponse` of the VOIDED invoice then has `paidCents` > 0 and `refundDueCents` =
+  `paidCents` (`paymentStatus` stays null). Show it as money to return.
+- **New error `request-id-reused`** (409): `POST /work-orders/{id}/invoices` or `/credit-notes` with a `requestId` that
+  already belongs to a closed document (discarded or voided) or to another order. The form must make a **new `requestId`**
+  after a discard or void (it only reuses the id for a retry of the same attempt). A replay of an active document is still
+  answered as before. Needs `error.request-id-reused` in pt-PT, en and pt-BR.
+- **Discard while the provider is working.** `POST /invoices/{id}/discard` answers 409 `try-again` while an attempt to reach
+  the provider is under way (started less than provider timeout + 30 s ago): retry in a few seconds.
+- **Issued after discard.** If the provider issued the document while it was being discarded, the DISCARDED document keeps
+  the number (`number`, `atcud` ... are filled) and `failure.code` is `issued-after-discard`. The UI should flag it
+  ("issued at the provider although discarded: void it there"). It stays DISCARDED.
+- **Total mismatch.** If the provider issues another total than ours, the document is FAILED with `failure.code`
+  `provider-total-mismatch` (202 on issue). Show `failure.message`; retry or discard as for any FAILED document.
+- **`payment-failed`**: the property `reason` is now a short machine code of the provider (the sandbox: `sandbox-rejected`),
+  never the provider's text. Show the translated `error.payment-failed` text.
+- **Webhook**: a body over 16 KB answers 413 `webhook-too-large` before any signature check; provider calls are no longer
+  counted by the public pages' per-address lookup limit (their own budget only). The signature is computed over the raw body
+  bytes (same wire format as before). The reverse proxy limits request bodies (1 MB, 6 MB for photo uploads, 16 KB for
+  webhooks).
+- **Event** `PaymentReceived` has the new flag `lateOnClosedInvoice` (internal).
+- A suspended or expired workshop's webhooks answer 404 (public pages are closed); its pending payments are settled by the
+  expiry job asking the provider (the job now covers closed workshops too).
+
+### Round 2 changes (final review)
+
+- **New error `customer-name-too-long`** (400, `errors["customer.name"]`): a customer name over 120 characters on the invoice,
+  whether typed in `customer.name` or taken from the vehicle owner. Needs `error.customer-name-too-long` in pt-PT, en and
+  pt-BR. `customer.name` is also checked as one line without links or control characters (400 `validation`,
+  `errors["customer.name"]`).
+- **`version` is required** on `POST /invoices/{id}/void`, `/discard` and `POST /payments/{id}/cancel`: without it the answer
+  is 400 `validation` with `errors.version`.
+- **Address country is optional** in `IssueInvoiceRequest.customer.address`: left out, it is the workshop's country (the
+  response `customer.address.country` shows it). The Portuguese postal code format (`NNNN-NNN`) is checked when that country
+  is PT (400 `validation`, `errors["customer.address.postalCode"]`).
+- **`failure.code`** can also be `provider-invalid-response` (FAILED: the provider answered with a value that does not fit).
+- **A second staff retry** while the first is with the provider answers 409 `try-again`; a replay of the same issue request
+  while the first call is still with the provider answers 202 with the PENDING document.
+- **Webhook limits**: POSTs to `/api/v1/public/{slug}/billing/webhooks/...` have their own per-address budget before the slug
+  lookup (`app.public.rate-limit.webhook-lookups`, 120 a minute across slugs) and their per-address-and-slug budget
+  (`webhooks`, 600 a minute); other methods on that path count in `lookups` like any public request.

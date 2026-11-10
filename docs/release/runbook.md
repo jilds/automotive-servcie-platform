@@ -100,6 +100,18 @@ an older image on a newer schema; then restore the backup taken before the upgra
 - Metrics: `/actuator/prometheus` on port 8081, reachable only on the internal network. A Prometheus container on that
   network can scrape `app:8081` (not set up yet, see the checklist).
 - Rate limits and caches are in memory per instance: run **one** app container until they move to a shared store.
+- Invoicing and payments (plan 07): in production both providers default to `none`
+  (`ASP_BILLING_INVOICING_PROVIDER`, `ASP_BILLING_PAYMENTS_PROVIDER`; the app refuses `sandbox` under the `prod`
+  profile). When a real payments provider is added, `ASP_BILLING_WEBHOOK_SECRET` (at least 32 bytes) is required.
+  Caddy limits request bodies (`deploy/Caddyfile`): 1 MB by default, 6 MB for photo uploads, 16 KB for the billing
+  webhook `/api/v1/public/<slug>/billing/webhooks/...` (the app refuses a larger one too). A **suspended or expired
+  workshop's webhooks answer 404** (its public pages are closed), so the provider will retry and give up; those payments
+  are settled by the expiry job (every 10 minutes, all workshops), which asks the provider for the status of every
+  pending payment past its validity. Real provider adapters must set HTTP connect and read timeouts to
+  `app.billing.provider-timeout` (2 s) or less. Migrations V20 and V21 are forward-fix only once real documents exist
+  (invoices are kept 10 years): never roll them back after go-live. The app role's connections set
+  `statement_timeout` 30 s and `idle_in_transaction_session_timeout` 60 s.
+  Once a real payments provider is chosen, allow its source addresses for the webhook path in `deploy/Caddyfile` (a `remote_ip` matcher on `@billingWebhook`) so nobody else can reach it; the per-address limits (120 a minute across slugs, 600 per slug) are only a backstop.
 
 ## 5. Backups
 
