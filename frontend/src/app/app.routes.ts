@@ -73,7 +73,7 @@ export const routes: Routes = [
       { path: 'vehicles/:id', loadComponent: () => import('./workshop/vehicle-history').then((m) => m.VehicleHistory) },
       {
         path: 'work-orders/:id',
-        resolve: { texts: textsFor('catalogue', 'quote', 'floor') },
+        resolve: { texts: textsFor('catalogue', 'quote', 'floor', 'billing') },
         loadComponent: () => import('./workshop/work-order-detail').then((m) => m.WorkOrderDetail),
       },
       {
@@ -93,6 +93,18 @@ export const routes: Routes = [
         canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
         resolve: { texts: textsFor('shop') },
         loadComponent: () => import('./shop/shop-orders-page').then((m) => m.ShopOrdersPage),
+      },
+      {
+        path: 'invoices',
+        canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
+        resolve: { texts: textsFor('billing') },
+        loadComponent: () => import('./billing/invoices-page').then((m) => m.InvoicesPage),
+      },
+      {
+        path: 'invoices/:id',
+        canActivate: [roleGuard('OWNER', 'FRONT_DESK')],
+        resolve: { texts: textsFor('billing') },
+        loadComponent: () => import('./billing/invoice-detail-page').then((m) => m.InvoiceDetailPage),
       },
       {
         path: 'backoffice',

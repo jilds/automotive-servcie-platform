@@ -72,6 +72,7 @@ const NO_ADD_ONS: AddOns = { booking: false, shop: false };
                 }
                 <a class="nav-link" routerLink="/customers" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="users" />{{ 'nav.customers' | t }}</a>
                 <a class="nav-link" routerLink="/stock" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="inbox" />{{ 'nav.stock' | t }}</a>
+                <a class="nav-link" routerLink="/invoices" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="file-text" />{{ 'nav.invoices' | t }}</a>
               }
               @if (auth.hasRole('OWNER')) {
                 <a class="nav-link" routerLink="/backoffice" routerLinkActive="active" ariaCurrentWhenActive="page"><app-icon name="briefcase" />{{ 'nav.backoffice' | t }}</a>

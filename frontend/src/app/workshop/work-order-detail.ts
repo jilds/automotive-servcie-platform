@@ -21,6 +21,7 @@ import { StockPicker } from '../stock/stock-picker';
 import { MechanicCard } from './mechanic-card';
 import { QUOTE_BADGE, quoteBadgeKey } from './quote-logic';
 import { QuotePanel } from './quote-panel';
+import { InvoicePanel } from '../billing/invoice-panel';
 import { ChecklistPanel } from './checklist-panel';
 import { PhotoPanel } from './photo-panel';
 import { TimePanel } from './time-panel';
@@ -28,7 +29,7 @@ import { TimePanel } from './time-panel';
 @Component({
   selector: 'app-work-order-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker, QuotePanel, TimePanel, PhotoPanel, ChecklistPanel],
+  imports: [ReactiveFormsModule, RouterLink, MoneyPipe, KmPipe, DecimalPipe, TranslatePipe, Alert, Icon, Plate, CheckInEditDialog, MechanicCard, CataloguePicker, StockPicker, QuotePanel, InvoicePanel, TimePanel, PhotoPanel, ChecklistPanel],
   template: `
     <a routerLink="/board" class="d-inline-block mb-2 small fw-medium text-body-secondary text-decoration-none">{{ 'workOrder.back' | t }}</a>
     @if (error()) {
@@ -108,6 +109,7 @@ import { TimePanel } from './time-panel';
       @if (auth.hasRole('OWNER', 'FRONT_DESK')) {
         <app-mechanic-card [workOrder]="w" (changed)="mechanicChanged($event)" />
         <app-quote-panel [workOrder]="w" (changed)="reload()" />
+        <app-invoice-panel [workOrder]="w" />
       }
 
       <h2 class="mt-5 mb-3">{{ 'workOrder.lines' | t }}</h2>

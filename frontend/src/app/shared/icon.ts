@@ -69,6 +69,7 @@ const ICONS = {
   pencil: ['M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z', 'm15 5 4 4'],
   'chevron-up': ['m18 15-6-6-6 6'],
   'chevron-down': ['m6 9 6 6 6-6'],
+  'file-text': ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z', 'M14 2v4a2 2 0 0 0 2 2h4', 'M10 9H8', 'M16 13H8', 'M16 17H8'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type IconName = keyof typeof ICONS;

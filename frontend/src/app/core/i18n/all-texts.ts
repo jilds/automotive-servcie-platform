@@ -4,6 +4,9 @@ import { adminPtPT } from '../../admin/i18n/admin.pt-PT';
 import { backofficeEn } from '../../backoffice/i18n/backoffice.en';
 import { backofficePtBR } from '../../backoffice/i18n/backoffice.pt-BR';
 import { backofficePtPT } from '../../backoffice/i18n/backoffice.pt-PT';
+import { billingEn } from '../../billing/i18n/billing.en';
+import { billingPtBR } from '../../billing/i18n/billing.pt-BR';
+import { billingPtPT } from '../../billing/i18n/billing.pt-PT';
 import { bookingEn } from '../../booking/i18n/booking.en';
 import { bookingPtBR } from '../../booking/i18n/booking.pt-BR';
 import { bookingPtPT } from '../../booking/i18n/booking.pt-PT';
@@ -36,9 +39,9 @@ import { ptPT } from './messages.pt-PT';
  * completeness checks); the app loads them lazily through `feature-texts.ts`.
  */
 export const ALL_TEXTS = {
-  en: { core: en, admin: adminEn, backoffice: backofficeEn, booking: bookingEn, catalogue: catalogueEn, floor: floorEn, identity: identityEn, quote: quoteEn, shop: shopEn, stock: stockEn },
-  'pt-PT': { core: ptPT, admin: adminPtPT, backoffice: backofficePtPT, booking: bookingPtPT, catalogue: cataloguePtPT, floor: floorPtPT, identity: identityPtPT, quote: quotePtPT, shop: shopPtPT, stock: stockPtPT },
-  'pt-BR': { core: ptBR, admin: adminPtBR, backoffice: backofficePtBR, booking: bookingPtBR, catalogue: cataloguePtBR, floor: floorPtBR, identity: identityPtBR, quote: quotePtBR, shop: shopPtBR, stock: stockPtBR },
+  en: { core: en, admin: adminEn, backoffice: backofficeEn, billing: billingEn, booking: bookingEn, catalogue: catalogueEn, floor: floorEn, identity: identityEn, quote: quoteEn, shop: shopEn, stock: stockEn },
+  'pt-PT': { core: ptPT, admin: adminPtPT, backoffice: backofficePtPT, billing: billingPtPT, booking: bookingPtPT, catalogue: cataloguePtPT, floor: floorPtPT, identity: identityPtPT, quote: quotePtPT, shop: shopPtPT, stock: stockPtPT },
+  'pt-BR': { core: ptBR, admin: adminPtBR, backoffice: backofficePtBR, billing: billingPtBR, booking: bookingPtBR, catalogue: cataloguePtBR, floor: floorPtBR, identity: identityPtBR, quote: quotePtBR, shop: shopPtBR, stock: stockPtBR },
 } satisfies Record<Language, Record<TextPart, object>> & LoadedTexts;
 
 /** All texts of a language in one dictionary, as the app has them once every feature is loaded. */
