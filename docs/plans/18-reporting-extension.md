@@ -11,14 +11,14 @@ Plan 08 adds the `reporting` module (read-only JDBC, owner only), the `work_orde
 mechanic productivity, CSV export. The owner dashboard has a few tiles.
 
 ## Owner decisions (2026-11-09)
-- Discuss this plan with the owner before any implementation starts. Open points (revenue source, comeback window) stay open.
+- Discussed on 2026-11-10: revenue comes from **issued invoices minus credit notes** (plan 07); comebacks are the same vehicle within 30 days; retention is a customer returning within 12 months. Margin uses one workshop labour cost per hour (see plan 08). Phasing: plan 08 first, then this plan. Everything else in this plan is still a proposal to confirm before building.
 
 ## Decisions (proposed, to confirm)
 
 | Point | Proposal |
 |---|---|
 | Module | Same `reporting` module, same rules: read-only JDBC queries, owner only, no writes, no dependency from other modules on it. It reads tables of its own workshop under RLS; no facade calls in hot loops. |
-| Revenue source | **Open:** delivered work orders (available now) vs issued invoices (plan 07, the fiscal truth). Proposal: work orders until plan 07 is done, then invoices, with the source named on the screen. |
+| Revenue source | **Decided (2026-11-10):** issued invoices minus credit notes; delivered but not yet invoiced orders shown separately; the source is named on the screen. |
 | Periods | Day / week / month in the workshop's time zone; at most 24 months per query. |
 | Export | CSV as in plan 08 (UTF-8 BOM, `;`), formula-injection safe. |
 

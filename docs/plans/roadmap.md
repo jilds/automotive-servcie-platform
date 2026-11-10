@@ -18,6 +18,7 @@ CLAUDE.md §12. The step plans are listed in [README.md](README.md).
 | 2026-10-25 | Domain, hosting and legal entity are not decided yet: use placeholders (`asp.example`, `<Empresa, Lda.>`), all listed in the checklist. |
 | 2026-11-09 | A feature comparison with a competitor's pricing page ([gap-analysis-carbob.md](gap-analysis-carbob.md)) adds plans 12–21 after step 10, in the order below. External plate / VIN lookup, manufacturer labour times, diagrams and procedures, multi-location and Brazil fiscal stay out. Product decisions are open in each plan; plan 21 is blocked on the pricing tiers. |
 | 2026-11-09 | Owner answers on the open points: plan 13 (SMS / WhatsApp providers) collect options for later, sandbox only; plan 14 video undecided, no provider yet; plans 16 and 18 and the smaller open points of 12, 15, 17, 19 and 20 are to be discussed before implementation starts. Each plan has an Owner decisions section. |
+| 2026-11-10 | Reports discussed (plans 08 and 18): revenue and average order value come from issued invoices minus credit notes; margin = net − part cost − tracked hours × one workshop labour cost per hour; retention = customer back within 12 months, comeback = same vehicle within 30 days; plan 08 is built first with the KPIs that have data, a KPI screen shows the rest as "available with <feature>" until plans 12, 19 and the complaints plan land. |
 
 ## Order and migrations
 
