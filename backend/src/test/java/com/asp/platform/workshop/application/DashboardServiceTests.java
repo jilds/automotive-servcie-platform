@@ -95,6 +95,11 @@ class DashboardServiceTests {
             }
 
             @Override
+            public com.asp.platform.identity.WorkshopFiscalProfile fiscalProfile(UUID tenantId) {
+                return new com.asp.platform.identity.WorkshopFiscalProfile("Oficina", null, "PT");
+            }
+
+            @Override
             public boolean deliveryChecklistRequired(UUID tenantId) {
                 return false;
             }

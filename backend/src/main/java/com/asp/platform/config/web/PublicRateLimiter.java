@@ -25,11 +25,13 @@ final class PublicRateLimiter extends OncePerRequestFilter {
 
     private final FixedWindowLimit reads;
     private final FixedWindowLimit writes;
+    private final FixedWindowLimit webhooks;
     private final ProblemResponses problems;
 
     PublicRateLimiter(PublicRateLimitProperties properties, ProblemResponses problems, Ticker ticker) {
         this.reads = new FixedWindowLimit(properties.reads(), ticker);
         this.writes = new FixedWindowLimit(properties.writes(), ticker);
+        this.webhooks = new FixedWindowLimit(properties.webhooks(), ticker);
         this.problems = problems;
     }
 
@@ -43,7 +45,8 @@ final class PublicRateLimiter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String slug = PublicPaths.slug(request).orElse("");
         String key = ClientAddresses.key(request.getRemoteAddr()) + '|' + slug;
-        FixedWindowLimit limit = READS.contains(request.getMethod()) ? reads : writes;
+        FixedWindowLimit limit = READS.contains(request.getMethod()) ? reads
+                : PublicPaths.isBillingWebhook(request) ? webhooks : writes;
         FixedWindowLimit.Outcome outcome = limit.acquire(key);
         if (outcome.refused()) {
             problems.tooManyRequests(request, response, slug, outcome);

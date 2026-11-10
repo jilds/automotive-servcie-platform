@@ -40,6 +40,17 @@ final class PublicPaths {
         return slug.isEmpty() ? Optional.empty() : Optional.of(slug);
     }
 
+    /// True for `/api/v1/public/{slug}/billing/webhooks/...`: a payment provider's call, counted apart from the forms.
+    static boolean isBillingWebhook(HttpServletRequest request) {
+        String path = path(request);
+        if (!path.startsWith(PREFIX)) {
+            return false;
+        }
+        String rest = path.substring(PREFIX.length());
+        int slash = rest.indexOf('/');
+        return slash > 0 && rest.substring(slash).startsWith("/billing/webhooks/");
+    }
+
     private static String path(HttpServletRequest request) {
         return request.getServletPath() + Objects.toString(request.getPathInfo(), "");
     }

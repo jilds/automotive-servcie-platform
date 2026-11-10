@@ -17,7 +17,13 @@ spring:
     url: ${ASP_DB_URL:jdbc:postgresql://localhost:5432/asp}
     username: ${ASP_DB_APP_USER:asp_app}
     password: ${ASP_DB_APP_PASSWORD:asp_app}
+    hikari:
+      # Guards for the app role only (Flyway has its own connection): no statement runs longer than 30 s and no
+      # transaction sits idle for more than 60 s (a stuck request cannot hold row locks forever).
+      connection-init-sql: "set statement_timeout = '30s'; set idle_in_transaction_session_timeout = '60s'"
   flyway:
+    # Migrations run without the 30 s / 60 s limits of the app role (a long index build must finish); said explicitly.
+    init-sqls: "set statement_timeout = 0; set idle_in_transaction_session_timeout = 0"
     user: ${ASP_DB_OWNER_USER:asp_owner}
     password: ${ASP_DB_OWNER_PASSWORD:asp_owner}
   jpa:
@@ -109,6 +115,26 @@ app:
     # Online orders (PLACED or READY) one workshop may hold at once; more answer 409 shop-busy. Orders are paid only
     # at the counter, so this keeps anonymous orders from reserving all the stock.
     max-open-orders: ${ASP_SHOP_MAX_OPEN_ORDERS:50}
+  # Invoicing and payments (step 07, docs/plans/07-invoicing-payments.md). Providers: sandbox (documents that are NOT
+  # fiscal documents, the default for development) or none (every call answers 409 provider-not-configured). The prod
+  # profile defaults both to none and refuses sandbox. The webhook secret comes from the environment only.
+  billing:
+    invoicing:
+      provider: ${ASP_BILLING_INVOICING_PROVIDER:sandbox}
+    payments:
+      provider: ${ASP_BILLING_PAYMENTS_PROVIDER:sandbox}
+      webhook-secret: ${ASP_BILLING_WEBHOOK_SECRET:}
+    # The largest total (cents) a document may have without the customer NIF and address (to be confirmed against the AT rule).
+    final-consumer-limit-cents: 100000
+    # The longest a provider call may take. A real adapter must set its HTTP connect and read timeouts to this: a void and
+    # a payment creation call the provider while holding the invoice row lock (3 s lock timeout), so keep it well below 3 s.
+    provider-timeout: 2s
+    multibanco-valid-days: 3
+    mbway-valid-minutes: 5
+    # Pending documents are retried by the job every 5 minutes, at least min-age after the last attempt, at most max-attempts times.
+    retry:
+      max-attempts: 5
+      min-age: 1m
 
 management:
   endpoints:
@@ -123,7 +149,6 @@ management:
   info:
     git:
       mode: simple
-
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

@@ -26,6 +26,10 @@ public interface CustomerManagement {
     /// not found in the workshop.
     Optional<CustomerContact> contactForVehicle(UUID vehicleId);
 
+    /// The name, tax number and address of the customer who owns the vehicle, for the snapshot of an invoice; empty
+    /// when the vehicle is not found in the workshop.
+    Optional<CustomerFiscalData> fiscalDataForVehicle(UUID vehicleId);
+
     /// Records a newer odometer reading, ignoring readings lower than the current one.
     void recordMileage(UUID vehicleId, int mileage);
 }

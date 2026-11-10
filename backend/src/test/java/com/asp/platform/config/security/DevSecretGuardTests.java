@@ -69,4 +69,38 @@ class DevSecretGuardTests {
     private static AppSecurityProperties properties(String secret) {
         return new AppSecurityProperties(secret);
     }
+
+    @Test
+    void should_refuse_the_public_webhook_secret_outside_dev_and_test() {
+        MockEnvironment prod = new MockEnvironment().withProperty("app.billing.payments.webhook-secret",
+                DevSecretGuard.DEV_WEBHOOK_SECRET);
+        prod.setActiveProfiles("prod");
+        MockEnvironment dev = new MockEnvironment().withProperty("app.billing.payments.webhook-secret",
+                DevSecretGuard.DEV_WEBHOOK_SECRET);
+        dev.setActiveProfiles("dev");
+        MockEnvironment own = new MockEnvironment().withProperty("app.billing.payments.webhook-secret",
+                "an-own-webhook-secret-of-more-than-32-bytes");
+        own.setActiveProfiles("prod");
+
+        assertThatIllegalStateException()
+                .isThrownBy(() -> new DevSecretGuard(properties(RANDOM_SECRET), prod))
+                .withMessageContaining("ASP_BILLING_WEBHOOK_SECRET")
+                .withMessageNotContaining(DevSecretGuard.DEV_WEBHOOK_SECRET);
+        assertThatCode(() -> new DevSecretGuard(properties(RANDOM_SECRET), dev)).doesNotThrowAnyException();
+        assertThatCode(() -> new DevSecretGuard(properties(RANDOM_SECRET), own)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void should_refuse_the_development_secrets_whenever_prod_is_active_even_with_dev() {
+        MockEnvironment both = new MockEnvironment()
+                .withProperty("app.billing.payments.webhook-secret", DevSecretGuard.DEV_WEBHOOK_SECRET);
+        both.setActiveProfiles("prod", "dev");
+
+        assertThatIllegalStateException()
+                .isThrownBy(() -> new DevSecretGuard(properties(DevSecretGuard.DEV_SECRET), both))
+                .withMessageContaining("ASP_JWT_SECRET");
+        assertThatIllegalStateException()
+                .isThrownBy(() -> new DevSecretGuard(properties(RANDOM_SECRET), both))
+                .withMessageContaining("ASP_BILLING_WEBHOOK_SECRET");
+    }
 }

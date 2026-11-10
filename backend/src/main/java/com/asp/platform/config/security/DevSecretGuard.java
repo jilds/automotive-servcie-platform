@@ -14,10 +14,24 @@ class DevSecretGuard {
     /// valid outside dev and test.
     static final String DEV_SECRET = "dev-only-secret-change-me-at-least-32-bytes!!";
 
+    /// The fallback of `app.billing.payments.webhook-secret` in `application-dev.yml` (keep the two equal); public, so
+    /// never valid outside dev and test.
+    static final String DEV_WEBHOOK_SECRET = "dev-only-webhook-secret-change-me-32-bytes!!";
+
+    /// Dev secrets are valid only in dev or test, and never when prod is active as well.
+    private static boolean refusesDevSecrets(Environment environment) {
+        return environment.matchesProfiles("prod") || !environment.matchesProfiles("dev | test");
+    }
+
     DevSecretGuard(AppSecurityProperties properties, Environment environment) {
-        if (DEV_SECRET.equals(properties.jwtSecret()) && !environment.matchesProfiles("dev | test")) {
+        if (DEV_SECRET.equals(properties.jwtSecret()) && refusesDevSecrets(environment)) {
             throw new IllegalStateException("app.security.jwt-secret is the development secret; set ASP_JWT_SECRET "
                     + "to a random value of at least 32 characters");
+        }
+        String webhookSecret = environment.getProperty("app.billing.payments.webhook-secret");
+        if (DEV_WEBHOOK_SECRET.equals(webhookSecret) && refusesDevSecrets(environment)) {
+            throw new IllegalStateException("app.billing.payments.webhook-secret is the development secret; set "
+                    + "ASP_BILLING_WEBHOOK_SECRET to a random value of at least 32 bytes");
         }
     }
 }

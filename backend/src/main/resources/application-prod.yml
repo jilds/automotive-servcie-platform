@@ -32,6 +32,12 @@ app:
     jwt-secret: ${ASP_JWT_SECRET}
   # https://app.<domain>: the absolute links in mails; required (checked at start) while ASP_MAIL_ENABLED=true.
   public-url: ${ASP_PUBLIC_URL:}
+  # No real provider is built yet: invoicing and payments stay off in production until one is configured.
+  billing:
+    invoicing:
+      provider: ${ASP_BILLING_INVOICING_PROVIDER:none}
+    payments:
+      provider: ${ASP_BILLING_PAYMENTS_PROVIDER:none}
 
 server:
   # Behind the reverse proxy (Caddy): the client's address, scheme and host come from X-Forwarded-*, but only when the

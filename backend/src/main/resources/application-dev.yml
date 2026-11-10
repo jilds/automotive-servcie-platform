@@ -14,3 +14,7 @@ app:
   mail:
     enabled: ${ASP_MAIL_ENABLED:true}
     from: ${ASP_MAIL_FROM:ASP <noreply@asp.localhost>}
+  billing:
+    payments:
+      # Public, for the sandbox payment provider only (the prod profile has no default and refuses the sandbox).
+      webhook-secret: ${ASP_BILLING_WEBHOOK_SECRET:dev-only-webhook-secret-change-me-32-bytes!!}

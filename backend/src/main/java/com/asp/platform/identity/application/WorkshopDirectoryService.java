@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.asp.platform.identity.PublicWorkshop;
 import com.asp.platform.identity.TeamMember;
 import com.asp.platform.identity.WorkshopDirectory;
+import com.asp.platform.identity.WorkshopFiscalProfile;
 import com.asp.platform.identity.WorkshopProfile;
 import com.asp.platform.identity.domain.Slug;
 import com.asp.platform.identity.domain.Tenant;
@@ -58,6 +59,13 @@ class WorkshopDirectoryService implements WorkshopDirectory {
     public Optional<WorkshopProfile> profile(UUID tenantId) {
         return tenants.findById(tenantId).map(t -> new WorkshopProfile(t.shownName(), t.slug().value(),
                 t.settings().country(), t.settings().zone()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WorkshopFiscalProfile fiscalProfile(UUID tenantId) {
+        var settings = tenant(tenantId).settings();
+        return new WorkshopFiscalProfile(settings.name(), settings.nif(), settings.country());
     }
 
     @Override

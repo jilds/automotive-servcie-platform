@@ -28,7 +28,8 @@ class RowLevelSecurityCatalogueTests extends ApiTestSupport {
             "work_order_line", "booking_settings", "opening_hours", "booking_closure", "booking", "booking_service",
             "shop_settings", "shop_order", "shop_order_line", "quote", "quote_line", "work_time_entry",
             "work_order_photo", "work_order_photo_data", "checklist_template", "checklist_template_item",
-            "work_order_checklist", "work_order_checklist_item", "work_time_entry_change");
+            "work_order_checklist", "work_order_checklist_item", "work_time_entry_change", "invoice", "invoice_line",
+            "invoicing_sandbox_document", "payment", "payment_event");
 
     @Autowired
     JdbcClient jdbc;

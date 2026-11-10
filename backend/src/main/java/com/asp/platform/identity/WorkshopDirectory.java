@@ -19,6 +19,9 @@ public interface WorkshopDirectory {
     /// workshop. Reads the tenant table, which is not under row-level security, so it works outside a request.
     Optional<WorkshopProfile> profile(UUID tenantId);
 
+    /// The name, tax number and country the workshop prints on its invoices, from its settings.
+    WorkshopFiscalProfile fiscalProfile(UUID tenantId);
+
     /// The workshop's hourly labour rate before VAT, in cents, from its settings (prices services charged by the hour).
     long labourRateCents(UUID tenantId);
 

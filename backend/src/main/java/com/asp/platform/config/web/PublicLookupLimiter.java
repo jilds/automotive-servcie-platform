@@ -18,22 +18,29 @@ import com.github.benmanes.caffeine.cache.Ticker;
 final class PublicLookupLimiter extends OncePerRequestFilter {
 
     private final FixedWindowLimit lookups;
+    private final FixedWindowLimit webhookLookups;
     private final ProblemResponses problems;
 
     PublicLookupLimiter(PublicRateLimitProperties properties, ProblemResponses problems, Ticker ticker) {
         this.lookups = new FixedWindowLimit(properties.lookups(), ticker);
+        this.webhookLookups = new FixedWindowLimit(properties.webhookLookups(), ticker);
         this.problems = problems;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+
         return !PublicPaths.isPublic(request);
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        FixedWindowLimit.Outcome outcome = lookups.acquire(ClientAddresses.key(request.getRemoteAddr()));
+        // A payment provider sends many calls from few addresses across workshops: its POSTs have a budget of their own,
+        // still counted before the slug is looked up.
+        boolean webhook = "POST".equals(request.getMethod()) && PublicPaths.isBillingWebhook(request);
+        FixedWindowLimit.Outcome outcome = (webhook ? webhookLookups : lookups)
+                .acquire(ClientAddresses.key(request.getRemoteAddr()));
         if (outcome.refused()) {
             problems.tooManyRequests(request, response, PublicPaths.slug(request).orElse(""), outcome);
             return;

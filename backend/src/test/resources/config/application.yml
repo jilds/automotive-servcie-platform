@@ -43,3 +43,7 @@ app:
       reads:
         limit: 20
         window: 1m
+  # Billing (step 07): the sandbox payment provider verifies webhooks with this secret (test fixture, not a secret).
+  billing:
+    payments:
+      webhook-secret: test-webhook-secret-0123456789abcdef

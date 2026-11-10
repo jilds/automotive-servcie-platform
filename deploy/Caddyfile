@@ -11,7 +11,28 @@ import caddy/site.caddy
 # and the app trusts the header only from Caddy's fixed address.
 {$ASP_APP_DOMAIN} {
 	encode zstd gzip
-	reverse_proxy app:8080
+	# Request body limits: 1 MB by default, 6 MB for photo uploads (5 MB file), 16 KB for a payment provider's webhook
+	# (the app also refuses a larger one before reading it).
+	@billingWebhook path_regexp ^/api/v1/public/[^/]+/billing/webhooks/
+	@photoUpload path_regexp ^/api/v1/work-orders/[^/]+/photos
+	handle @billingWebhook {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy app:8080
+	}
+	handle @photoUpload {
+		request_body {
+			max_size 6MB
+		}
+		reverse_proxy app:8080
+	}
+	handle {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy app:8080
+	}
 }
 
 # The landing site (step 03) on the main domain: the build of site/ (ASP_SITE_DIR); deploy/site holds a placeholder.
