@@ -56,6 +56,11 @@ export const FEATURE_TEXTS = {
     'pt-PT': () => import('../../workshop/i18n/quote.pt-PT').then((m) => m.quotePtPT),
     'pt-BR': () => import('../../workshop/i18n/quote.pt-BR').then((m) => m.quotePtBR),
   },
+  reports: {
+    en: () => import('../../reporting/i18n/reports.en').then((m) => m.reportsEn),
+    'pt-PT': () => import('../../reporting/i18n/reports.pt-PT').then((m) => m.reportsPtPT),
+    'pt-BR': () => import('../../reporting/i18n/reports.pt-BR').then((m) => m.reportsPtBR),
+  },
   shop: {
     en: () => import('../../shop/i18n/shop.en').then((m) => m.shopEn),
     'pt-PT': () => import('../../shop/i18n/shop.pt-PT').then((m) => m.shopPtPT),

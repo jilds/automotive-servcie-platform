@@ -1,3 +1,4 @@
+import { reportsCorePtPT } from '../../reporting/i18n/reports-core.pt-PT';
 import { billingCorePtPT } from '../../billing/i18n/billing-core.pt-PT';
 import { bookingCorePtPT } from '../../booking/i18n/booking-core.pt-PT';
 import { catalogueCorePtPT } from '../../catalogue/i18n/catalogue-core.pt-PT';
@@ -238,4 +239,5 @@ export const ptPT: PortugueseDictionary<CoreKey> = {
   ...quoteCorePtPT,
   ...floorCorePtPT,
   ...billingCorePtPT,
+  ...reportsCorePtPT,
 };

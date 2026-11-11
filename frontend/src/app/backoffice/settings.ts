@@ -111,6 +111,26 @@ import { HasUnsavedChanges } from './unsaved-changes.guard';
                 <div class="form-text">{{ 'backoffice.settings.quoteValidDaysHelp' | t }}</div>
               }
             </div>
+            <div class="col-md-6">
+              <label class="form-label" for="ws-labour-cost">{{ 'backoffice.settings.labourCost' | t }}</label>
+              <div class="input-group has-validation">
+                <input id="ws-labour-cost" class="form-control" formControlName="labourCostEuros" type="number" inputmode="decimal" min="0" max="10000" step="0.01" aria-describedby="ws-labour-cost-help" [class.is-invalid]="invalid('labourCostEuros')" />
+                <button type="button" class="btn btn-outline-secondary" data-test="clear-labour-cost" [disabled]="form.controls.labourCostEuros.value === null || form.controls.labourCostEuros.value === undefined" [attr.aria-label]="'backoffice.settings.labourCostClearLabel' | t" (click)="clearLabourCost()">{{ 'backoffice.settings.labourCostClear' | t }}</button>
+                @if (invalid('labourCostEuros')) {
+                  <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ message('labourCostEuros', 'backoffice.settings.labourCostInvalid') }}</div>
+                }
+              </div>
+              <div class="form-text" id="ws-labour-cost-help">{{ 'backoffice.settings.labourCostHelp' | t }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="ws-retention">{{ 'backoffice.settings.retentionMonths' | t }}</label>
+              <input id="ws-retention" class="form-control" formControlName="retentionMonths" type="number" inputmode="numeric" min="1" max="60" step="1" [class.is-invalid]="invalid('retentionMonths')" />
+              @if (invalid('retentionMonths')) {
+                <div class="invalid-feedback"><app-icon name="alert-circle" [size]="14" /> {{ message('retentionMonths', 'backoffice.settings.retentionMonthsInvalid') }}</div>
+              } @else {
+                <div class="form-text">{{ 'backoffice.settings.retentionMonthsHelp' | t }}</div>
+              }
+            </div>
             <div class="col-12">
               <div class="form-check form-switch">
                 <input id="ws-delivery-checklist" class="form-check-input" type="checkbox" role="switch" formControlName="deliveryChecklistRequired" aria-describedby="ws-delivery-checklist-help" />
@@ -217,6 +237,13 @@ export class Settings implements OnInit, HasUnsavedChanges {
     return this.i18n.t(key && key !== 'error.field' ? key : fallback);
   }
 
+  /** Empties the labour cost; saving then sends `clearLabourCost: true` (it is never sent together with a value). */
+  protected clearLabourCost(): void {
+    const control = this.form.controls.labourCostEuros;
+    control.markAsDirty();
+    control.setValue(null);
+  }
+
   protected discard(): void {
     const s = this.saved();
     if (s) this.reset(s);
@@ -230,7 +257,7 @@ export class Settings implements OnInit, HasUnsavedChanges {
     }
     this.busy.set(true);
     this.error.set(null);
-    this.api.saveSettings(toSettings(this.form, this.saved()?.version ?? 0)).subscribe({
+    this.api.saveSettings(toSettings(this.form, this.saved()?.version ?? 0, this.saved()?.labourCostPerHourCents ?? null)).subscribe({
       next: (s) => {
         this.reset(s);
         this.branding().useVersion(s.version);

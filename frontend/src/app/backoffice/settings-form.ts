@@ -1,6 +1,7 @@
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 
 import { nifValidator } from '../shared/nif';
+import { centsToEuros, eurosToCents } from '../shared/money';
 import { WorkshopSettings } from './backoffice.models';
 
 /** Countries offered in the select; a stored country outside this list is added to it. */
@@ -65,6 +66,13 @@ export const QUOTE_VALID_DAYS_MIN = 1;
 export const QUOTE_VALID_DAYS_MAX = 90;
 export const QUOTE_VALID_DAYS_DEFAULT = 15;
 
+/** Months after a delivered order in which another delivered order counts the customer as retained (1-60, default 12). */
+/** The most one hour of labour may cost, in euros (the server caps it at 1 000 000 cents). */
+export const LABOUR_COST_MAX_EUROS = 10_000;
+export const RETENTION_MONTHS_MIN = 1;
+export const RETENTION_MONTHS_MAX = 60;
+export const RETENTION_MONTHS_DEFAULT = 12;
+
 /**
  * Typed form for the workshop settings. The labour rate is edited in euros and sent in cents. A Portuguese workshop's
  * NIF must pass the check digit (`nif` error); it is re-checked when the country changes.
@@ -78,6 +86,14 @@ export function settingsForm() {
     defaultVatRate: new FormControl<number | null>(23, [Validators.required, Validators.min(0), Validators.max(100), maxDecimals(2)]),
     labourRateEuros: new FormControl<number | null>(0, [Validators.required, Validators.min(0), maxDecimals(2)]),
     deliveryChecklistRequired: new FormControl(false, { nonNullable: true }),
+    // Optional: empty = not set (the report margin counts parts only).
+    labourCostEuros: new FormControl<number | null>(null, [Validators.min(0), Validators.max(LABOUR_COST_MAX_EUROS), maxDecimals(2)]),
+    retentionMonths: new FormControl<number | null>(RETENTION_MONTHS_DEFAULT, [
+      Validators.required,
+      Validators.min(RETENTION_MONTHS_MIN),
+      Validators.max(RETENTION_MONTHS_MAX),
+      maxDecimals(0),
+    ]),
     quoteValidDays: new FormControl<number | null>(QUOTE_VALID_DAYS_DEFAULT, [
       Validators.required,
       Validators.min(QUOTE_VALID_DAYS_MIN),
@@ -102,6 +118,9 @@ export const FIELD_CONTROL: Record<Exclude<keyof WorkshopSettings, 'version'>, k
   labourRateCents: 'labourRateEuros',
   quoteValidDays: 'quoteValidDays',
   deliveryChecklistRequired: 'deliveryChecklistRequired',
+  labourCostPerHourCents: 'labourCostEuros',
+  clearLabourCost: 'labourCostEuros',
+  retentionMonths: 'retentionMonths',
 };
 
 export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
@@ -114,14 +133,28 @@ export function toFormValue(s: WorkshopSettings): SettingsForm['value'] {
     labourRateEuros: s.labourRateCents / 100,
     quoteValidDays: s.quoteValidDays ?? QUOTE_VALID_DAYS_DEFAULT,
     deliveryChecklistRequired: s.deliveryChecklistRequired ?? false,
+    labourCostEuros: centsToEuros(s.labourCostPerHourCents),
+    retentionMonths: s.retentionMonths ?? RETENTION_MONTHS_DEFAULT,
   };
 }
 
-/** The PUT body; `version` is the workshop version the form was loaded with. */
-export function toSettings(form: SettingsForm, version: number): WorkshopSettings {
+/**
+ * The labour cost part of a PUT: a typed value is sent as cents (and never with `clearLabourCost`); an emptied field
+ * sends `clearLabourCost: true` when the saved settings had a value, and nothing when they had none (nothing to clear).
+ */
+export function labourCostChange(euros: number | string | null | undefined, savedCents: number | null | undefined): Pick<WorkshopSettings, 'labourCostPerHourCents' | 'clearLabourCost'> {
+  const cents = eurosToCents(euros);
+  if (cents !== null) return { labourCostPerHourCents: cents };
+  return savedCents == null ? {} : { clearLabourCost: true };
+}
+
+/** The PUT body; `version` is the workshop version the form was loaded with, `savedLabourCostCents` the stored labour cost. */
+export function toSettings(form: SettingsForm, version: number, savedLabourCostCents: number | null = null): WorkshopSettings {
   const v = form.getRawValue();
   const nif = v.nif.trim();
   return {
+    ...labourCostChange(v.labourCostEuros, savedLabourCostCents),
+    retentionMonths: Number(v.retentionMonths),
     name: v.name.trim(),
     nif: nif || null,
     country: v.country.trim().toUpperCase(),

@@ -56,6 +56,15 @@ export interface WorkshopSettings {
   quoteValidDays: number;
   /** READY to DELIVERED needs the delivery checklist complete. Left out of a PUT (or null) keeps the stored value. */
   deliveryChecklistRequired?: boolean;
+  /**
+   * What one hour of labour costs the workshop, in cents (for the report margins; not the price). GET always answers it,
+   * null = not set. On a PUT left out keeps the stored value; use `clearLabourCost` to unset it.
+   */
+  labourCostPerHourCents?: number | null;
+  /** Customer retention window of the KPI report, 1..60 months (default 12). On a PUT left out keeps the stored value. */
+  retentionMonths?: number;
+  /** PUT only, never in a response: set the labour cost back to unset. Never sent together with a value. */
+  clearLabourCost?: boolean;
   /** Workshop version (shared with the theme); a newer save answers 409 `stale-data`. */
   version: number;
 }

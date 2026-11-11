@@ -252,7 +252,7 @@ describe('settings form helpers', () => {
     const form = settingsForm();
     form.reset(toFormValue({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, quoteValidDays: 30, version: 2 }));
     expect(form.controls.labourRateEuros.value).toBe(45.5);
-    expect(toSettings(form, 2)).toEqual({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, quoteValidDays: 30, deliveryChecklistRequired: false, version: 2 });
+    expect(toSettings(form, 2)).toEqual({ name: 'Oficina', nif: '509999999', country: 'PT', timezone: 'Atlantic/Azores', defaultVatRate: 16, labourRateCents: 4550, quoteValidDays: 30, deliveryChecklistRequired: false, retentionMonths: 12, version: 2 });
   });
 
   it('requires the quote validity in whole days from 1 to 90', () => {
