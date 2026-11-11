@@ -936,3 +936,258 @@ What changed for the Angular side since the first version of this section:
 - **Webhook limits**: POSTs to `/api/v1/public/{slug}/billing/webhooks/...` have their own per-address budget before the slug
   lookup (`app.public.rate-limit.webhook-lookups`, 120 a minute across slugs) and their per-address-and-slug budget
   (`webhooks`, 600 a minute); other methods on that path count in `lookups` like any public request.
+
+## Reports
+
+Module `reporting` (plan step 08, `docs/plans/08-reports.md`; no dependency on any other module, nobody depends on it).
+Read-only: it never writes and the screens call only `GET`. **OWNER only**: front desk and mechanic get 403 `forbidden`
+(prices, margins, colleagues' hours), a platform admin gets 403 (no workshop), no token 401. Tests that pin this
+contract: `CostVsQuoteReportApiTests`, `ProductivityReportApiTests`, `KpiReportApiTests`, `ReportAccessTests`,
+`ReportIsolationTests`, `ReportCsvApiTests`, `ReportPeriodTests`, `ReportCsvTests`, `WorkOrderLineAmountsViewTests`,
+`WorkshopReportSettingsApiTests`, `StockIssueUnitCostTests`, `ReportingArchitectureTests`.
+
+### Common rules
+
+- **Period.** `from` and `to` are local dates (`yyyy-MM-dd`) in the workshop's time zone (`timezone` in every response),
+  **both inclusive**. The instants are `[from 00:00, to + 1 day 00:00)` in that zone (daylight saving respected). Both
+  optional: `to` defaults to today, `from` to the first day of the month of `to`. The responses echo the dates used.
+  - `from` after `to`, or a value that is not a date: 400 `validation`, `errors.from` / `errors.to`.
+  - A period longer than 24 months (`to + 1 day` after `from + 24 months`): 400 `report-range-too-large`
+    (`errors.to`). `2025-01-01` to `2026-12-31` is allowed; to `2027-01-01` is not.
+- **A delivered order** is a work order in `DELIVERED`; its date is the delivery instant (`deliveredAt`). Cancelled and open
+  orders are never reported.
+- **Money** is integer cents, **before VAT** unless the name says `Total` or `Vat`. **Hours** are numbers with 2 decimals
+  (`1.5` is 1 h 30 min), **percentages** numbers with 2 decimals (`12.5` is 12.5 %); a ratio that cannot be computed
+  (division by zero) is `null`, never 0 and never an error.
+- **Tracked hours** count closed time entries only (a running timer counts after it stops).
+- **`format`**: `json` (default) or `csv`; anything else 400 `validation` (`errors.format`). See "CSV".
+- Unknown parameters are ignored. A `mechanicId` that is not a UUID is 400 `validation`; a UUID of another workshop or an
+  unknown one simply matches nothing (200, empty).
+
+### `GET /api/v1/reports/cost-vs-quote`
+
+Delivered orders of the period, newest delivery first (then id), paged.
+
+| Parameter | Meaning |
+|---|---|
+| `from`, `to` | the period, see above |
+| `mechanicId` | only orders assigned to this mechanic at delivery |
+| `hasApprovedQuote` | `true`: only orders with an approved quote; `false`: only orders without one; left out: all |
+| `page`, `size` | `page` from 0 (default 0); `size` 1..200 (default 50). Out of range: 400 `validation`. Ignored by the CSV |
+| `format` | `json` or `csv` |
+
+```json
+{
+  "from": "2026-11-01", "to": "2026-11-30", "timezone": "Europe/Lisbon",
+  "labourCostSet": true,
+  "marginBasis": "PARTS_AND_LABOUR",
+  "summary": {
+    "orders": 12,
+    "ordersWithApprovedQuote": 9,
+    "quoteTotalCents": 150000,
+    "finalTotalCents": 156000,
+    "differenceCents": 6000,
+    "differencePercent": 4.00,
+    "standardHours": 30.5,
+    "trackedHours": 28.0,
+    "netCents": 200000,
+    "partsCostCents": 60000,
+    "labourCostCents": 42000,
+    "marginCents": 98000,
+    "marginPercent": 49.00
+  },
+  "page": 0, "size": 50, "totalElements": 12, "totalPages": 1,
+  "items": [
+    {
+      "workOrderId": "…", "number": 42, "plate": "AA00AA",
+      "deliveredAt": "2026-11-05T14:30:00Z",
+      "mechanicId": "…", "mechanicName": "Rui",
+      "quote": { "id": "…", "number": 7, "approvedAt": "2026-11-02T10:00:00Z", "channel": "CUSTOMER",
+                 "netCents": 10000, "totalCents": 12300 },
+      "finalNetCents": 10500, "finalVatCents": 2415, "finalTotalCents": 12915,
+      "differenceCents": 615, "differencePercent": 5.00,
+      "standardHours": 2.5, "trackedHours": 2.75,
+      "partsCostCents": 3000, "labourCostCents": 2200,
+      "marginCents": 5300, "marginPercent": 50.48
+    }
+  ]
+}
+```
+
+- `plate` is the vehicle's normalised plate (no dashes, as stored). `quote` is the approved quote (`APPROVED`, highest number); **null** when the order has none, and then
+  `differenceCents` and `differencePercent` are null. `channel` is `CUSTOMER` or `STAFF`. `mechanicId` / `mechanicName`
+  are null when no mechanic was assigned at delivery.
+- `differenceCents = finalTotalCents − quote.totalCents` (positive: dearer than quoted); `differencePercent =
+  differenceCents × 100 ÷ quote.totalCents`, null when the quote total is 0. Compared with VAT on both sides.
+- `standardHours`: the sum of the standard hours the catalogue service lines **kept when they were added** (a package line "× n" keeps n times the service's time; typed lines and parts count 0). Later changes of a service's standard time never move old reports. `trackedHours`: closed
+  entries on the order.
+- `partsCostCents`: the cost of the stock issued to the order, at the cost the product had when it was issued.
+  `labourCostCents` = tracked hours × the workshop's `labourCostPerHourCents`; **null when that setting is unset**, and
+  then `marginBasis` is `PARTS_ONLY` and the margin is `net − partsCost` (show a hint). `marginPercent` is null when the
+  order's net is 0. A margin can be negative.
+- `summary` covers **every** order that matches the filters (not only the page). `quoteTotalCents`, `finalTotalCents`,
+  `differenceCents`, `differencePercent` cover the orders **with** an approved quote only (`differencePercent` null when
+  there are none); `standardHours`, `trackedHours`, `netCents`, `partsCostCents`, `labourCostCents`, `marginCents`,
+  `marginPercent` cover all matching orders. An empty period: zeros, `items: []`, percentages null.
+
+### `GET /api/v1/reports/productivity`
+
+One row per mechanic with activity in the period (tracked time, or a delivered job), ordered by name. Not paged.
+
+| Parameter | Meaning |
+|---|---|
+| `from`, `to` | the period |
+| `mechanicId` | only this mechanic (listed even without activity, with zeros) |
+| `format` | `json` or `csv` |
+
+```json
+{
+  "from": "2026-11-01", "to": "2026-11-30", "timezone": "Europe/Lisbon",
+  "mechanics": [
+    { "mechanicId": "…", "name": "Rui", "active": true,
+      "trackedHours": 120.5, "jobs": 18, "standardHours": 110.0,
+      "trackedHoursOnJobs": 100.0, "efficiency": 1.10, "averageHoursInWorkshop": 52.25 }
+  ],
+  "totals": { "trackedHours": 120.5, "jobs": 18, "standardHours": 110.0,
+              "trackedHoursOnJobs": 100.0, "efficiency": 1.10, "averageHoursInWorkshop": 52.25 }
+}
+```
+
+- `trackedHours`: the mechanic's closed entries that **started** in the period (day boundaries in the workshop's zone).
+- `jobs`: delivered orders in the period **assigned to the mechanic at delivery**. `standardHours`: their standard hours.
+- `trackedHoursOnJobs`: the mechanic's closed entries on those jobs, whenever they happened.
+- `efficiency = standardHours ÷ trackedHoursOnJobs` (above 1: faster than the standard time); **null when
+  `trackedHoursOnJobs` is 0**; 0 when there is tracked time and no standard hours.
+- `averageHoursInWorkshop`: average of (delivered − checked in) of the jobs, in hours; null without jobs.
+- `totals` sums the listed rows (`efficiency` and the average are recomputed from the sums, the average weighted by jobs).
+  With no rows: zeros and nulls.
+
+### `GET /api/v1/reports/kpis`
+
+The seven indicators of the client's list plus comebacks, for the period.
+
+| Parameter | Meaning |
+|---|---|
+| `from`, `to` | the period |
+| `format` | `json` or `csv` |
+
+```json
+{
+  "from": "2026-11-01", "to": "2026-11-30", "timezone": "Europe/Lisbon",
+  "labourCostSet": true, "retentionMonths": 12,
+  "deliveredOrders": 40,
+  "averageTimePerJob": {
+    "available": true, "trackedHours": 80.0, "ordersWithTime": 32, "hoursPerJob": 2.5,
+    "byService": [ { "serviceItemId": "…", "name": "Mudança de óleo", "trackedHours": 10.0, "orders": 20, "hoursPerJob": 0.5 } ]
+  },
+  "averageOrderValue": {
+    "available": true, "source": "ISSUED_INVOICES_MINUS_CREDIT_NOTES",
+    "invoicedOrders": 30, "creditedOrders": 1,
+    "netCents": 300000, "totalCents": 369000, "averageNetCents": 10000, "averageTotalCents": 12300,
+    "notYetInvoiced": { "orders": 9, "netCents": 80000, "totalCents": 98400 }
+  },
+  "margin": {
+    "available": true, "basis": "PARTS_AND_LABOUR", "labourCostSet": true,
+    "orders": 40, "netCents": 380000, "partsCostCents": 120000, "labourCostCents": 80000,
+    "marginCents": 180000, "marginPercent": 47.37,
+    "packageParts": { "lines": 12, "netCents": 30000, "partsCostCents": 18000, "marginCents": 12000, "marginPercent": 40.00 },
+    "otherParts": { "netCents": 90000, "partsCostCents": 102000, "marginCents": -12000, "marginPercent": -13.33 },
+    "byService": [ { "serviceItemId": "…", "name": "Mudança de óleo", "lines": 20, "orders": 20,
+                     "netCents": 80000, "trackedHours": 10.0, "labourCostCents": 5000,
+                     "marginCents": 75000, "marginPercent": 93.75 } ]
+  },
+  "retention": { "available": true, "months": 12, "customers": 35, "retained": 21, "ratePercent": 60.00,
+                 "final": true, "monthsCovered": 12 },
+  "comebacks": { "available": true, "days": 30, "orders": 3, "ratePercent": 7.50 },
+  "occupancy": { "available": false, "availableWith": "plan-12-bays" },
+  "satisfaction": { "available": false, "availableWith": "satisfaction" },
+  "complaints": { "available": false, "availableWith": "complaints" }
+}
+```
+
+- **A KPI whose data does not exist yet** is `{ "available": false, "availableWith": "<feature>" }` with no other field:
+  `occupancy` gives `plan-12-bays`, `satisfaction` gives `satisfaction`, `complaints` gives `complaints`. When their plans land
+  the same keys fill in with `available: true` and the numbers; the screen must key on `available`, not on the feature id.
+- **`averageTimePerJob`**: `hoursPerJob = trackedHours ÷ ordersWithTime`: closed tracked hours on the period's delivered
+  orders ÷ those delivered orders that have any tracked time (null when none). `byService`: per catalogue service
+  (`serviceItemId` is the catalogue service), the hours tracked on lines of it ÷ the orders with time on it, ordered by
+  `trackedHours` descending then name; at most 200 services.
+- **`averageOrderValue`**: the revenue source is named by `source` (always `ISSUED_INVOICES_MINUS_CREDIT_NOTES`). The cohort is
+  the delivered orders of the period that have an ISSUED invoice; `netCents` and `totalCents` are their invoices minus the
+  ISSUED credit note of each (whenever it was issued). `invoicedOrders` counts the cohort without the fully credited orders,
+  which are counted in `creditedOrders` instead. `averageNetCents = netCents ÷ invoicedOrders` and `averageTotalCents`, rounded
+  half up, null when `invoicedOrders` is 0. PENDING, FAILED, DISCARDED and VOIDED documents never count. `notYetInvoiced`:
+  delivered orders of the period without an ISSUED invoice, with their net and total from the work order lines.
+- **`margin`**: over the period's delivered orders (`orders`): `netCents` of the lines, `partsCostCents`, `labourCostCents`
+  (null when `labourCostSet` is false, and then `basis` is `PARTS_ONLY`), `marginCents = net − parts − labour`, `marginPercent`
+  null when net is 0. **`byService`**: per catalogue service, over the LABOR lines that came from it: `lines`, `orders`,
+  `netCents` (the lines' net), `trackedHours` (time tracked **on those lines**), `labourCostCents` (null when unset),
+  `marginCents = net − labourCost` (**parts are not attributed to services**; they are in the order margin above, and the two rows below show them apart), `marginPercent`.
+  **`packageParts`**: the PART lines that came from a catalogue package (the line keeps its package since V23: `lines`, `netCents` of those lines, `partsCostCents` = their consumed reservations at the unit cost the stock issue kept, `marginCents`, `marginPercent`); **`otherParts`**: every other part (from stock, typed by hand, and the package parts of orders from before V23, which cannot be told): `netCents`, `partsCostCents` (= total parts cost − package parts cost), `marginCents`, `marginPercent`. Both are part of the order margin (`marginCents` above already includes them), not additional; percentages null when net is 0. Ordered by `marginCents` descending then name; at most 200 services.
+- **`retention`** (forward-looking): `customers` = distinct owners (vehicle owner) of the delivered orders of the period; `retained` = those that have **another delivered order on a later local day** (workshop zone) within `months` (= `retentionMonths` of the workshop settings, calendar months) after one of their period orders; same-day orders never count (a fleet delivered on one day is not "retained"); a follow-up exactly `months` months later counts, one day more does not. The follow-up may be after the period end. `ratePercent = retained × 100 ÷ customers`, null when there are none. **`final`** is false while the follow-up window is not over (`period end + months` after today in the workshop zone): the rate is still computed from the data available, so it reads low; `monthsCovered` is how many of the `months` have passed since the period end (0..`months`; equal to `months` when final). The screen should say "provisional, N of M months" when `final` is false.
+- **`comebacks`**: delivered orders of the period whose vehicle had another delivered order delivered at most `days` (30)
+  before this order was checked in; `ratePercent = orders × 100 ÷ deliveredOrders`, null when there are none.
+- An empty period: counts 0, money 0, ratios and averages null, lists empty, `available: true` for the first six.
+
+### CSV (`?format=csv` on the three reports)
+
+- `Content-Type: text/csv; charset=UTF-8`, `Content-Disposition: attachment; filename="<report>-<from>-<to>.csv"`
+  (`cost-vs-quote`, `productivity`, `kpis`). The body starts with a **UTF-8 BOM**; the separator is `;`; lines end with
+  CRLF; the first line is the header.
+- **Numbers** use a decimal comma and no thousands separator: money in **euros with two decimals** (`123,45`; every `…Cents`
+  field becomes `…Eur`), hours and percentages with two decimals (`2,50`). Empty cell for null. Timestamps are
+  `yyyy-MM-dd HH:mm` in the workshop's time zone.
+- **Text cells** (plate, mechanic, service names) that start with `=`, `+`, `-`, `@`, TAB or CR get a leading `'` so a
+  spreadsheet never runs them as a formula; a cell containing `;`, `"`, CR or LF is wrapped in `"` with inner `"` doubled.
+- Ids are not exported. No totals row (the summary is in the JSON).
+- `cost-vs-quote` columns, in order: `number;plate;deliveredAt;mechanic;quoteNumber;quoteTotalEur;finalNetEur;finalVatEur;finalTotalEur;differenceEur;differencePercent;standardHours;trackedHours;partsCostEur;labourCostEur;marginEur;marginPercent`
+  (all matching orders, not one page; more than **10 000** rows: 400 `report-too-many-rows`, `errors.format`, narrow the period).
+- `productivity` columns: `mechanic;trackedHours;jobs;standardHours;trackedHoursOnJobs;efficiency;averageHoursInWorkshop`.
+- `kpis` columns: `kpi;item;metric;value`, one row per figure. `kpi` is the JSON key (`averageTimePerJob`, `averageOrderValue`,
+  `notYetInvoiced`, `margin`, `packageParts`, `otherParts`, `retention`, `comebacks`, `occupancy`, `satisfaction`, `complaints`), `item` is the service name
+  of a `byService` row and empty otherwise, `metric` the JSON field name (money fields as `…Eur`), `value` the number or text.
+  `retention` also has the rows `final` (`true`/`false`) and `monthsCovered`. An unavailable KPI has two rows: `available;false` and `availableWith;<feature>`.
+
+### Workshop settings (changes)
+
+`GET/PUT /api/v1/workshop/settings` get two fields. `GET` (OWNER, FRONT_DESK) returns them; `PUT` (OWNER) saves them with
+the workshop's `version` like every setting (a stale version answers 409 `stale-data`).
+
+```json
+{ "labourCostPerHourCents": 2500, "retentionMonths": 12 }
+```
+
+- `labourCostPerHourCents`: what one hour of labour costs the workshop, in cents, for the margin (**owner only**: `GET` answers it as `null` to the front desk, who also cannot write it; at most **1 000 000** cents, more is 400 `validation` on `labourCostPerHourCents`) (not the price: that is
+  `labourRateCents`). `null` = not set (margins are "parts only"). `>= 0`; 0 is a real value. Optional on `PUT`: left out keeps
+  the stored value. To set it back to unset send `"clearLabourCost": true` (not part of the response); together with a value:
+  400 `validation`. A negative value: 400 `validation`.
+- `retentionMonths`: 1..60, default 12; out of range 400 `validation`. Optional on `PUT`: left out keeps the stored value.
+- `GET` always answers `labourCostPerHourCents` (number or null) and `retentionMonths` (number).
+
+### Dashboard (no contract change)
+
+`GET /api/v1/dashboard` answers the same figures; its SQL now reads the shared view `work_order_line_amounts`.
+
+### Error codes added
+
+400: `report-range-too-large` (`errors.to`), `report-too-many-rows` (`errors.format`: the cost-vs-quote list, JSON **and** CSV, with more than 10 000 matching orders; the KPIs with more than 100 000 orders in the period), `validation` (bad date, `from` after `to`,
+`page`, `size`, `format`, `mechanicId`, settings fields).
+403 for every other role.
+429: **`try-again`** (`Retry-After: 5`): **at most 2 reports at a time per workshop** (`app.reports.max-concurrent-per-workshop`, default 2: a third one of the same workshop answers 429 at once, no waiting) and at most 3 reports run at once per instance (`app.reports.max-concurrent`); a fourth waits up to 2 s (`app.reports.max-wait`) for a slot, then answers 429. A report is cancelled after 30 s. The screen keeps the figures on screen and offers a Try again button. Settings: a time zone that is not a canonical region id (`+01:00`, `UTC+01:00`, `CET`, and legacy aliases such as `Brazil/East` or `Asia/Calcutta`) is now 400 `validation` (`errors.timezone`) on `PUT /workshop/settings` and in the platform admin console.
+Needs `error.report-range-too-large`, `error.report-too-many-rows` and `error.try-again` (check it exists) in pt-PT, en and pt-BR.
+
+### Migrations V23 and V24 (V22 is payment instalments)
+
+V23: `tenant.labour_cost_per_hour_cents` (nullable) and `tenant.retention_months` (default 12), `work_order_line.standard_hours` (what a catalogue service line keeps of the catalogue's standard time, backfilled from the current catalogue; null otherwise) and `work_order_line.package_id` (the package a line was expanded from; not backfilled), and the check `tenant_timezone_region` (offset-like zones of existing rows are reset to the country's region zone). V24: `stock_movement.unit_cost_cents` (the product's cost when stock was issued, ISSUE rows only, backfilled with the current cost, required on every ISSUE by a check), the view `work_order_line_amounts` (`security_invoker`, read-only for the app role) and the partial index `stock_movement_issue_reference_idx`. No new table.
+
+### Screens (for the Angular side)
+
+- `/backoffice/reports` (OWNER): tabs "Cost vs quote" and "Productivity", and `/backoffice/reports/kpis`. A period filter
+  (two date inputs, defaults as above) shared by the tabs; mechanic filter on productivity; "with approved quote" filter on
+  cost vs quote. Cards at 390 px, tables on desktop; an export button per report (a `fetch` with the bearer token and
+  `format=csv`, saved as a file: the endpoint needs the `Authorization` header, so not a plain link).
+- KPI cards: show the number, or "Available with <feature>" (translated by `availableWith`) when `available` is false. Name the
+  revenue source on the average-value card ("issued invoices minus credit notes"), show "not yet invoiced" next to it, and a
+  "parts only: set the labour cost in the settings" hint with a link when `labourCostSet` is false.
+- The workshop settings screen gets `labourCostPerHourCents` (with a clear action) and `retentionMonths`.
+- New routes in `SpaForwardingController` and `SpaForwardingTests`. Texts in the three languages (a lazy `reporting` text set).

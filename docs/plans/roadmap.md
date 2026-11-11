@@ -31,7 +31,7 @@ CLAUDE.md §12. The step plans are listed in [README.md](README.md).
 | 5 | Quotes | `feat(workshop)` | V18 |
 | 6 | Workshop floor | `feat(workshop)` | V19 |
 | 7 | Invoicing and payments | `feat(billing)` | V20, V21 |
-| 8 | Reports | `feat(reporting)` | view only, if needed V22 |
+| 8 | Reports | `feat(reporting)` | V23 (settings, line snapshot) and V24 (ledger unit cost, index, view); V22 went to payment instalments |
 | 9 | Mechanic offline | `feat(pwa)` | idempotency keys, next free number |
 | 10 | Leftovers | several small commits | composite FKs, next free number |
 | 11 | Scheduling: bays, mechanic calendar ([12](12-scheduling-bays-calendar.md)) | `feat(booking)` | next free number |
