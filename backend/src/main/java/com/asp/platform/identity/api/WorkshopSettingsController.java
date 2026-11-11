@@ -23,16 +23,17 @@ class WorkshopSettingsController {
         this.settings = settings;
     }
 
-    /// The front desk reads the default VAT and labour rate when it adds lines.
+    /// The front desk reads the default VAT and labour rate when it adds lines (not the labour cost per hour: owner only).
     @GetMapping
     @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
     WorkshopSettingsResponse get(CurrentUser user) {
-        return WorkshopSettingsResponse.of(settings.workshop(user.tenantId()));
+        return WorkshopSettingsResponse.of(settings.workshop(user.tenantId()), user.isOwner());
     }
 
     @PutMapping
     @PreAuthorize("hasRole('OWNER')")
     WorkshopSettingsResponse update(CurrentUser user, @Valid @RequestBody WorkshopSettingsRequest request) {
-        return WorkshopSettingsResponse.of(settings.update(user.tenantId(), request::toSettings, request.version()));
+        return WorkshopSettingsResponse.of(
+                settings.update(user.tenantId(), request::toSettings, request.version()), user.isOwner());
     }
 }

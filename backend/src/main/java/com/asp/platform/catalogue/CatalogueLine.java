@@ -12,8 +12,14 @@ import org.jspecify.annotations.Nullable;
 /// @param productId     the stock product of a PART line, which the work order reserves; null on LABOR lines
 /// @param quantity      1 for a service (a package's "× n" is in the description); the units of a product, which is
 ///                      also what the work order reserves
+///
+/// @param standardHours the standard time of a LABOR line as a whole (the service's standard hours times the units the
+///                      line stands for), copied onto the work order line so later catalogue changes never rewrite
+///                      reports; null on PART lines
+/// @param packageId     the package the line was expanded from, null for a single service
 public record CatalogueLine(CatalogueLineType type, @Nullable UUID serviceItemId, @Nullable UUID productId,
-        String description, BigDecimal quantity, long unitPriceCents, BigDecimal vatRate) {
+        String description, BigDecimal quantity, long unitPriceCents, BigDecimal vatRate,
+        @Nullable BigDecimal standardHours, @Nullable UUID packageId) {
 
     public CatalogueLine {
         boolean labor = type == CatalogueLineType.LABOR;
@@ -24,14 +30,15 @@ public record CatalogueLine(CatalogueLineType type, @Nullable UUID serviceItemId
 
     /// A LABOR line for a service.
     public CatalogueLine(UUID serviceItemId, String description, BigDecimal quantity, long unitPriceCents,
-            BigDecimal vatRate) {
-        this(CatalogueLineType.LABOR, serviceItemId, null, description, quantity, unitPriceCents, vatRate);
+            BigDecimal vatRate, BigDecimal standardHours, @Nullable UUID packageId) {
+        this(CatalogueLineType.LABOR, serviceItemId, null, description, quantity, unitPriceCents, vatRate,
+                standardHours, packageId);
     }
 
     /// A PART line for a stock product.
     public static CatalogueLine part(UUID productId, String description, BigDecimal quantity, long unitPriceCents,
-            BigDecimal vatRate) {
+            BigDecimal vatRate, @Nullable UUID packageId) {
         return new CatalogueLine(CatalogueLineType.PART, null, productId, description, quantity, unitPriceCents,
-                vatRate);
+                vatRate, null, packageId);
     }
 }

@@ -54,7 +54,10 @@ public final class Product {
     /// @throws AdjustmentReasonRequiredException when an adjustment has no reason
     public StockMovement record(UUID movementId, MovementType type, BigDecimal quantity,
             @Nullable StockReference reference, @Nullable String reason, UUID changedBy, Instant at) {
-        StockMovement movement = new StockMovement(movementId, id, type, quantity, reference, reason, changedBy, at);
+        // An issue keeps the cost the product has now: reports value the parts of an order by it.
+        Long unitCost = type == MovementType.ISSUE ? details.costCents() : null;
+        StockMovement movement = new StockMovement(movementId, id, type, quantity, reference, reason, changedBy, at,
+                unitCost);
         BigDecimal after = onHand.add(quantity);
         if (after.signum() < 0) {
             throw new InsufficientStockException();

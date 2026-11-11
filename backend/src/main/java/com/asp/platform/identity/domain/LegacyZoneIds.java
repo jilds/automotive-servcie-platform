@@ -1,0 +1,87 @@
+package com.asp.platform.identity.domain;
+
+import java.util.Set;
+
+/// Legacy time zone aliases (tzdata "backward" links such as `Brazil/East`, `Asia/Calcutta`, `US/Eastern`) that Java knows
+/// but PostgreSQL's `AT TIME ZONE` does not, so a report of a workshop that chose one would fail with a SQL error. They are
+/// not accepted as a workshop zone (`WorkshopSettings.isZoneId`); the canonical name (`America/Sao_Paulo`,
+/// `Asia/Kolkata`, `America/New_York`) is. `ReportSchemaTests` probes every accepted zone against PostgreSQL, so a new alias
+/// in a later tzdata makes that test fail and this list grows.
+final class LegacyZoneIds {
+
+    static final Set<String> NOT_IN_POSTGRESQL = Set.of(
+            "Africa/Asmera",
+            "America/Argentina/ComodRivadavia",
+            "America/Buenos_Aires",
+            "America/Catamarca",
+            "America/Cordoba",
+            "America/Fort_Wayne",
+            "America/Godthab",
+            "America/Indianapolis",
+            "America/Jujuy",
+            "America/Knox_IN",
+            "America/Louisville",
+            "America/Mendoza",
+            "America/Rosario",
+            "Antarctica/South_Pole",
+            "Asia/Ashkhabad",
+            "Asia/Calcutta",
+            "Asia/Choibalsan",
+            "Asia/Chungking",
+            "Asia/Dacca",
+            "Asia/Katmandu",
+            "Asia/Macao",
+            "Asia/Rangoon",
+            "Asia/Saigon",
+            "Asia/Thimbu",
+            "Asia/Ujung_Pandang",
+            "Asia/Ulan_Bator",
+            "Atlantic/Faeroe",
+            "Australia/ACT",
+            "Australia/LHI",
+            "Australia/NSW",
+            "Australia/North",
+            "Australia/Queensland",
+            "Australia/South",
+            "Australia/Tasmania",
+            "Australia/Victoria",
+            "Australia/West",
+            "Brazil/Acre",
+            "Brazil/DeNoronha",
+            "Brazil/East",
+            "Brazil/West",
+            "Canada/Atlantic",
+            "Canada/Central",
+            "Canada/Eastern",
+            "Canada/Mountain",
+            "Canada/Newfoundland",
+            "Canada/Pacific",
+            "Canada/Saskatchewan",
+            "Canada/Yukon",
+            "Chile/Continental",
+            "Chile/EasterIsland",
+            "Europe/Kiev",
+            "Europe/Uzhgorod",
+            "Europe/Zaporozhye",
+            "Mexico/BajaNorte",
+            "Mexico/BajaSur",
+            "Mexico/General",
+            "Pacific/Enderbury",
+            "Pacific/Ponape",
+            "Pacific/Truk",
+            "US/Alaska",
+            "US/Aleutian",
+            "US/Arizona",
+            "US/Central",
+            "US/East-Indiana",
+            "US/Eastern",
+            "US/Hawaii",
+            "US/Indiana-Starke",
+            "US/Michigan",
+            "US/Mountain",
+            "US/Pacific",
+            "US/Samoa");
+
+    private LegacyZoneIds() {
+    }
+}

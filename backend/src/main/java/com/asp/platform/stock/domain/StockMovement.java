@@ -13,8 +13,12 @@ import org.jspecify.annotations.Nullable;
 /// @param reference the document behind the movement; null for an adjustment
 /// @param reason    why stock was adjusted; required for an adjustment
 /// @param changedBy the user who made the change
+///
+/// @param unitCostCents the product's cost per unit when the stock was issued (an ISSUE), so a later change of the cost
+///                      never rewrites the margin of a delivered order; null for receipts and adjustments
 public record StockMovement(UUID id, UUID productId, MovementType type, BigDecimal quantity,
-        @Nullable StockReference reference, @Nullable String reason, UUID changedBy, Instant changedAt) {
+        @Nullable StockReference reference, @Nullable String reason, UUID changedBy, Instant changedAt,
+        @Nullable Long unitCostCents) {
 
     public static final int MAX_REASON = 500;
 

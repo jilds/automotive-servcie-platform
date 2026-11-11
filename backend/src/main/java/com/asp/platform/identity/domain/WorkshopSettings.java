@@ -1,7 +1,7 @@
 package com.asp.platform.identity.domain;
 
 import java.math.BigDecimal;
-import java.time.DateTimeException;
+import java.util.regex.Pattern;
 import java.time.ZoneId;
 import java.util.Locale;
 
@@ -22,8 +22,12 @@ import com.asp.platform.shared.PortugueseNif;
 ///                        [#MAX_QUOTE_VALID_DAYS]
 /// @param deliveryChecklistRequired when on, a work order cannot be delivered while required items of its delivery
 ///                        checklist are open
+/// @param labourCostPerHourCents what one hour of labour costs the workshop, in cents, for the margin of the reports
+///                        (not the price: that is `labourRateCents`); null when the owner has not set it, 0 is a value
+/// @param retentionMonths the window of the retention KPI, [#MIN_RETENTION_MONTHS] to [#MAX_RETENTION_MONTHS]
 public record WorkshopSettings(String name, @Nullable String nif, String country, String timezone,
-        BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays, boolean deliveryChecklistRequired) {
+        BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays, boolean deliveryChecklistRequired,
+        @Nullable Long labourCostPerHourCents, int retentionMonths) {
 
     /// Settings without the delivery checklist gate (off).
     public WorkshopSettings(String name, @Nullable String nif, String country, String timezone,
@@ -31,10 +35,23 @@ public record WorkshopSettings(String name, @Nullable String nif, String country
         this(name, nif, country, timezone, defaultVatRate, labourRateCents, quoteValidDays, false);
     }
 
+    /// Settings without a labour cost and with the default retention window.
+    public WorkshopSettings(String name, @Nullable String nif, String country, String timezone,
+            BigDecimal defaultVatRate, long labourRateCents, int quoteValidDays, boolean deliveryChecklistRequired) {
+        this(name, nif, country, timezone, defaultVatRate, labourRateCents, quoteValidDays,
+                deliveryChecklistRequired, null, DEFAULT_RETENTION_MONTHS);
+    }
+
     public static final int MIN_QUOTE_VALID_DAYS = 1;
     public static final int MAX_QUOTE_VALID_DAYS = 90;
     public static final int DEFAULT_QUOTE_VALID_DAYS = 15;
+    public static final int MIN_RETENTION_MONTHS = 1;
+    public static final int MAX_RETENTION_MONTHS = 60;
+    public static final int DEFAULT_RETENTION_MONTHS = 12;
+    /// EUR 10 000 an hour: a ceiling that catches a typed-in euro value, and keeps hours times cost far from overflow.
+    public static final long MAX_LABOUR_COST_PER_HOUR_CENTS = 1_000_000L;
 
+    private static final Pattern REGION_ID = Pattern.compile("[A-Za-z]+(/[A-Za-z0-9_+-]+)+");
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final int VAT_DECIMALS = 2;
 
@@ -64,6 +81,15 @@ public record WorkshopSettings(String name, @Nullable String nif, String country
             throw new IllegalArgumentException("A quote is valid for " + MIN_QUOTE_VALID_DAYS + " to "
                     + MAX_QUOTE_VALID_DAYS + " days");
         }
+        if (labourCostPerHourCents != null
+                && (labourCostPerHourCents < 0 || labourCostPerHourCents > MAX_LABOUR_COST_PER_HOUR_CENTS)) {
+            throw new IllegalArgumentException("Labour cost per hour is 0 to " + MAX_LABOUR_COST_PER_HOUR_CENTS
+                    + " cents");
+        }
+        if (retentionMonths < MIN_RETENTION_MONTHS || retentionMonths > MAX_RETENTION_MONTHS) {
+            throw new IllegalArgumentException("The retention window is " + MIN_RETENTION_MONTHS + " to "
+                    + MAX_RETENTION_MONTHS + " months");
+        }
     }
 
     /// Checks a Portuguese NIF (check digit and first digit). Called when settings are written, not when they are
@@ -91,13 +117,13 @@ public record WorkshopSettings(String name, @Nullable String nif, String country
         return ZoneId.of(timezone);
     }
 
-    /// Region ids such as "Europe/Lisbon" and fixed ids such as "UTC" or "+01:00".
+    /// Region ids such as "Europe/Lisbon" (and "UTC" or "GMT"), nothing else: no offsets such as "+01:00" or
+    /// "UTC+01:00" and no short names such as "CET". The reports hand the zone to PostgreSQL's `AT TIME ZONE`, where an
+    /// offset id would mean a POSIX offset with the opposite sign. The pattern is the one of the check constraint
+    /// `tenant_timezone_region` (V23).
     public static boolean isZoneId(String id) {
-        try {
-            ZoneId.of(id);
-            return true;
-        } catch (DateTimeException e) {
-            return false;
-        }
+        return (REGION_ID.matcher(id).matches() || id.equals("UTC") || id.equals("GMT"))
+                && !LegacyZoneIds.NOT_IN_POSTGRESQL.contains(id)
+                && ZoneId.getAvailableZoneIds().contains(id);
     }
 }

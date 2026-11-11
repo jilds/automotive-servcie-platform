@@ -43,6 +43,36 @@ class WorkshopSettingsTests {
     }
 
     @Test
+    void should_accept_region_ids_only_as_a_time_zone() {
+        // Offsets and short names are not region ids: the reports give the zone to PostgreSQL's AT TIME ZONE, where
+        // "UTC+01:00" and "+01:00" mean something else (POSIX offsets with the opposite sign).
+        for (String zone : new String[] {"+01:00", "UTC+01:00", "UTC-3", "GMT+1", "Z", "CET", "EST5EDT", "Brazil/East", "Asia/Calcutta"}) {
+            org.assertj.core.api.Assertions.assertThat(WorkshopSettings.isZoneId(zone)).as(zone).isFalse();
+            assertThatThrownBy(() -> settings("PT", zone, "23", 0)).as(zone)
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+        for (String zone : new String[] {"Europe/Lisbon", "America/Sao_Paulo", "America/Argentina/Buenos_Aires",
+                "Etc/GMT+1", "UTC", "GMT"}) {
+            org.assertj.core.api.Assertions.assertThat(WorkshopSettings.isZoneId(zone)).as(zone).isTrue();
+        }
+    }
+
+    @Test
+    void should_validate_the_report_settings() {
+        assertThatThrownBy(() -> new WorkshopSettings("Oficina", null, "PT", "Europe/Lisbon", new BigDecimal("23"), 0,
+                15, false, -1L, 12)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new WorkshopSettings("Oficina", null, "PT", "Europe/Lisbon", new BigDecimal("23"), 0,
+                15, false, null, 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new WorkshopSettings("Oficina", null, "PT", "Europe/Lisbon", new BigDecimal("23"), 0,
+                15, false, null, 61)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new WorkshopSettings("Oficina", null, "PT", "Europe/Lisbon", new BigDecimal("23"), 0,
+                15, false, 1_000_001L, 12)).isInstanceOf(IllegalArgumentException.class);
+        WorkshopSettings ok = new WorkshopSettings("Oficina", null, "PT", "Europe/Lisbon", new BigDecimal("23"), 0, 15,
+                false, 0L, 60);
+        org.assertj.core.api.Assertions.assertThat(ok.labourCostPerHourCents()).isZero();
+    }
+
+    @Test
     void should_reject_vat_outside_0_to_100_or_with_more_than_two_decimals() {
         assertThatThrownBy(() -> settings("PT", "Europe/Lisbon", "100.01", 0))
                 .isInstanceOf(IllegalArgumentException.class);

@@ -56,6 +56,12 @@ class TenantEntity implements DomainEntity<Tenant> {
     @Column(name = "delivery_checklist_required", nullable = false)
     private boolean deliveryChecklistRequired;
 
+    @Column(name = "labour_cost_per_hour_cents")
+    private @Nullable Long labourCostPerHourCents;
+
+    @Column(name = "retention_months", nullable = false)
+    private short retentionMonths;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Plan plan;
@@ -115,6 +121,8 @@ class TenantEntity implements DomainEntity<Tenant> {
         this.labourRateCents = s.labourRateCents();
         this.quoteValidDays = (short) s.quoteValidDays();
         this.deliveryChecklistRequired = s.deliveryChecklistRequired();
+        this.labourCostPerHourCents = s.labourCostPerHourCents();
+        this.retentionMonths = (short) s.retentionMonths();
         Subscription sub = tenant.subscription();
         this.plan = sub.plan();
         this.status = sub.status();
@@ -133,7 +141,7 @@ class TenantEntity implements DomainEntity<Tenant> {
     public Tenant toDomain() {
         return new Tenant(id,
                 new WorkshopSettings(name, nif, country, timezone, defaultVatRate, labourRateCents,
-                        quoteValidDays, deliveryChecklistRequired),
+                        quoteValidDays, deliveryChecklistRequired, labourCostPerHourCents, retentionMonths),
                 new Subscription(plan, status, subscriptionUntil),
                 new Slug(slug),
                 new Branding(displayName, color(primaryColor), color(accentColor)),

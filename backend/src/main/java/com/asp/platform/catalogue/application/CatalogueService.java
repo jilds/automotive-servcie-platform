@@ -151,7 +151,7 @@ public class CatalogueService implements CatalogueLookup {
         item.requireActive();
         ServiceDetails d = item.details();
         return List.of(new CatalogueLine(item.id(), d.name(), BigDecimal.ONE, view(item).effectivePriceCents(),
-                d.vatRate()));
+                d.vatRate(), d.standardHours(), null));
     }
 
     /// A product of the package that is no longer sold stops the whole package (409 `product-inactive`).
@@ -178,12 +178,15 @@ public class CatalogueService implements CatalogueLookup {
             if (item.kind() == PackageItemKind.SERVICE) {
                 String description = d.name() + ": " + item.name()
                         + (item.quantity() > 1 ? " × " + item.quantity() : "");
-                lines.add(new CatalogueLine(item.id(), description, BigDecimal.ONE, shares.get(i), d.vatRate()));
+                BigDecimal standard = contents.services().get(item.id()).details().standardHours()
+                        .multiply(BigDecimal.valueOf(item.quantity()));
+                lines.add(new CatalogueLine(item.id(), description, BigDecimal.ONE, shares.get(i), d.vatRate(),
+                        standard, packageId));
             } else {
                 String description = d.name() + ": " + item.name() + " (" + item.sku() + ")";
                 for (PackagePricing.Portion portion : PackagePricing.split(shares.get(i), item.quantity())) {
                     lines.add(CatalogueLine.part(item.id(), description, BigDecimal.valueOf(portion.quantity()),
-                            portion.unitCents(), d.vatRate()));
+                            portion.unitCents(), d.vatRate(), packageId));
                 }
             }
         }

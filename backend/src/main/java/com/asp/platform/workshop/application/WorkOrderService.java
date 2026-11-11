@@ -169,7 +169,7 @@ public class WorkOrderService {
             UUID productId = line.productId();
             order.addLine(lineId, new NewLine(line.type() == CatalogueLineType.PART ? LineType.PART : LineType.LABOR,
                     line.description(), line.quantity(), line.unitPriceCents(), null, line.vatRate(),
-                    line.serviceItemId(), productId));
+                    line.serviceItemId(), productId, line.standardHours(), line.packageId()));
             if (productId != null) {
                 parts.add(new PartReservation(productId, line.quantity(), lineId));
             }

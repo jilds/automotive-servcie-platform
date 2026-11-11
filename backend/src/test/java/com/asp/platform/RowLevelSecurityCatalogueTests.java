@@ -69,6 +69,24 @@ class RowLevelSecurityCatalogueTests extends ApiTestSupport {
                 });
     }
 
+    /// A view reads its base tables with the view owner's rights unless it is `security_invoker`; the owner is subject to
+    /// FORCE row-level security too, but a view that lost the option would silently stop depending on who asks.
+    @Test
+    void should_run_every_view_with_the_rights_of_the_caller() {
+        Map<String, Boolean> views = jdbc.sql("""
+                select c.relname as name,
+                       coalesce(c.reloptions::text, '') like '%security_invoker=true%' as invoker
+                from pg_class c
+                join pg_namespace n on n.oid = c.relnamespace
+                where n.nspname = 'public' and c.relkind = 'v'""")
+                .query((rs, _) -> Map.entry(rs.getString("name"), rs.getBoolean("invoker")))
+                .list().stream().collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        assertThat(views).containsKey("work_order_line_amounts");
+        assertThat(views).allSatisfy((name, invoker) -> assertThat(invoker)
+                .as("%s: security_invoker", name).isTrue());
+    }
+
     record TableSecurity(String name, boolean enabled, boolean forced, boolean hasPolicy) {
     }
 }

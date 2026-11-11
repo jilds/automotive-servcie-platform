@@ -10,11 +10,22 @@ import org.jspecify.annotations.Nullable;
 ///
 /// @param serviceItemId the catalogue service the line was added from, or null for a line typed by hand
 /// @param productId     the stock product the line reserves, or null when it does not come from stock
+/// @param standardHours the standard time of a catalogue service line as a whole, copied when the line was added so a
+///                      later change of the catalogue never rewrites reports; null for other lines
+/// @param packageId     the catalogue package the line was expanded from, or null
 public record WorkOrderLine(UUID id, int position, LineType type, String description, BigDecimal quantity,
         long unitPriceCents, BigDecimal discountPercent, BigDecimal vatRate, @Nullable UUID serviceItemId,
-        @Nullable UUID productId) {
+        @Nullable UUID productId, @Nullable BigDecimal standardHours, @Nullable UUID packageId) {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+
+    /// A line without catalogue timing or package origin.
+    public WorkOrderLine(UUID id, int position, LineType type, String description, BigDecimal quantity,
+            long unitPriceCents, BigDecimal discountPercent, BigDecimal vatRate, @Nullable UUID serviceItemId,
+            @Nullable UUID productId) {
+        this(id, position, type, description, quantity, unitPriceCents, discountPercent, vatRate, serviceItemId,
+                productId, null, null);
+    }
 
     public WorkOrderLine {
         if (quantity.signum() <= 0) {
@@ -30,7 +41,8 @@ public record WorkOrderLine(UUID id, int position, LineType type, String descrip
     static WorkOrderLine from(UUID id, int position, NewLine line) {
         BigDecimal discount = line.discountPercent() == null ? BigDecimal.ZERO : line.discountPercent();
         return new WorkOrderLine(id, position, line.type(), line.description(), line.quantity(),
-                line.unitPriceCents(), discount, line.vatRate(), line.serviceItemId(), line.productId());
+                line.unitPriceCents(), discount, line.vatRate(), line.serviceItemId(), line.productId(), line.standardHours(),
+                line.packageId());
     }
 
     public long netCents() {

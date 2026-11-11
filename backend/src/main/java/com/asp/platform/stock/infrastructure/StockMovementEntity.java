@@ -51,6 +51,10 @@ class StockMovementEntity {
     @Column(name = "changed_at", nullable = false)
     private Instant changedAt;
 
+    /// The product's cost per unit at the moment of an issue (V24).
+    @Column(name = "unit_cost_cents")
+    private @Nullable Long unitCostCents;
+
     @SuppressWarnings("NullAway.Init")
     protected StockMovementEntity() {
     }
@@ -66,12 +70,14 @@ class StockMovementEntity {
         this.reason = movement.reason();
         this.changedBy = movement.changedBy();
         this.changedAt = movement.changedAt();
+        this.unitCostCents = movement.unitCostCents();
     }
 
     StockMovement toDomain() {
         String refType = referenceType;
         UUID refId = referenceId;
         StockReference reference = refType == null || refId == null ? null : new StockReference(refType, refId);
-        return new StockMovement(id, productId, type, quantity, reference, reason, changedBy, changedAt);
+        return new StockMovement(id, productId, type, quantity, reference, reason, changedBy, changedAt,
+                unitCostCents);
     }
 }

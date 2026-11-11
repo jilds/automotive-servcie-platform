@@ -22,9 +22,8 @@ class JdbcDashboardQueries implements DashboardQueries {
             where status in (:statuses)
             group by status, assigned_mechanic_id""";
 
-    /// Line maths as in WorkOrderLine: net = round(quantity × unit price × (100 − discount) / 100), then
-    /// VAT = round(net × rate / 100), rounded per line, half up (round() on positive numerics). Multiplying
-    /// by 0.01 instead of dividing keeps every intermediate value exact.
+    /// The line maths (as in WorkOrderLine: net and VAT rounded per line, half up) is the shared view
+    /// `work_order_line_amounts`, which the reports read too.
     private static final String DELIVERED = """
             with delivered as (
                 select id
@@ -32,16 +31,12 @@ class JdbcDashboardQueries implements DashboardQueries {
                 where status = 'DELIVERED'
                   and status_changed_at >= :from
                   and status_changed_at < :to
-            ), line_totals as (
-                select round(l.quantity * l.unit_price_cents * (100 - l.discount_percent) * 0.01) as net,
-                       l.vat_rate
-                from work_order_line l
-                join delivered d on d.id = l.work_order_id
             )
             select (select count(*) from delivered) as orders,
-                   coalesce(sum(net), 0) as net_cents,
-                   coalesce(sum(round(net * vat_rate * 0.01)), 0) as vat_cents
-            from line_totals""";
+                   coalesce(sum(a.net_cents), 0) as net_cents,
+                   coalesce(sum(a.vat_cents), 0) as vat_cents
+            from work_order_line_amounts a
+            join delivered d on d.id = a.work_order_id""";
 
     private final JdbcClient jdbc;
 

@@ -62,6 +62,14 @@ class WorkOrderLineEntity {
     @Column(name = "product_id", updatable = false)
     private @Nullable UUID productId;
 
+    /// The standard time of a catalogue service line as a whole, copied when the line was added (V23).
+    @Column(name = "standard_hours", updatable = false, precision = 7, scale = 2)
+    private @Nullable BigDecimal standardHours;
+
+    /// The catalogue package the line was expanded from, if any (V23); no foreign key, the line outlives the package.
+    @Column(name = "package_id", updatable = false)
+    private @Nullable UUID packageId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private @Nullable Instant createdAt;
@@ -86,6 +94,8 @@ class WorkOrderLineEntity {
         this.vatRate = line.vatRate();
         this.serviceItemId = line.serviceItemId();
         this.productId = line.productId();
+        this.standardHours = line.standardHours();
+        this.packageId = line.packageId();
     }
 
     UUID getId() {
@@ -94,6 +104,6 @@ class WorkOrderLineEntity {
 
     WorkOrderLine toDomain() {
         return new WorkOrderLine(id, position, type, description, quantity, unitPriceCents, discountPercent,
-                vatRate, serviceItemId, productId);
+                vatRate, serviceItemId, productId, standardHours, packageId);
     }
 }
