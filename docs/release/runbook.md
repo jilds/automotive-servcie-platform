@@ -100,6 +100,19 @@ an older image on a newer schema; then restore the backup taken before the upgra
 - Metrics: `/actuator/prometheus` on port 8081, reachable only on the internal network. A Prometheus container on that
   network can scrape `app:8081` (not set up yet, see the checklist).
 - Rate limits and caches are in memory per instance: run **one** app container until they move to a shared store.
+- **Never enable access logs without URL redaction.** The activation link's token travels in a query string
+  (`GET /api/v1/auth/activation?token=...`), and the public status links carry theirs in the path
+  (`/w/<slug>/booking/<token>`, `/shop/<token>`, `/quote/<token>`). An access log that records the full URL (Caddy,
+  the Tomcat access log valve, a load balancer) would keep working credentials. Today none is enabled: `deploy/Caddyfile`
+  has no `log` directive (so no access log) and the app logs no URLs. If one is ever needed,
+  drop the query string and replace the token segments before writing (for Caddy, a `log` with `request>uri` filtered
+  by `query` and `replace` filters), and check it with a test link before go-live.
+- Sign-in endpoints are rate-limited per address (10 a minute) and per submitted e-mail (5 failed logins in 15
+  minutes, `app.auth.rate-limit.*`): behind Caddy the client address comes from `X-Forwarded-For` as for the public
+  pages, so `ASP_TRUSTED_PROXIES` must be right or every user shares one bucket. A user locked out by failures waits
+  for the `Retry-After` (at most 15 minutes) or the app restarts (counters are in memory).
+- Tokens issued before the audience check (plan 23 batch A) have no `aud` claim and are refused: after that deploy every
+  signed-in user must sign in again once (tokens last 12 h anyway).
 - Invoicing and payments (plan 07): in production both providers default to `none`
   (`ASP_BILLING_INVOICING_PROVIDER`, `ASP_BILLING_PAYMENTS_PROVIDER`; the app refuses `sandbox` under the `prod`
   profile). When a real payments provider is added, `ASP_BILLING_WEBHOOK_SECRET` (at least 32 bytes) is required.

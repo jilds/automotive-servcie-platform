@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +29,8 @@ import com.asp.platform.shared.StaleDataException;
 /// Feature-specific mappings live in an advice in that feature's `api` package.
 @RestControllerAdvice
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail notFound(NotFoundException e) {
@@ -65,7 +69,9 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /// forms have coded exceptions ([InvalidInputException]), so this mostly guards programming errors.
     @ExceptionHandler(IllegalArgumentException.class)
     ProblemDetail badRequest(IllegalArgumentException e) {
-        return problem(HttpStatus.BAD_REQUEST, "bad-request", e.getMessage());
+        // The message is written for developers and may carry values the user typed: not sent, kept at DEBUG.
+        log.debug("Bad request: {}", e.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "bad-request", "The request is not valid");
     }
 
     /// Adds the failing fields, so the UI can show the message next to the right input.

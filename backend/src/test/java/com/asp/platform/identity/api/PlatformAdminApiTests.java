@@ -122,7 +122,8 @@ class PlatformAdminApiTests extends ApiTestSupport {
                 {"name":"Suspensa","country":"PT","timezone":"Europe/Lisbon","plan":"PRO","status":"SUSPENDED",
                  "ownerName":"X","ownerEmail":"%s"}""".formatted(uniqueEmail("s"))), admin)
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("bad-request"));
+                .andExpect(jsonPath("$.code").value("bad-request"))
+                .andExpect(jsonPath("$.detail").value("The request is not valid"));
 
         String takenEmail = uniqueEmail("taken");
         provisionWorkshop("Primeira", takenEmail).andExpect(status().isCreated());

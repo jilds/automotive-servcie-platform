@@ -2,10 +2,10 @@ package com.asp.platform.identity.application;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +38,9 @@ public class IdentityService {
     private final ActivationLinks links;
     private final Clock clock;
     private final SubscriptionPolicy subscriptions;
+    /// Hash of a throw-away password, made with the same encoder (so the same cost) and checked when no account can
+    /// log in: every login attempt costs one hash check, so the answer time does not tell which e-mails exist.
+    private final String absentAccountHash;
 
     IdentityService(TenantRepository tenants, UserRepository users, PlatformAdminRepository admins,
             PasswordEncoder passwordEncoder, TokenIssuer tokenIssuer, AccessDirectoryService access,
@@ -51,6 +54,7 @@ public class IdentityService {
         this.access = access;
         this.links = links;
         this.clock = clock;
+        this.absentAccountHash = Objects.requireNonNull(passwordEncoder.encode(UUID.randomUUID().toString()));
     }
 
     /// One login for everyone: a workshop user, else a platform admin with that email.
@@ -64,18 +68,27 @@ public class IdentityService {
         String normalized = User.normalizeEmail(email);
         Optional<User> user = users.findByEmail(normalized)
                 .filter(User::active)
-                .filter(candidate -> matches(password, candidate.passwordHash()));
+                .filter(candidate -> candidate.passwordHash() != null);
+        Optional<PlatformAdmin> admin = user.isPresent() ? Optional.empty()
+                : admins.findByEmail(normalized)
+                        .filter(PlatformAdmin::active)
+                        .filter(candidate -> candidate.passwordHash() != null);
+        // Exactly one password check whatever the account is (unknown, inactive, not activated): a hash of a
+        // throw-away password stands in, so the answer time does not tell which e-mails are registered.
+        String hash = user.map(User::passwordHash)
+                .or(() -> admin.map(PlatformAdmin::passwordHash))
+                .orElse(absentAccountHash);
+        boolean passwordMatches = passwordEncoder.matches(password, hash);
+        if (!passwordMatches || (user.isEmpty() && admin.isEmpty())) {
+            throw new InvalidCredentialsException();
+        }
         if (user.isPresent()) {
             if (!tenants.findById(user.get().tenantId()).map(subscriptions::allowsSignIn).orElse(false)) {
                 throw new WorkshopSuspendedException();
             }
             return new Session(tokenIssuer.issue(user.get()), Account.of(user.get()));
         }
-        PlatformAdmin admin = admins.findByEmail(normalized)
-                .filter(PlatformAdmin::active)
-                .filter(candidate -> matches(password, candidate.passwordHash()))
-                .orElseThrow(InvalidCredentialsException::new);
-        return new Session(tokenIssuer.issue(admin), Account.of(admin));
+        return new Session(tokenIssuer.issue(admin.get()), Account.of(admin.get()));
     }
 
     /// Adds a team member without a password and returns their activation link.
@@ -127,9 +140,5 @@ public class IdentityService {
         if (users.existsByEmail(normalized) || admins.existsByEmail(normalized)) {
             throw new EmailAlreadyRegisteredException();
         }
-    }
-
-    private boolean matches(String password, @Nullable String hash) {
-        return hash != null && passwordEncoder.matches(password, hash);
     }
 }

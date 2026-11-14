@@ -90,6 +90,21 @@ class FixedWindowLimitTests {
         assertThat(limit.acquire("a").firstRefusal()).isTrue();
     }
 
+    @Test
+    void should_peek_without_counting_and_refuse_once_the_limit_is_used_up() {
+        assertThat(limit.peek("a").refused()).isFalse();
+        limit.acquire("a");
+        assertThat(limit.peek("a").refused()).isFalse();
+        limit.acquire("a");
+
+        assertThat(limit.peek("a").retryAfterSeconds()).isEqualTo(60);
+        assertThat(limit.peek("a").retryAfterSeconds()).isEqualTo(60);
+        assertThat(limit.peek("b").refused()).isFalse();
+
+        advance(Duration.ofSeconds(61));
+        assertThat(limit.peek("a").refused()).isFalse();
+    }
+
     private void advance(Duration duration) {
         nanos.addAndGet(duration.toNanos());
     }

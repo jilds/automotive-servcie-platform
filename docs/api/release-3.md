@@ -48,6 +48,20 @@ makes unexpired tokens work again.
 #### `POST /auth/login`
 Unchanged body. See "Roles and tokens" for the platform admin.
 
+**(updated 2026-11-14) Rate limit on `POST /auth/login`, `POST /auth/activate` and `GET /auth/activation`** (assessment
+2026-11-11 #1). Every request to these three paths counts against its client address: 10 a minute by default
+(`app.auth.rate-limit.attempts`, IPv6 by its /64), successful ones included. A login that fails (401) also counts against
+the submitted e-mail, from any address: 5 in 15 minutes by default (`app.auth.rate-limit.failures`), counted by the
+SHA-256 of the trimmed, lower-case e-mail whether or not an account exists, so the answer never tells which e-mails are
+registered. Over either limit: `429 too-many-requests` (`/problems/too-many-requests`) with `Retry-After` (seconds). A
+locked e-mail answers 429 also for the right password until the window ends. Counters are per instance, in memory. The
+UI already translates `error.too-many-requests`. Also: a login for an unknown, inactive or not yet activated account now
+costs one password check like any other (same answer time), and `400 bad-request` has the fixed detail "The request is
+not valid". `unsupported-charset` (415) for a login whose Content-Type declares a charset other than UTF-8, and
+`400 validation` (`errors.email`) for a login body that is not JSON or has no e-mail (both before the controller, so no
+login skips the per-e-mail limit). `payload-too-large` (413): a login body over 8 KB is refused without being parsed (it
+would skip the per-e-mail limit); `email` is at most 254 and `password` at most 128 characters (`400 validation`).
+
 #### `GET /auth/activation?token=…`
 Who the link is for, so the page can greet them.
 ```json

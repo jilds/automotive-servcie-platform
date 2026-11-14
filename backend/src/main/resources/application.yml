@@ -86,6 +86,17 @@ app:
   # After subscription_until a workshop keeps working for these days, then it is locked out like a suspended one.
   subscription:
     grace-days: ${ASP_SUBSCRIPTION_GRACE_DAYS:7}
+  # Sign-in endpoints (POST /auth/login, POST /auth/activate, GET /auth/activation): requests per client address, and
+  # failed logins (401) per submitted e-mail (counted by its SHA-256 whether or not the account exists). Over a limit:
+  # 429 too-many-requests with Retry-After. Counters are per instance, in memory.
+  auth:
+    rate-limit:
+      attempts:
+        limit: 10
+        window: 1m
+      failures:
+        limit: 5
+        window: 15m
   # Public workshop pages /api/v1/public/{slug}/... (ADR 0004): lookups per client address across all slugs
   # (checked before the slug is looked up), then reads and writes per client address and workshop.
   # The prod profile reads the client's address from X-Forwarded-For sent by a trusted proxy (application-prod.yml).

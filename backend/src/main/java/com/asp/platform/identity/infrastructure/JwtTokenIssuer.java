@@ -2,6 +2,7 @@ package com.asp.platform.identity.infrastructure;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -50,6 +51,7 @@ class JwtTokenIssuer implements TokenIssuer {
         Instant now = clock.instant();
         return JwtClaimsSet.builder()
                 .issuer(properties.issuer())
+                .audience(List.of(TokenClaims.AUDIENCE))
                 .subject(subject)
                 .issuedAt(now)
                 .expiresAt(now.plus(properties.ttl()))

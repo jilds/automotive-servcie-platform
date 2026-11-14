@@ -20,7 +20,7 @@ import com.asp.platform.identity.domain.UserRepository;
 /// Creates the first platform admin at startup from `app.platform.bootstrap-admin-email` and
 /// `app.platform.bootstrap-admin-password` (environment variables `ASP_BOOTSTRAP_ADMIN_EMAIL` and
 /// `ASP_BOOTSTRAP_ADMIN_PASSWORD`), but only while no platform admin exists. Once one exists the settings are
-/// ignored, so they can be removed after the first start. Logs the e-mail, never the password.
+/// ignored, so they can be removed after the first start. Logs neither the e-mail nor the password.
 @Component
 class PlatformAdminBootstrap implements ApplicationRunner {
 
@@ -56,12 +56,12 @@ class PlatformAdminBootstrap implements ApplicationRunner {
             return;
         }
         if (users.existsByEmail(normalized)) {
-            log.warn("Platform admin not created: {} already belongs to a workshop user", normalized);
+            log.warn("Platform admin not created: the bootstrap e-mail already belongs to a workshop user");
             return;
         }
         String name = PlatformProperties.blankToNull(properties.bootstrapAdminName());
         admins.save(PlatformAdmin.create(UUID.randomUUID(), name == null ? DEFAULT_NAME : name, normalized,
                 passwordEncoder.encode(password), clock.instant()));
-        log.info("Created the first platform admin {}", normalized);
+        log.info("Created the first platform admin");
     }
 }

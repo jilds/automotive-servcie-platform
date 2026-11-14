@@ -12,6 +12,10 @@ public final class TokenClaims {
 
     public static final String EMAIL = "email";
 
+    /// The `aud` of every access token: the ASP API. The decoder refuses a token signed with the right key but meant
+    /// for another audience.
+    public static final String AUDIENCE = "asp-api";
+
     /// Role claim of a platform admin. Not a [com.asp.platform.shared.Role]: platform admins are not workshop users.
     public static final String PLATFORM_ADMIN = "PLATFORM_ADMIN";
 

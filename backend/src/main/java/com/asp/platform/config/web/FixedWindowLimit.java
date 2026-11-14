@@ -43,6 +43,18 @@ final class FixedWindowLimit {
         return new Outcome(Math.max(1, seconds), count == max + 1);
     }
 
+    /// Whether the key has used up its window, without counting anything: refused when `acquire` has been called
+    /// `max` times or more in the key's current window. For limits that count only some outcomes (failed logins).
+    Outcome peek(String key) {
+        Window window = windows.getIfPresent(key);
+        if (window == null || window.count().get() < max) {
+            return Outcome.ALLOWED;
+        }
+        long remainingNanos = Math.max(0, window.startNanos() + windowNanos - ticker.read());
+        long seconds = TimeUnit.NANOSECONDS.toSeconds(remainingNanos + TimeUnit.SECONDS.toNanos(1) - 1);
+        return new Outcome(Math.max(1, seconds), false);
+    }
+
     /// What [#acquire] decided.
     ///
     /// @param retryAfterSeconds 0 when the request is allowed, else the whole seconds until the window ends,

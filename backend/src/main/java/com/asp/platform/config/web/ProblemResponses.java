@@ -52,6 +52,13 @@ final class ProblemResponses {
 
     void write(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String code,
             String detail) throws IOException {
+        write(request, response, status, code, detail, Map.of());
+    }
+
+    /// Like [#write(HttpServletRequest, HttpServletResponse, HttpStatus, String, String)], with the failing fields in
+    /// `errors` (as the validation answer has them) when there are any.
+    void write(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String code,
+            String detail, Map<String, String> errors) throws IOException {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("type", "/problems/" + code);
         body.put("title", status.getReasonPhrase());
@@ -59,6 +66,9 @@ final class ProblemResponses {
         body.put("detail", detail);
         body.put("instance", request.getRequestURI());
         body.put("code", code);
+        if (!errors.isEmpty()) {
+            body.put("errors", errors);
+        }
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");

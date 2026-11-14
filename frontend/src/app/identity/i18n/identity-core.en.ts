@@ -8,6 +8,8 @@ export const identityCoreEn = {
   'error.workshop-not-found': 'Workshop not found.',
   'error.add-on-not-available': 'This service is not available for this workshop.',
   'error.too-many-requests': 'Too many requests. Wait a moment and try again.',
+  'error.payload-too-large': 'The request is too large.',
+  'error.unsupported-charset': 'Only UTF-8 text is accepted.',
   'error.privacy-consent-required': 'Accept the privacy notice to send this form.',
   'error.activation-invalid': 'This activation link is no longer valid. Ask for a new one.',
   'error.activation-expired': 'This activation link has expired. Ask for a new one.',

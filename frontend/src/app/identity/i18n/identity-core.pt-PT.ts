@@ -10,6 +10,8 @@ export const identityCorePtPT: Record<IdentityCoreKey, string> = {
   'error.workshop-not-found': 'Oficina não encontrada.',
   'error.add-on-not-available': 'Este serviço não está disponível nesta oficina.',
   'error.too-many-requests': 'Demasiados pedidos. Aguarde um momento e tente de novo.',
+  'error.payload-too-large': 'O pedido é demasiado grande.',
+  'error.unsupported-charset': 'Só é aceite texto em UTF-8.',
   'error.privacy-consent-required': 'Aceite a política de privacidade para enviar este formulário.',
   'error.activation-invalid': 'Esta ligação de ativação já não é válida. Peça uma nova.',
   'error.activation-expired': 'Esta ligação de ativação expirou. Peça uma nova.',

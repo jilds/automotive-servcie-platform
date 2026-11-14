@@ -30,6 +30,16 @@ app:
   # No scheduled jobs in the tests: ShopOrderExpiryTests calls the expiry directly.
   scheduling:
     enabled: false
+  # Sign-in limits high enough for the whole suite (it logs in hundreds of times from one address);
+  # AuthRateLimitApiTests sets small ones.
+  auth:
+    rate-limit:
+      attempts:
+        limit: 100000
+        window: 1m
+      failures:
+        limit: 100000
+        window: 15m
   # Small limits so PublicWorkshopApiTests reaches them quickly; every test uses its own workshops (own slugs) and
   # its own client address.
   public:

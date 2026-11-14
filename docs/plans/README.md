@@ -34,4 +34,5 @@ Rules:
 | [20-marketing-campaigns.md](20-marketing-campaigns.md): consent-based segments, sending, unsubscribe | planned | |
 | [21-plan-limits-gating.md](21-plan-limits-gating.md): quotas, usage counters and feature gating per plan (blocked on tiers) | planned | |
 
+| [23-assessment-hardening.md](23-assessment-hardening.md): security, performance, schema and refactoring items from the 2026-11-11 assessment, in batches A-I | planned, not scheduled | |
 Plans 12–21 come from the feature comparison in [gap-analysis-carbob.md](gap-analysis-carbob.md) (2026-11-09).
