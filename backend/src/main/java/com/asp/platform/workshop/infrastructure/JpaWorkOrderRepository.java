@@ -1,5 +1,6 @@
 package com.asp.platform.workshop.infrastructure;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +51,26 @@ class JpaWorkOrderRepository implements WorkOrderRepository {
     public List<WorkOrder> findByMechanicAndStatusIn(UUID mechanicId, Collection<WorkOrderStatus> statuses) {
         return jpa.findByAssignedMechanicIdAndStatusInOrderByStatusChangedAt(mechanicId, statuses).stream()
                 .map(WorkOrderEntity::toDomain).toList();
+    }
+
+    @Override
+    public List<WorkOrder> findBoard(Collection<WorkOrderStatus> open, Instant deliveredSince) {
+        return jpa.findBoard(open, deliveredSince).stream().map(WorkOrderEntity::toDomain).toList();
+    }
+
+    @Override
+    public List<WorkOrder> findBoardOf(UUID mechanicId, Collection<WorkOrderStatus> open, Instant deliveredSince) {
+        return jpa.findBoardOf(mechanicId, open, deliveredSince).stream().map(WorkOrderEntity::toDomain).toList();
+    }
+
+    @Override
+    public boolean hideFromBoard(UUID id, UUID userId, Instant now) {
+        return jpa.hide(id, userId, now) > 0;
+    }
+
+    @Override
+    public int hideAllDeliveredFromBoard(UUID userId, Instant now) {
+        return jpa.hideAllDelivered(userId, now);
     }
 
     @Override

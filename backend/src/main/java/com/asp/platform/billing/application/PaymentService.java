@@ -19,6 +19,8 @@ import com.asp.platform.billing.domain.Invoice;
 import com.asp.platform.billing.domain.InvoiceNotFoundException;
 import com.asp.platform.billing.domain.InvoiceNotIssuedException;
 import com.asp.platform.billing.domain.InvoiceRepository;
+import com.asp.platform.billing.domain.Instalment;
+import com.asp.platform.billing.domain.InvalidInstalmentException;
 import com.asp.platform.billing.domain.InvalidPhoneException;
 import com.asp.platform.billing.domain.Payment;
 import com.asp.platform.billing.domain.PaymentExceedsBalanceException;
@@ -73,7 +75,11 @@ public class PaymentService {
     /// @throws ProviderUnavailableException    when the provider cannot be reached
     @Transactional
     public Payment create(CurrentUser user, UUID invoiceId, PaymentMethod method, @Nullable Long amountCents,
-            @Nullable String phone, @Nullable String note) {
+            @Nullable String phone, @Nullable String note, @Nullable Instalment instalment) {
+        if ((method == PaymentMethod.INSTALMENTS) != (instalment != null)) {
+            throw new InvalidInstalmentException("instalment-required", "instalment",
+                    "Instalment data is required for INSTALMENTS and not allowed for other methods");
+        }
         Invoice invoice = invoices.lockById(invoiceId).orElseThrow(InvoiceNotFoundException::new);
         invoice.requireIssuedInvoice();
         if (invoices.findActiveCreditNote(invoiceId).isPresent()) {
@@ -88,7 +94,9 @@ public class PaymentService {
         Instant now = clock.instant();
         UUID id = UUID.randomUUID();
         Payment payment;
-        if (!method.viaProvider()) {
+        if (instalment != null) {
+            payment = Payment.instalments(id, invoiceId, amount, instalment, cleanNote, user.userId(), now);
+        } else if (!method.viaProvider()) {
             payment = Payment.recorded(id, invoiceId, method, amount, cleanNote, user.userId(), now);
         } else {
             payment = createViaProvider(id, invoiceId, method, amount, phone, cleanNote, user.userId(), now);

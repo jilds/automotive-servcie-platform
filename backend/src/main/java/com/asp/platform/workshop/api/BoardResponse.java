@@ -21,7 +21,7 @@ record BoardResponse(Map<WorkOrderStatus, List<Card>> columns) {
     record Card(UUID id, int number, @Nullable String plate, @Nullable String plateDisplay,
             @Nullable String plateEra, @Nullable String registrationCountry, @Nullable YearMonth registrationDate,
             String vehicle, @Nullable UUID assignedMechanicId, Instant statusChangedAt,
-            @Nullable QuoteStatus quoteStatus) {
+            @Nullable QuoteStatus quoteStatus, @Nullable String customerName) {
 
         static Card of(BoardCard card) {
             VehiclePlate plate = card.plate();
@@ -31,7 +31,8 @@ record BoardResponse(Map<WorkOrderStatus, List<Card>> columns) {
                     plate == null ? null : plate.era(),
                     plate == null ? null : plate.registrationCountry(),
                     plate == null ? null : plate.registrationDate(),
-                    card.vehicle(), card.assignedMechanicId(), card.statusChangedAt(), card.quoteStatus());
+                    card.vehicle(), card.assignedMechanicId(), card.statusChangedAt(), card.quoteStatus(),
+                    card.customerName());
         }
     }
 

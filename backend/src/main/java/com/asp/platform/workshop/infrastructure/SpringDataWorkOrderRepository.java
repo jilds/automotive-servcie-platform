@@ -1,5 +1,6 @@
 package com.asp.platform.workshop.infrastructure;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -11,8 +12,10 @@ import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
+import org.springframework.data.repository.query.Param;
 
 import com.asp.platform.workshop.domain.WorkOrderStatus;
 
@@ -39,4 +42,37 @@ interface SpringDataWorkOrderRepository extends JpaRepository<WorkOrderEntity, U
 
     @EntityGraph(attributePaths = "lines")
     List<WorkOrderEntity> findByVehicleIdOrderByNumberDesc(UUID vehicleId);
+
+    /// Open orders plus recently delivered ones that nobody hid yet.
+    @EntityGraph(attributePaths = "lines")
+    @Query("""
+            select w from WorkOrderEntity w
+            where w.status in :open
+               or (w.status = com.asp.platform.workshop.domain.WorkOrderStatus.DELIVERED
+                   and w.boardHiddenAt is null and w.statusChangedAt >= :since)
+            order by w.statusChangedAt""")
+    List<WorkOrderEntity> findBoard(@Param("open") Collection<WorkOrderStatus> open, @Param("since") Instant since);
+
+    @EntityGraph(attributePaths = "lines")
+    @Query("""
+            select w from WorkOrderEntity w
+            where w.assignedMechanicId = :mechanicId
+              and (w.status in :open
+                   or (w.status = com.asp.platform.workshop.domain.WorkOrderStatus.DELIVERED
+                       and w.boardHiddenAt is null and w.statusChangedAt >= :since))
+            order by w.statusChangedAt""")
+    List<WorkOrderEntity> findBoardOf(@Param("mechanicId") UUID mechanicId,
+            @Param("open") Collection<WorkOrderStatus> open, @Param("since") Instant since);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update WorkOrderEntity w set w.boardHiddenAt = :now, w.boardHiddenBy = :by
+            where w.id = :id and w.status = com.asp.platform.workshop.domain.WorkOrderStatus.DELIVERED""")
+    int hide(@Param("id") UUID id, @Param("by") UUID by, @Param("now") Instant now);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update WorkOrderEntity w set w.boardHiddenAt = :now, w.boardHiddenBy = :by
+            where w.status = com.asp.platform.workshop.domain.WorkOrderStatus.DELIVERED and w.boardHiddenAt is null""")
+    int hideAllDelivered(@Param("by") UUID by, @Param("now") Instant now);
 }

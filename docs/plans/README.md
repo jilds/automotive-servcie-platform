@@ -28,11 +28,12 @@ Rules:
 | [14-digital-inspection.md](14-digital-inspection.md): inspection items with photos, customer report link, e-signature later | planned | |
 | [15-deferred-quotes-maintenance.md](15-deferred-quotes-maintenance.md): deferred work with follow-up, service intervals and due list | planned | |
 | [16-data-import.md](16-data-import.md): CSV import of customers and vehicles with dry run | planned | |
+| [19-board-delivered-notes.md](19-board-delivered-notes.md): customer name on the board, Delivered column with hide, observations and notes | done | |
 | [17-suppliers-parts-ordering.md](17-suppliers-parts-ordering.md): suppliers, sending purchase orders, supplier invoices, stocktake | planned | |
 | [18-reporting-extension.md](18-reporting-extension.md): revenue, quote conversion, parts and performance reports | planned | |
 | [19-customer-satisfaction.md](19-customer-satisfaction.md): survey link after delivery, results and scores | planned | |
 | [20-marketing-campaigns.md](20-marketing-campaigns.md): consent-based segments, sending, unsubscribe | planned | |
 | [21-plan-limits-gating.md](21-plan-limits-gating.md): quotas, usage counters and feature gating per plan (blocked on tiers) | planned | |
-
 | [23-assessment-hardening.md](23-assessment-hardening.md): security, performance, schema and refactoring items from the 2026-11-11 assessment, in batches A-I | planned, not scheduled | |
+
 Plans 12–21 come from the feature comparison in [gap-analysis-carbob.md](gap-analysis-carbob.md) (2026-11-09).

@@ -30,6 +30,7 @@ written where the last column says.
 | Branch protection on `main` | Require the CI checks before merge; enable Dependabot alerts. |
 | Release environment and tags | Add required reviewers to the `release` environment (CI pushes from it) and protect `v*` tags. |
 | IPv6 | Enable IPv6 on the `edge` network (`enable_ipv6` with a ULA subnet, `ip6tables` in Docker), check Caddy sees the client's IPv6 address, then publish AAAA records. Until then: A records only (runbook §1). |
+| Parcela Já com UNICRE (instalments on the REDUNIQ terminal, the principal instalment method) | Business contract with UNICRE / REDUNIQ: commission, settlement (about 48 h); the customer credit approval is theirs. ASP only records the sale (method INSTALMENTS); no technical go-live step. |
 | Certified invoicing provider (AT), Multibanco / MB WAY provider | Release 1 items 6 (CLAUDE.md §2); not needed for the first pilots without billing. |
 | Shared store for rate limits | Needed only before running more than one app container (CLAUDE.md §12). |
 

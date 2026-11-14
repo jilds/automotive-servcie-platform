@@ -3,7 +3,7 @@ import { CdkScrollable } from '@angular/cdk/scrolling';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../core/api/api.service';
 import { Board as BoardData, BoardCard, WorkOrderStatus } from '../core/api/models';
@@ -39,6 +39,9 @@ interface Dragging {
         <p class="small text-body-secondary mb-0 mt-1">{{ 'board.hint' | t }}</p>
       </div>
       <button type="button" class="btn btn-outline-secondary" (click)="load()"><app-icon name="refresh" [size]="16" />{{ 'common.refresh' | t }}</button>
+      @if (canHide()) {
+        <button type="button" class="btn btn-outline-secondary" data-test="hide-all" [disabled]="(board()?.columns?.DELIVERED?.length ?? 0) === 0" (click)="hideAll()">{{ 'board.hideAll' | t }}</button>
+      }
     </header>
     @if (error()) {
       <app-alert>{{ error() }}</app-alert>
@@ -76,23 +79,29 @@ interface Dragging {
                 [cdkDragDisabled]="!canDrag(card, col) || pending().has(card.id)"
                 [cdkDragStartDelay]="startDelay"
                 (cdkDragStarted)="dragging.set({ card, from: col })"
-                (cdkDragEnded)="dragging.set(null)"
+                (cdkDragEnded)="dragEnded()"
+                (click)="open(card, $event)"
                 [class.is-movable]="canDrag(card, col)"
                 [class.is-pending]="pending().has(card.id)"
                 [attr.aria-busy]="pending().has(card.id)"
               >
                 <div class="card-body vstack gap-2">
-                  <span class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                  <span class="d-flex flex-wrap align-items-center gap-2">
                     <app-plate [plate]="card.plateDisplay ?? card.plate" [era]="card.plateEra" [country]="card.registrationCountry" [registrationDate]="card.registrationDate" size="sm" />
-                    <span class="small fw-semibold text-body-secondary">#{{ card.number }}</span>
                   </span>
-                  <a class="stretched-link small fw-medium text-body text-break text-decoration-none" [routerLink]="['/work-orders', card.id]">{{ card.vehicle }}</a>
+                  <a class="small fw-medium text-body text-break text-decoration-none" [routerLink]="['/work-orders', card.id]">{{ card.vehicle }}</a>
+                  @if (card.customerName) {
+                    <span class="small text-body-secondary text-break" data-test="customer-name">{{ card.customerName }}</span>
+                  }
                   @if (quoteStatus(card); as qs) {
                     <span class="badge align-self-start" [class]="quoteBadge[qs]" data-test="quote-badge">{{ quoteBadgeKey(qs) | t }}</span>
                   }
                   <span class="d-flex align-items-center gap-1 small text-body-secondary">
                     <app-icon name="clock" [size]="14" />{{ 'board.since' | t: { time: card.statusChangedAt | date: 'dd/MM HH:mm' } }}
                   </span>
+                  @if (col === 'DELIVERED' && canHide()) {
+                    <button type="button" class="btn btn-sm btn-outline-secondary position-relative z-1" data-test="hide" [attr.aria-label]="'board.hideLabel' | t: { number: card.number }" [disabled]="pending().has(card.id)" (click)="hide(card)">{{ 'board.hide' | t }}</button>
+                  }
                   @let targets = moves(card, col);
                   @if (targets.length) {
                     <select
@@ -122,6 +131,8 @@ export class Board implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
+  private readonly router = inject(Router);
+  private justDragged = false;
   protected readonly columns = BOARD_COLUMNS;
   protected readonly statusKey = statusKey;
   protected readonly startDelay = START_DELAY;
@@ -141,6 +152,44 @@ export class Board implements OnInit {
     const user = this.auth.user();
     return user ? { role: user.role, userId: user.id } : null;
   });
+
+  /** Only the owner and the front desk hide delivered orders. */
+  protected readonly canHide = computed(() => {
+    const role = this.mover()?.role;
+    return role === 'OWNER' || role === 'FRONT_DESK';
+  });
+
+  /** Takes a delivered card off the board; its status and history stay. */
+  protected hide(card: BoardCard): void {
+    if (this.pending().has(card.id)) return;
+    this.setPending(card.id, true);
+    this.moveError.set(null);
+    this.api.hideFromBoard(card.id).subscribe({
+      next: () => {
+        this.setPending(card.id, false);
+        this.board.update((b) => (b ? { columns: { ...b.columns, DELIVERED: (b.columns.DELIVERED ?? []).filter((c) => c.id !== card.id) } } : b));
+        this.notice.set(this.i18n.t('board.hidden'));
+      },
+      error: (e) => {
+        this.setPending(card.id, false);
+        const message = this.i18n.t('board.hideFailed', { number: card.number, reason: this.i18n.error(e) });
+        this.moveError.set(message);
+        this.notice.set(message);
+        if (e instanceof HttpErrorResponse && e.status === 409) this.load();
+      },
+    });
+  }
+
+  protected hideAll(): void {
+    this.moveError.set(null);
+    this.api.hideDeliveredFromBoard().subscribe({
+      next: () => {
+        this.board.update((b) => (b ? { columns: { ...b.columns, DELIVERED: [] } } : b));
+        this.notice.set(this.i18n.t('board.hidden'));
+      },
+      error: (e) => this.moveError.set(this.i18n.error(e)),
+    });
+  }
 
   /** Columns the card being dragged may be dropped in. */
   protected readonly dropTargets = computed(() => {
@@ -166,6 +215,20 @@ export class Board implements OnInit {
       },
       error: (e) => this.error.set(this.i18n.error(e)),
     });
+  }
+
+  protected dragEnded(): void {
+    this.dragging.set(null);
+    // The click that ends a mouse drag must not open the order.
+    this.justDragged = true;
+    setTimeout(() => (this.justDragged = false));
+  }
+
+  /** The whole card opens the work order, except its buttons and the "Move to…" select. */
+  protected open(card: BoardCard, event: Event): void {
+    const target = event.target as HTMLElement;
+    if (this.justDragged || target.closest('button, select, option, a')) return;
+    void this.router.navigate(['/work-orders', card.id]);
   }
 
   protected canDrag(card: BoardCard, from: WorkOrderStatus): boolean {

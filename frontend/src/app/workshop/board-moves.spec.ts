@@ -76,6 +76,6 @@ describe('board moves', () => {
 
   it('only offers board columns as drop targets', () => {
     expect(allowedDropTargets('DIAGNOSTICS', owner, null)).toEqual(['AWAITING_APPROVAL', 'IN_PROGRESS']);
-    expect(allowedDropTargets('READY', owner, null)).toEqual(['IN_PROGRESS']);
+    expect(allowedDropTargets('READY', owner, null)).toEqual(['IN_PROGRESS', 'DELIVERED']);
   });
 });

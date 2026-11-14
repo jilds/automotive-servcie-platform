@@ -45,6 +45,7 @@ import com.asp.platform.workshop.domain.QuoteRepository;
 import com.asp.platform.workshop.domain.UnknownVehicleException;
 import com.asp.platform.workshop.domain.WorkOrder;
 import com.asp.platform.workshop.domain.WorkOrderLine;
+import com.asp.platform.workshop.domain.WorkOrderNotDeliveredException;
 import com.asp.platform.workshop.domain.WorkOrderNotFoundException;
 import com.asp.platform.workshop.domain.WorkOrderRepository;
 import com.asp.platform.workshop.domain.WorkOrderStatus;
@@ -59,6 +60,9 @@ public class WorkOrderService {
     /// Request fields that carry the mechanic id, reported back when the mechanic is not valid.
     private static final String CHECK_IN_MECHANIC_FIELD = "assignedMechanicId";
     private static final String ASSIGN_MECHANIC_FIELD = "mechanicId";
+
+    /// A delivered order stays on the board this long unless it is hidden earlier.
+    private static final java.time.Duration DELIVERED_ON_BOARD = java.time.Duration.ofDays(30);
 
     private final WorkOrderRepository orders;
     private final MechanicChangeRepository mechanicChanges;
@@ -329,13 +333,20 @@ public class WorkOrderService {
     /// Mechanics see only the jobs assigned to them. The vehicles of all cards are read in one query.
     @Transactional(readOnly = true)
     public Board board(CurrentUser user) {
-        Set<WorkOrderStatus> columns = WorkOrderStatus.boardColumns();
+        Set<WorkOrderStatus> open = WorkOrderStatus.boardColumns();
+        Set<WorkOrderStatus> columns = EnumSet.copyOf(open);
+        columns.add(WorkOrderStatus.DELIVERED);
+        Instant deliveredSince = clock.instant().minus(DELIVERED_ON_BOARD);
         List<WorkOrder> active = user.isMechanic()
-                ? orders.findByMechanicAndStatusIn(user.userId(), columns)
-                : orders.findByStatusIn(columns);
+                ? orders.findBoardOf(user.userId(), open, deliveredSince)
+                : orders.findBoard(open, deliveredSince);
         Map<UUID, VehicleSummary> vehicles = active.isEmpty() ? Map.of()
                 : customers.findVehicles(active.stream().map(WorkOrder::vehicleId).collect(Collectors.toSet()));
         Map<UUID, QuoteHeadline> latestQuotes = quotes.latestOf(active.stream().map(WorkOrder::id).toList());
+        // Personal data: never looked up for a mechanic.
+        Map<UUID, String> customerNames = user.isMechanic() || vehicles.isEmpty() ? Map.of()
+                : customers.customerNames(vehicles.values().stream().map(VehicleSummary::customerId)
+                        .collect(Collectors.toSet()));
         Instant now = clock.instant();
         Map<WorkOrderStatus, List<BoardCard>> board = new LinkedHashMap<>();
         columns.forEach(status -> board.put(status, new ArrayList<>()));
@@ -344,9 +355,27 @@ public class WorkOrderService {
             board.get(order.status()).add(new BoardCard(order.id(), order.number(),
                     vehicle.map(VehiclePlate::of).orElse(null), vehicle.map(VehicleSummary::label).orElse(""),
                     order.assignedMechanicId(), order.statusChangedAt(),
-                    Optional.ofNullable(latestQuotes.get(order.id())).map(q -> q.statusAt(now)).orElse(null)));
+                    Optional.ofNullable(latestQuotes.get(order.id())).map(q -> q.statusAt(now)).orElse(null),
+                    vehicle.map(v -> customerNames.get(v.customerId())).orElse(null)));
         }
         return new Board(board);
+    }
+
+    /// Hides one delivered order from the board; its status and history stay. Owner and front desk (checked by the
+    /// controller). 409 `work-order-not-delivered` for any other status.
+    @Transactional
+    public void hideFromBoard(UUID id, CurrentUser user) {
+        WorkOrder order = lockedOrder(id);
+        if (order.status() != WorkOrderStatus.DELIVERED
+                || !orders.hideFromBoard(id, user.userId(), clock.instant())) {
+            throw new WorkOrderNotDeliveredException();
+        }
+    }
+
+    /// Hides every delivered order that is still on the board; returns how many.
+    @Transactional
+    public int hideAllDeliveredFromBoard(CurrentUser user) {
+        return orders.hideAllDeliveredFromBoard(user.userId(), clock.instant());
     }
 
     /// Service history of one vehicle, newest first: every job, also for mechanics (who get no prices and can open

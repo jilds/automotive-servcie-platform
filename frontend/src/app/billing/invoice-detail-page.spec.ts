@@ -306,6 +306,27 @@ describe('PaymentsPanel', () => {
     expect(el(f, '[data-method="CASH"]')).toBeNull();
   });
 
+  it('records an instalment sale approved on the terminal with the financier, count and receipt', () => {
+    const f = open(invoice());
+    pick(f, 'INSTALMENTS');
+    expect(el(f, '[data-test="instalment-hint"]')!.textContent).toContain('REDUNIQ');
+    const count = el<HTMLSelectElement>(f, '#pay-count')!;
+    count.value = '6';
+    count.dispatchEvent(new Event('change'));
+    typeInto(el<HTMLInputElement>(f, '#pay-ref')!, ' 000123 ');
+    send(f);
+    const req = http.expectOne('/api/v1/invoices/i1/payments');
+    expect(req.request.body).toEqual({
+      method: 'INSTALMENTS',
+      amountCents: 4920,
+      instalment: { financier: 'PARCELA_JA', count: 6, reference: '000123' },
+    });
+    req.flush(payment({ method: 'INSTALMENTS', amountCents: 4920, instalment: { financier: 'PARCELA_JA', count: 6, reference: '000123' } }));
+    reload(f, invoice({ paidCents: 4920, balanceCents: 0, paymentStatus: 'PAID', payments: [payment({ method: 'INSTALMENTS', amountCents: 4920, instalment: { financier: 'PARCELA_JA', count: 6, reference: '000123' } })] }));
+    expect(el(f, '[data-test="instalment"]')!.textContent).toContain('6 instalments');
+    expect(el(f, '[data-test="instalment"]')!.textContent).toContain('000123');
+  });
+
   it('refuses an amount above what is left without calling the server', () => {
     const f = open();
     pick(f, 'CARD');

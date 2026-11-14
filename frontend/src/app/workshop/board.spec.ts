@@ -52,11 +52,12 @@ describe('Board', () => {
     fixture.detectChanges();
     http.expectOne('/api/v1/work-orders/board').flush({
       columns: {
-        DIAGNOSTICS: [card('w1', 1, 'm1'), card('w2', 2)],
+        DIAGNOSTICS: [{ ...card('w1', 1, 'm1'), customerName: 'Rui Costa' }, card('w2', 2)],
         AWAITING_APPROVAL: [],
         AWAITING_PARTS: [],
         IN_PROGRESS: [card('w3', 3, 'm1')],
         READY: [],
+        DELIVERED: [card('w9', 9)],
       },
     });
     fixture.detectChanges();
@@ -128,7 +129,7 @@ describe('Board', () => {
     expect(count(el, 'DIAGNOSTICS')).toBe('2');
     expect(count(el, 'IN_PROGRESS')).toBe('1');
     const cards = [...columnOf(el, 'DIAGNOSTICS').querySelectorAll('.wo-card')].map((c) => text(c as HTMLElement));
-    expect(cards[1]).toContain('#2');
+    expect(cards[1]).toContain('Renault Clio');
     expect(text(el.querySelector('app-alert')!)).toContain('não foi movida. A ordem de reparação não pode passar para esse estado.');
 
     // The board is out of date, so it reloads; the message stays.
@@ -244,5 +245,37 @@ describe('Board', () => {
     http.expectOne('/api/v1/work-orders/w2/status').flush({ id: 'w2', status: 'CANCELLED', statusChangedAt: '2026-10-21T09:00:00Z' });
     fixture.detectChanges();
     expect(count(fixture.nativeElement, 'DIAGNOSTICS')).toBe('1');
+  });
+
+  it('shows the customer name under the vehicle, only when the server sent it', () => {
+    const fixture = open(user('FRONT_DESK'));
+    const names = fixture.nativeElement.querySelectorAll('[data-test="customer-name"]');
+    expect(names.length).toBe(1);
+    expect(text(names[0])).toContain('Rui Costa');
+  });
+
+  describe('delivered column', () => {
+    it('hides one delivered card for the front desk, keeping the order', () => {
+      const fixture = open(user('FRONT_DESK'));
+      expect(count(fixture.nativeElement, 'DELIVERED')).toBe('1');
+      (columnOf(fixture.nativeElement, 'DELIVERED').querySelector('[data-test="hide"]') as HTMLButtonElement).click();
+      http.expectOne('/api/v1/work-orders/w9/board-hide').flush(null, { status: 204, statusText: 'No Content' });
+      fixture.detectChanges();
+      expect(count(fixture.nativeElement, 'DELIVERED')).toBe('0');
+    });
+
+    it('hides all delivered cards at once', () => {
+      const fixture = open(user('OWNER'));
+      ((fixture.nativeElement as HTMLElement).querySelector('[data-test="hide-all"]') as HTMLButtonElement).click();
+      http.expectOne('/api/v1/work-orders/board-hide-delivered').flush({ hidden: 1 });
+      fixture.detectChanges();
+      expect(count(fixture.nativeElement, 'DELIVERED')).toBe('0');
+    });
+
+    it('gives a mechanic no hide action', () => {
+      const fixture = open(user('MECHANIC', 'm1'));
+      expect(columnOf(fixture.nativeElement, 'DELIVERED').querySelector('[data-test="hide"]')).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-test="hide-all"]')).toBeNull();
+    });
   });
 });

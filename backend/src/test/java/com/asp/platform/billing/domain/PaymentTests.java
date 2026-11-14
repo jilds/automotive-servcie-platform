@@ -52,6 +52,30 @@ class PaymentTests {
     }
 
     @Test
+    void should_record_an_instalment_sale_as_paid_and_keep_its_data() {
+        Payment p = Payment.instalments(java.util.UUID.randomUUID(), java.util.UUID.randomUUID(), 9000,
+                new Instalment(Financier.PARCELA_JA, 6, "R-1"), null, Fixtures.USER, Fixtures.NOW);
+
+        assertThat(p.method()).isEqualTo(PaymentMethod.INSTALMENTS);
+        assertThat(p.status()).isEqualTo(PaymentStatus.PAID);
+        assertThat(p.instalment()).isEqualTo(new Instalment(Financier.PARCELA_JA, 6, "R-1"));
+        assertThatThrownBy(() -> Payment.recorded(java.util.UUID.randomUUID(), java.util.UUID.randomUUID(),
+                PaymentMethod.INSTALMENTS, 500, null, Fixtures.USER, Fixtures.NOW))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void should_accept_two_to_six_instalments_only() {
+        assertThat(new Instalment(Financier.OTHER, 2, null).count()).isEqualTo(2);
+        assertThatThrownBy(() -> new Instalment(Financier.OTHER, 1, null))
+                .isInstanceOf(InvalidInstalmentException.class);
+        assertThatThrownBy(() -> new Instalment(Financier.OTHER, 7, null))
+                .isInstanceOf(InvalidInstalmentException.class);
+        assertThatThrownBy(() -> new Instalment(Financier.OTHER, 3, " "))
+                .isInstanceOf(InvalidInstalmentException.class);
+    }
+
+    @Test
     void should_record_staff_methods_as_paid_at_once_and_refuse_provider_methods_there() {
         Payment cash = Payment.recorded(java.util.UUID.randomUUID(), java.util.UUID.randomUUID(), PaymentMethod.CASH,
                 500, null, Fixtures.USER, Fixtures.NOW);

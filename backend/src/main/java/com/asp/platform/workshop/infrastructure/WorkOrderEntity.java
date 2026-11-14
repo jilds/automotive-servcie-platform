@@ -63,6 +63,13 @@ class WorkOrderEntity implements DomainEntity<WorkOrder> {
     @Column(name = "status_changed_at", nullable = false)
     private Instant statusChangedAt;
 
+    /// Set only by the board-hide queries, never by `apply`: a delivered order stays on the board until hidden.
+    @Column(name = "board_hidden_at", insertable = false, updatable = false)
+    private @Nullable Instant boardHiddenAt;
+
+    @Column(name = "board_hidden_by", insertable = false, updatable = false)
+    private @Nullable UUID boardHiddenBy;
+
     /// Optimistic locking: two people editing the same order cannot silently overwrite each other.
     @Version
     private @Nullable Long version;

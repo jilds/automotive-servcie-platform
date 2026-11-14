@@ -3,12 +3,23 @@
 export type InvoiceKind = 'INVOICE' | 'CREDIT_NOTE';
 export type InvoiceStatus = 'PENDING' | 'ISSUED' | 'FAILED' | 'VOIDED' | 'DISCARDED';
 export type PaymentStatusOfInvoice = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'CREDITED';
-export type PaymentMethod = 'CASH' | 'CARD' | 'MULTIBANCO' | 'MBWAY' | 'TRANSFER';
+export type PaymentMethod = 'CASH' | 'CARD' | 'MULTIBANCO' | 'MBWAY' | 'TRANSFER' | 'INSTALMENTS';
+export type Financier = 'PARCELA_JA' | 'OTHER';
+
+/** The instalment sale approved on the card terminal: 2 to 6 monthly instalments. */
+export const INSTALMENT_COUNTS: readonly number[] = [2, 3, 4, 5, 6];
+export const INSTALMENT_REFERENCE_MAX = 60;
+export const FINANCIERS: readonly Financier[] = ['PARCELA_JA', 'OTHER'];
+export interface Instalment {
+  financier: Financier;
+  count: number;
+  reference: string | null;
+}
 export type PaymentState = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'CANCELLED';
 export type SandboxOutcome = 'PAID' | 'FAILED' | 'EXPIRED';
 
 /** Methods recorded as paid at once, without a provider. */
-export const IMMEDIATE_METHODS: readonly PaymentMethod[] = ['CASH', 'CARD', 'TRANSFER'];
+export const IMMEDIATE_METHODS: readonly PaymentMethod[] = ['CASH', 'CARD', 'TRANSFER', 'INSTALMENTS'];
 export const REASON_MAX = 500;
 export const NOTE_MAX = 200;
 export const INVOICE_STATUSES: readonly InvoiceStatus[] = ['PENDING', 'ISSUED', 'FAILED', 'VOIDED', 'DISCARDED'];
@@ -58,6 +69,7 @@ export interface Payment {
   provider: string | null;
   multibanco: { entity: string; reference: string } | null;
   mbway: { phoneMasked: string } | null;
+  instalment: Instalment | null;
   expiresAt: string | null;
   paidAt: string | null;
   failureCode: string | null;
@@ -167,6 +179,8 @@ export interface CreatePaymentRequest {
   amountCents?: number;
   phone?: string;
   note?: string;
+  /** Required for INSTALMENTS, not allowed for the other methods. */
+  instalment?: { financier: Financier; count: number; reference?: string };
 }
 
 export interface BillingSettings {

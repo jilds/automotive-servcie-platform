@@ -1,7 +1,7 @@
 import { QuoteStatus, Role, WorkOrderStatus } from '../core/api/models';
 
-/** Open statuses, in board column order. Delivered and cancelled orders leave the board. */
-export const BOARD_COLUMNS: readonly WorkOrderStatus[] = ['DIAGNOSTICS', 'AWAITING_APPROVAL', 'AWAITING_PARTS', 'IN_PROGRESS', 'READY'];
+/** Board columns in order: the open statuses, then Delivered (until the front desk hides the order). Cancelled orders leave the board. */
+export const BOARD_COLUMNS: readonly WorkOrderStatus[] = ['DIAGNOSTICS', 'AWAITING_APPROVAL', 'AWAITING_PARTS', 'IN_PROGRESS', 'READY', 'DELIVERED'];
 
 /** Mirrors `WorkOrderStatus.next()` in the backend. The server stays the authority. */
 const NEXT: Record<WorkOrderStatus, readonly WorkOrderStatus[]> = {

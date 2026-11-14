@@ -11,6 +11,7 @@ import { TranslatePipe } from '../core/i18n/translate.pipe';
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { KmPipe } from '../shared/km.pipe';
+import { NotesPanel } from '../shared/notes-panel';
 import { Plate } from '../shared/plate';
 import { registrationControls } from '../shared/plate-format';
 import { RegistrationFields } from '../shared/registration-fields';
@@ -24,7 +25,7 @@ import { OwnerChange, VehicleOwnerDialog } from './vehicle-owner-dialog';
 @Component({
   selector: 'app-customer-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, KmPipe, Alert, Icon, Plate, RegistrationFields, CustomerEditDialog, VehicleEditDialog, VehicleOwnerDialog],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, KmPipe, Alert, Icon, NotesPanel, Plate, RegistrationFields, CustomerEditDialog, VehicleEditDialog, VehicleOwnerDialog],
   template: `
     <header class="d-flex flex-wrap align-items-end gap-3 mb-4">
       <div class="me-auto">
@@ -55,6 +56,9 @@ import { OwnerChange, VehicleOwnerDialog } from './vehicle-owner-dialog';
           <div class="col-sm-6 col-xl-4"><dt class="small text-body-secondary fw-semibold">{{ 'customers.marketing' | t }}</dt><dd class="mb-0">{{ (c.marketingConsent ? 'common.yes' : 'common.no') | t }}</dd></div>
         </dl></div>
       </div>
+    }
+    @if (customer() && canEdit()) {
+      <app-notes-panel kind="customer" [subjectId]="id()" />
     }
     @if (error()) {
       <app-alert>{{ error() }}</app-alert>

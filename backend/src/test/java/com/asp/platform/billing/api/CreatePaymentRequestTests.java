@@ -10,7 +10,8 @@ class CreatePaymentRequestTests {
 
     @Test
     void should_not_print_the_phone_number() {
-        var request = new PaymentController.CreatePaymentRequest(PaymentMethod.MBWAY, 100L, "912345678", "nota");
+        var request = new PaymentController.CreatePaymentRequest(PaymentMethod.MBWAY, 100L, "912345678", "nota",
+                null);
 
         assertThat(request.toString()).doesNotContain("912345678").contains("MBWAY");
     }

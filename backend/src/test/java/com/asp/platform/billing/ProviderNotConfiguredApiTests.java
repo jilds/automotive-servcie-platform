@@ -23,7 +23,7 @@ class ProviderNotConfiguredApiTests extends BillingTestSupport {
                 .andExpect(jsonPath("$.invoicing.configured").value(false))
                 .andExpect(jsonPath("$.invoicing.sandbox").value(false))
                 .andExpect(jsonPath("$.payments.configured").value(false))
-                .andExpect(jsonPath("$.methods.length()").value(3));
+                .andExpect(jsonPath("$.methods.length()").value(4));
         issue(g.owner(), wo, newRequestId()).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("provider-not-configured"));
         call(get("/api/v1/work-orders/" + wo + "/invoices"), g.owner()).andExpect(jsonPath("$.length()").value(0));

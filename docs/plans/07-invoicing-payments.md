@@ -38,12 +38,25 @@ a collected shop order (a later increment), refunds and payment reversals, e-mai
 | Providers | `InvoicingProvider` and `PaymentProvider` ports in `billing.domain`. Selection by `app.billing.invoicing.provider` and `app.billing.payments.provider`: `sandbox` (default) or `none` (every call answers 409 `provider-not-configured`). The `prod` profile defaults both to `none` and `BillingProviderGuard` stops the start when `sandbox` is selected there. Keys and secrets come from environment variables only (`ASP_BILLING_WEBHOOK_SECRET`). |
 | Sandbox invoicing | Offline and deterministic: a ledger table (`invoicing_sandbox_document`) gives numbers per workshop, series and kind and makes the call idempotent on the external reference, also across restarts. ATCUD `SANDBOX-<n>`, QR and hash marked `SANDBOX`. The PDF is drawn by hand (no new dependency) with the watermark "SEM VALIDADE FISCAL" and the line "SANDBOX - não é um documento fiscal". Faults are scripted by the bean `SandboxScenario` (reject, unavailable, unavailable after issuing). |
 | Sandbox payments | Fake Multibanco entity `99999` and a reference derived from the payment id; MB WAY accepts a Portuguese mobile number. Scripted faults through `SandboxScenario`. A staff action `POST /payments/{id}/sandbox/simulate` (only while the payments provider is `sandbox`; the controller does not exist otherwise) confirms, fails or expires a payment as the provider would. |
+| Instalments (V22, 2026-11-10) | Method INSTALMENTS: a sale in 2 to 6 monthly instalments approved on the card terminal (**Parcela Já com UNICRE** on the REDUNIQ terminal, decided as the principal instalment method). Staff charge the customer on the terminal, then record it: PAID at once, with `financier` (PARCELA_JA, OTHER), `count` and the optional terminal receipt number. No API is involved (none is public); ASP trusts the staff record, does not track the commission or the 48 h settlement, and a refund is as for any payment (credit note). Klarna / Scalapay and an online Parcela Já come later through the provider port (see "Later: provider-backed instalments"). |
 | Payments | Methods CASH, CARD, TRANSFER (recorded by staff, PAID at once), MULTIBANCO (reference, PENDING, valid `app.billing.multibanco-valid-days`, 3) and MBWAY (request to the phone, PENDING, valid `app.billing.mbway-valid-minutes`, 5). Status PENDING, PAID, FAILED, EXPIRED, CANCELLED. Partial payments: PAID plus PENDING may not exceed the invoice total (409 `payment-exceeds-balance`); the default amount is what is left. Balance due = total - PAID. A payment that arrives late (EXPIRED or CANCELLED reference paid) becomes PAID because the money is real. Payments are created under the invoice row lock (3 s, 409 `try-again`); the provider call is inside it. |
 | Webhook | `POST /api/v1/public/{slug}/billing/webhooks/{provider}` on the public chain of ADR 0004 (anonymous, the slug gives the workshop through `TenantScope`, the workshop is therefore never taken from the body). The provider verifies the call (sandbox: HMAC-SHA256 over `t.body` with `ASP_BILLING_WEBHOOK_SECRET`, header `X-ASP-Signature: t=<epoch seconds>,v1=<hex>`, 5 minutes tolerance); a bad or missing signature answers 401 `webhook-signature-invalid` before the body is read. Idempotent by `(workshop, provider, eventId)` in the insert-only table `payment_event`. An unknown payment, an amount that differs from the payment and a payment of another workshop are stored as IGNORED and answer 200 (so the provider stops retrying) and are logged with ids only. The public rate limiter gets a separate budget for webhooks (`app.public.rate-limit.webhooks`, 600 a minute per address and slug) so the 10-writes-an-hour budget of the forms never blocks a provider. |
 | Lost webhooks | The job `PaymentExpiry` (every 10 minutes) asks the provider for the status of PENDING payments past `expires_at` before marking them EXPIRED, and staff can refresh one payment (`POST /payments/{id}/refresh`). |
 | Roles | OWNER and FRONT_DESK on every billing endpoint (issue, void, credit note, payments). MECHANIC gets 403 on all of them (prices, customer data). |
 | Optimistic locking | `invoice` and `payment` carry `version`; void, discard and payment cancel must send it. |
 | Cost and size | `invoice` grows by about 1 row per delivered work order plus credit notes; `invoice_line` by the lines of those orders (tens per order); `payment` a few per invoice; `payment_event` one per provider call. At 200 orders a month and 100 workshops that is about 240k invoices and about 3M lines a year: indexed by `(tenant_id, ...)`, no partitioning needed yet. PDFs are not stored. |
+
+## Later: provider-backed instalments (not built)
+
+Decided 2026-11-10: Klarna or Scalapay as the secondary methods, for the public checkout (shop and invoice payment link), for
+booking / scheduling (deposit or pre-payment) and for an instalment plan shown on the invoice. Needed first: merchant
+contracts, sandbox credentials, the Portuguese limits per provider (Klarna Pay in 3 is said to be limited to about EUR 1,000;
+verify), a data-processing agreement for the customer data sent to them, and a refund rule for cancelled bookings.
+Technical work: a registry of payment providers by id (today one `PaymentProvider` bean: `PaymentService`,
+`PaymentWebhookService`), a `createInstalment` call that returns a checkout URL, an insert-only `checkout_url` column, the
+`UnconfiguredProviders` condition and `BillingProviderGuard.KNOWN` for new ids, and the UI branch in `payments-panel.ts`.
+An online Parcela Já needs UNICRE / REDUNIQ to give access to its online checkout; there is no public API documentation.
+Write its own plan file before building it.
 
 ## Open product decisions (for the owner)
 
@@ -60,14 +73,14 @@ a collected shop order (a later increment), refunds and payment reversals, e-mai
 
 ## Tables
 
-V20: `invoice`, `invoice_line`, `invoicing_sandbox_document`. V21: `payment`, `payment_event`. All have `tenant_id` with the V2
+V20: `invoice`, `invoice_line`, `invoicing_sandbox_document`. V21: `payment`, `payment_event`. V22: the INSTALMENTS method and the insert-only columns `financier`, `instalment_count`, `instalment_reference` on `payment`. All have `tenant_id` with the V2
 default, row-level security ENABLE + FORCE with `tenant_isolation`, indexed foreign keys, `set local lock_timeout = '5s'` and
 narrowed grants (see the migrations' comments).
 
 ## Error codes
 
 404: `invoice-not-found`, `payment-not-found`, `work-order-not-found`, `unknown-payment-provider`.
-400: `invalid-nif`, `customer-nif-required`, `customer-address-required`, `invalid-phone`, `validation`.
+400: `invalid-nif`, `customer-nif-required`, `customer-address-required`, `invalid-phone`, `instalment-required`, `invalid-instalment-count`, `invalid-instalment-reference`, `validation`.
 401: `webhook-signature-invalid`.
 409: `already-invoiced`, `work-order-not-invoiceable`, `invoice-not-issued`, `invoice-not-retryable`, `invoice-not-discardable`,
 `invoice-not-voidable`, `invoice-has-payments`, `credit-note-exists`, `payment-exceeds-balance`, `payment-not-pending`,

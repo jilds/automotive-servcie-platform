@@ -221,6 +221,8 @@ export interface BoardCard extends PlateInfo {
   statusChangedAt: string;
   /** Status of the latest quote, or null when none was sent. */
   quoteStatus?: QuoteStatus | null;
+  /** The vehicle owner's name; null for mechanics (no personal data). */
+  customerName?: string | null;
 }
 
 export interface Board {
@@ -251,4 +253,13 @@ export interface MechanicAssignment {
   mechanicId: string | null;
   mechanicName: string | null;
   changes: MechanicChange[];
+}
+
+/** A dated observation on a vehicle, or a note on a customer, with the name of its author. */
+export interface Note {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string | null;
+  createdAt: string;
 }

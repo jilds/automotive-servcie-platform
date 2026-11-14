@@ -31,6 +31,11 @@ class JpaCustomerRepository implements CustomerRepository {
     }
 
     @Override
+    public List<Customer> findAllById(java.util.Collection<UUID> ids) {
+        return jpa.findAllById(ids).stream().map(CustomerEntity::toDomain).toList();
+    }
+
+    @Override
     public List<Customer> search(@Nullable String query) {
         return jpa.search(query).stream().map(CustomerEntity::toDomain).toList();
     }

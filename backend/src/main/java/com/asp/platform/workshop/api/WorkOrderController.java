@@ -47,6 +47,24 @@ class WorkOrderController {
         return BoardResponse.of(workOrders.board(user));
     }
 
+    /// Takes a delivered order off the board (status and history unchanged); 409 `work-order-not-delivered` otherwise.
+    @PostMapping("/work-orders/{id}/board-hide")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
+    void hideFromBoard(CurrentUser user, @PathVariable UUID id) {
+        workOrders.hideFromBoard(id, user);
+    }
+
+    /// Takes every delivered order off the board; answers how many.
+    @PostMapping("/work-orders/board-hide-delivered")
+    @PreAuthorize("hasAnyRole('OWNER','FRONT_DESK')")
+    HiddenResponse hideDelivered(CurrentUser user) {
+        return new HiddenResponse(workOrders.hideAllDeliveredFromBoard(user));
+    }
+
+    record HiddenResponse(int hidden) {
+    }
+
     /// Mechanics may open any job; one not assigned to them comes back `readOnly`.
     @GetMapping("/work-orders/{id}")
     WorkOrderResponse get(CurrentUser user, @PathVariable UUID id) {

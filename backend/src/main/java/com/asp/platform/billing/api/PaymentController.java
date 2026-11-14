@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.asp.platform.billing.application.PaymentService;
+import com.asp.platform.billing.domain.Financier;
+import com.asp.platform.billing.domain.Instalment;
 import com.asp.platform.billing.domain.PaymentMethod;
 import com.asp.platform.shared.CurrentUser;
 
@@ -38,7 +40,7 @@ class PaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     PaymentResponse create(CurrentUser user, @PathVariable UUID invoiceId, @Valid @RequestBody CreatePaymentRequest request) {
         return PaymentResponse.of(payments.create(user, invoiceId, request.method(), request.amountCents(),
-                request.phone(), request.note()));
+                request.phone(), request.note(), request.instalment() == null ? null : request.instalment().toDomain()));
     }
 
     @GetMapping("/payments/{id}")
@@ -56,14 +58,25 @@ class PaymentController {
         return PaymentResponse.of(payments.cancel(id, request.version()));
     }
 
-    /// `amountCents` left out means what is left of the invoice; `phone` is for MBWAY only.
+    /// `amountCents` left out means what is left of the invoice; `phone` is for MBWAY only; `instalment` is required
+    /// for INSTALMENTS and not allowed for the other methods.
     record CreatePaymentRequest(@NotNull PaymentMethod method, @Positive @Nullable Long amountCents,
-            @Size(max = 30) @Nullable String phone, @Size(max = 200) @Nullable String note) {
+            @Size(max = 30) @Nullable String phone, @Size(max = 200) @Nullable String note,
+            @Valid @Nullable InstalmentRequest instalment) {
 
         /// The phone number never reaches a log line.
         @Override
         public String toString() {
             return "CreatePaymentRequest[method=" + method + ", amountCents=" + amountCents + "]";
+        }
+    }
+
+    record InstalmentRequest(@NotNull Financier financier, @NotNull Integer count,
+            @Size(max = 60) @Nullable String reference) {
+
+        Instalment toDomain() {
+            String ref = reference == null || reference.isBlank() ? null : reference.strip();
+            return new Instalment(financier, count, ref);
         }
     }
 

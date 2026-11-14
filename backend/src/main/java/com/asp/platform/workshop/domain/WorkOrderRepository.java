@@ -25,6 +25,17 @@ public interface WorkOrderRepository {
 
     List<WorkOrder> findByMechanicAndStatusIn(UUID mechanicId, Collection<WorkOrderStatus> statuses);
 
+    /// Orders in the open statuses, plus delivered ones changed since `deliveredSince` that were not hidden.
+    List<WorkOrder> findBoard(Collection<WorkOrderStatus> open, java.time.Instant deliveredSince);
+
+    List<WorkOrder> findBoardOf(UUID mechanicId, Collection<WorkOrderStatus> open, java.time.Instant deliveredSince);
+
+    /// Hides a DELIVERED order from the board without changing its status; false when it is not delivered.
+    boolean hideFromBoard(UUID id, UUID userId, java.time.Instant now);
+
+    /// Hides every delivered order still on the board; returns how many.
+    int hideAllDeliveredFromBoard(UUID userId, java.time.Instant now);
+
     /// Newest first.
     List<WorkOrder> findByVehicle(UUID vehicleId);
 }

@@ -18,7 +18,7 @@ export const invoice = (over: Partial<Invoice> = {}): Invoice => ({
 });
 
 export const payment = (over: Partial<Payment> = {}): Payment => ({
-  id: 'p1', invoiceId: 'i1', method: 'CASH', status: 'PAID', amountCents: 2000, provider: null, multibanco: null, mbway: null,
+  id: 'p1', invoiceId: 'i1', method: 'CASH', status: 'PAID', amountCents: 2000, provider: null, multibanco: null, mbway: null, instalment: null,
   expiresAt: null, paidAt: '2026-11-09T10:05:00Z', failureCode: null, note: null, createdAt: '2026-11-09T10:05:00Z', version: 0,
   ...over,
 });
@@ -33,7 +33,7 @@ export const summary = (over: Partial<InvoiceSummary> = {}): InvoiceSummary => (
 export const settings = (over: Partial<BillingSettings> = {}): BillingSettings => ({
   invoicing: { provider: 'sandbox', configured: true, sandbox: true },
   payments: { provider: 'sandbox', configured: true, sandbox: true },
-  finalConsumerLimitCents: 100000, currency: 'EUR', methods: ['CASH', 'CARD', 'TRANSFER', 'MULTIBANCO', 'MBWAY'],
+  finalConsumerLimitCents: 100000, currency: 'EUR', methods: ['CASH', 'CARD', 'TRANSFER', 'INSTALMENTS', 'MULTIBANCO', 'MBWAY'],
   multibancoValidDays: 3, mbwayValidMinutes: 5,
   ...over,
 });

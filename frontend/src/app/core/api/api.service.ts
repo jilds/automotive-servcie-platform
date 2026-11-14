@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 
 import {
   Board,
+  Note,
   CheckInUpdateRequest,
   Customer,
   CustomerRequest,
@@ -59,6 +60,18 @@ export class ApiService {
   vehicle(id: string) {
     return this.http.get<Vehicle>(`${API}/vehicles/${id}`);
   }
+  vehicleObservations(id: string) {
+    return this.http.get<Note[]>(`${API}/vehicles/${id}/observations`);
+  }
+  addVehicleObservation(id: string, body: string) {
+    return this.http.post<Note>(`${API}/vehicles/${id}/observations`, { body });
+  }
+  customerNotes(id: string) {
+    return this.http.get<Note[]>(`${API}/customers/${id}/notes`);
+  }
+  addCustomerNote(id: string, body: string) {
+    return this.http.post<Note>(`${API}/customers/${id}/notes`, { body });
+  }
   vehicleHistory(id: string) {
     return this.http.get<WorkOrder[]>(`${API}/vehicles/${id}/work-orders`);
   }
@@ -66,6 +79,12 @@ export class ApiService {
   // Work orders
   board() {
     return this.http.get<Board>(`${API}/work-orders/board`);
+  }
+  hideFromBoard(id: string) {
+    return this.http.post<void>(`${API}/work-orders/${id}/board-hide`, {});
+  }
+  hideDeliveredFromBoard() {
+    return this.http.post<{ hidden: number }>(`${API}/work-orders/board-hide-delivered`, {});
   }
   workOrder(id: string) {
     return this.http.get<WorkOrder>(`${API}/work-orders/${id}`);

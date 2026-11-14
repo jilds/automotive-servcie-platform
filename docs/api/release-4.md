@@ -256,6 +256,22 @@ A different stored `version` answers 409 `stale-data`.
   the OWNER, could otherwise move the order (not `readOnly`) and the latest quote is not answered (see the move rule). In that case `allowedNext` is empty for the
   caller; for the OWNER, and in every other status, `approvalPending` is false and `allowedNext` is unchanged.
 - Board `Card` gets `quoteStatus` (latest quote's status, same rule, or null).
+- Board `Card` gets `customerName`: the vehicle owner's name for OWNER and FRONT_DESK; always null for MECHANIC (personal
+  data; the lookup is not even made for them). One query for all cards.
+- The board now has a `DELIVERED` column: delivered orders changed in the last 30 days that nobody hid (a mechanic gets
+  only their own). `POST /work-orders/{id}/board-hide` (OWNER, FRONT_DESK; 204) takes one delivered order off the board
+  (409 `work-order-not-delivered` for any other status); `POST /work-orders/board-hide-delivered` (same roles) hides all
+  and answers `{ "hidden": n }`. The status is unchanged: invoicing, reports and the vehicle history still see DELIVERED.
+  The dashboard's `openByStatus` keeps the five open statuses.
+
+### Observations and notes (V25)
+
+- Vehicle observations, every role (mechanics too; the UI warns not to write customer personal data):
+  `GET /vehicles/{id}/observations` (newest first), `POST /vehicles/{id}/observations` `{ "body": "…" }` (1 to 2000
+  characters after trimming, else 400 `invalid-note` on `body`; 201).
+- Customer notes, OWNER and FRONT_DESK only (mechanics 403): `GET` / `POST /customers/{id}/notes`, same body and answer.
+- Answer: `{ id, body, authorId, authorName, createdAt }` (`authorName` null when the user is no longer in the workshop).
+  Rows are only added: no edit, no delete. Another workshop's vehicle or customer answers 404.
 - Line endpoints answer as before; when they supersede a quote, the returned `quote.status` is `SUPERSEDED`.
 
 ### Workshop settings (changes)
@@ -666,20 +682,21 @@ Returned by every endpoint that returns "an invoice". Field exact:
 ```json
 {
   "id": "uuid", "invoiceId": "uuid",
-  "method": "CASH | CARD | MULTIBANCO | MBWAY | TRANSFER",
+  "method": "CASH | CARD | MULTIBANCO | MBWAY | TRANSFER | INSTALMENTS",
   "status": "PENDING | PAID | FAILED | EXPIRED | CANCELLED",
   "amountCents": 2000,
   "provider": "sandbox | null",
   "multibanco": { "entity": "99999", "reference": "123456789" },
   "mbway": { "phoneMasked": "+351 9** *** 678" },
+  "instalment": { "financier": "PARCELA_JA | OTHER", "count": 4, "reference": "string | null" },
   "expiresAt": "instant | null", "paidAt": "instant | null",
   "failureCode": "string | null", "note": "string | null",
   "createdAt": "instant", "version": 0
 }
 ```
 
-`multibanco` is present only for MULTIBANCO, `mbway` only for MBWAY (null otherwise). `provider` is null for CASH, CARD and
-TRANSFER. Show the reference as `123 456 789`.
+`multibanco` is present only for MULTIBANCO, `mbway` only for MBWAY, `instalment` only for INSTALMENTS (null otherwise).
+`provider` is null for CASH, CARD, TRANSFER and INSTALMENTS. Show the reference as `123 456 789`.
 
 ### Endpoints
 
@@ -704,9 +721,9 @@ TRANSFER. Show the reference as `123 456 789`.
 
 **`BillingSettingsResponse`**: `{ "invoicing": { "provider": "sandbox", "configured": true, "sandbox": true },
 "payments": { "provider": "sandbox", "configured": true, "sandbox": true }, "finalConsumerLimitCents": 100000,
-"currency": "EUR", "methods": ["CASH","CARD","TRANSFER","MULTIBANCO","MBWAY"], "multibancoValidDays": 3,
+"currency": "EUR", "methods": ["CASH","CARD","TRANSFER","INSTALMENTS","MULTIBANCO","MBWAY"], "multibancoValidDays": 3,
 "mbwayValidMinutes": 5 }`. With provider `none`: `configured` false, `sandbox` false; `methods` always holds
-`CASH`, `CARD`, `TRANSFER` (no provider needed) and adds `MULTIBANCO`, `MBWAY` only when the payments provider is configured.
+`CASH`, `CARD`, `TRANSFER`, `INSTALMENTS` (no provider needed) and adds `MULTIBANCO`, `MBWAY` only when the payments provider is configured.
 
 **`IssueInvoiceRequest`** (invoice for the work order):
 
@@ -769,7 +786,8 @@ characters: matches the number, customer name, customer NIF or plate; case-insen
 **`CreatePaymentRequest`**:
 
 ```json
-{ "method": "CASH | CARD | MULTIBANCO | MBWAY | TRANSFER", "amountCents": 2000, "phone": "912345678", "note": "0..200" }
+{ "method": "CASH | CARD | MULTIBANCO | MBWAY | TRANSFER | INSTALMENTS", "amountCents": 2000, "phone": "912345678",
+  "note": "0..200", "instalment": { "financier": "PARCELA_JA | OTHER", "count": 2, "reference": "0..60" } }
 ```
 
 - `amountCents` optional: default = what is left (`totalCents - paidCents - pendingCents`). Must be between 1 and what
@@ -777,7 +795,12 @@ characters: matches the number, customer name, customer NIF or plate; case-insen
 - `phone` is required for MBWAY (Portuguese mobile: `9XXXXXXXX`, optionally `+351` or `00351` and spaces; else 400
   `invalid-phone`, `errors.phone`; also when it is missing) and ignored for the other methods. It is not stored; only
   `phoneMasked`.
-- CASH, CARD and TRANSFER are recorded as **PAID at once** (`paidAt` now; no provider). MULTIBANCO and MBWAY are
+- `instalment` is required for INSTALMENTS and not allowed for the other methods (400 `instalment-required`); `count` is 2 to 6
+  (400 `invalid-instalment-count`, `errors['instalment.count']`), `reference` (the terminal receipt number) is optional, 1 to
+  60 characters (400 `invalid-instalment-reference`). INSTALMENTS records a sale **approved on the card terminal**
+  (Parcela Já com UNICRE on the REDUNIQ terminal): staff charge the customer there first, then record it. ASP does not
+  verify the approval and does not track the commission or the settlement date (V22).
+- CASH, CARD, TRANSFER and INSTALMENTS are recorded as **PAID at once** (`paidAt` now; no provider). MULTIBANCO and MBWAY are
   PENDING with `expiresAt`; they need the payment provider (409 `provider-not-configured`). The invoice must be an ISSUED
   invoice without a credit note (409 `invoice-not-issued`). The provider can refuse (409 `payment-failed`, nothing stored,
   property `reason`) or be down (503 `provider-unavailable`, nothing stored).
@@ -786,7 +809,7 @@ characters: matches the number, customer name, customer NIF or plate; case-insen
 **Payment state machine**
 
 ```
-CASH/CARD/TRANSFER:  (created) -> PAID
+CASH/CARD/TRANSFER/INSTALMENTS:  (created) -> PAID
 MULTIBANCO/MBWAY:    (created) -> PENDING -> PAID        (webhook, refresh or simulate)
                                          -> FAILED      (provider says it failed, e.g. MB WAY refused on the phone)
                                          -> EXPIRED     (expiresAt passed; job or provider)
@@ -843,6 +866,9 @@ No personal data. No listener yet.
 | 400 | `customer-nif-required` | No NIF above the final consumer limit (`errors["customer.nif"]`) |
 | 400 | `customer-address-required` | No address above the limit (`errors["customer.address"]`) |
 | 400 | `invalid-phone` | MB WAY phone is not a Portuguese mobile (`errors.phone`) |
+| 400 | `instalment-required` | INSTALMENTS without `instalment`, or `instalment` on another method |
+| 400 | `invalid-instalment-count` | Instalments not between 2 and 6 (`errors['instalment.count']`) |
+| 400 | `invalid-instalment-reference` | Terminal receipt number blank or over 60 characters (`errors['instalment.reference']`) |
 | 401 | `webhook-signature-invalid` | Bad, missing or stale webhook signature |
 | 400 | `customer-name-too-long` | Customer name over 120 characters (`errors["customer.name"]`) |
 | 409 | `request-id-reused` | The request id already belongs to a document that is closed (DISCARDED or VOIDED) or to another work order: a request id is used once, make a new one (a replay of an active document is still answered) |
@@ -867,10 +893,11 @@ Reused: `invalid-nif`, `work-order-not-found`, `stale-data`, `try-again`, `valid
 (`webhook-signature-invalid`, `webhook-too-large` and `unknown-payment-provider`: only a provider sees them). A document that stays PENDING or FAILED shows `failure.message` (English fallback) next to a
 translated hint; `failure.code` values: `sandbox-rejected`, `provider-unavailable`, `provider-total-mismatch`, `provider-invalid-response` (the provider answered with a value that does not fit), `issued-after-discard`.
 
-### Migrations V20 and V21
+### Migrations V20, V21 and V22
 
 V20: `invoice` (both kinds; snapshot of issuer, customer, totals; provider result; status; closing columns; `version`),
-`invoice_line` (insert only), `invoicing_sandbox_document` (the sandbox ledger). V21: `payment`, `payment_event` (insert only).
+`invoice_line` (insert only), `invoicing_sandbox_document` (the sandbox ledger). V21: `payment`, `payment_event` (insert only). V22 adds the INSTALMENTS method and the insert-only columns `financier`,
+`instalment_count`, `instalment_reference` on `payment`.
 Each table has `tenant_id` with the V2 default and RLS ENABLE + FORCE with `tenant_isolation`. `asp_app` has no `delete` on
 any of them; `invoice` and `payment` allow `update` on the mutable columns only; a trigger on `invoice` refuses to change the
 issued data once set.

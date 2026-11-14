@@ -316,6 +316,8 @@ describe('CustomerDetail add vehicle', () => {
     fixture.detectChanges();
     http.expectOne('/api/v1/customers/c1').flush(ana);
     http.expectOne('/api/v1/customers/c1/vehicles').flush([]);
+    fixture.detectChanges();
+    http.match('/api/v1/customers/c1/notes').forEach((r) => r.flush([]));
     http.expectOne('/api/v1/workshop/settings').flush({ country: 'es' });
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
@@ -389,6 +391,8 @@ describe('CustomerDetail edit actions', () => {
     fixture.detectChanges();
     http.expectOne('/api/v1/customers/c1').flush(ana);
     http.expectOne('/api/v1/customers/c1/vehicles').flush([clio]);
+    fixture.detectChanges();
+    http.match('/api/v1/customers/c1/notes').forEach((r) => r.flush([]));
     // Owners and the front desk read the workshop country (the default registration country); mechanics may not.
     http.match('/api/v1/workshop/settings').forEach((r) => r.flush({ country: 'PT' }));
     fixture.detectChanges();

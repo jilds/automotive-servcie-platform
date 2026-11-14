@@ -72,7 +72,10 @@ class WorkOrderApiTests extends ApiTestSupport {
 
         call(get("/api/v1/work-orders/board"), mechanic)
                 .andExpect(jsonPath("$.columns.IN_PROGRESS[0].plate").value("12AB34"))
-                .andExpect(jsonPath("$.columns.IN_PROGRESS[0].vehicle").value("Renault Clio"));
+                .andExpect(jsonPath("$.columns.IN_PROGRESS[0].vehicle").value("Renault Clio"))
+                .andExpect(jsonPath("$.columns.IN_PROGRESS[0].customerName").doesNotExist());
+        call(get("/api/v1/work-orders/board"), owner)
+                .andExpect(jsonPath("$.columns.IN_PROGRESS[0].customerName").value("Ana Pereira"));
 
         // Unassigned: gone from the mechanic's board, but still readable (from the vehicle history), read-only.
         call(put("/api/v1/work-orders/" + woId + "/mechanic").content("{\"reason\":\"Mechanic off sick\"}"), owner)
@@ -277,7 +280,9 @@ class WorkOrderApiTests extends ApiTestSupport {
                 .andExpect(jsonPath("$.columns.DIAGNOSTICS[0].customerName").doesNotExist())
                 .andExpect(jsonPath("$.columns.DIAGNOSTICS[0].phone").doesNotExist())
                 .andExpect(jsonPath("$.columns.DIAGNOSTICS[0].email").doesNotExist())
-                .andExpect(jsonPath("$..customerName").doesNotExist())
+                .andExpect(jsonPath("$..customerName", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.nullValue())))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Ana Pereira"))))
                 .andExpect(jsonPath("$..phone").doesNotExist())
                 .andExpect(jsonPath("$..email").doesNotExist());
         call(get("/api/v1/vehicles/" + vehicleId), mechanic)
@@ -288,7 +293,7 @@ class WorkOrderApiTests extends ApiTestSupport {
                 .andExpect(jsonPath("$.email").doesNotExist());
     }
 
-    /// The board reads all card vehicles in one query: work orders with their lines (1) plus vehicles (1),
+    /// The board reads all card vehicles and owners in one query each: work orders with their lines (1) plus vehicles (1) plus customer names (1),
     /// whatever the number of cards.
     @Test
     void should_load_the_board_with_a_constant_number_of_queries() throws Exception {
@@ -309,7 +314,7 @@ class WorkOrderApiTests extends ApiTestSupport {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.columns.DIAGNOSTICS.length()").value(10))
                     .andExpect(jsonPath("$.columns.DIAGNOSTICS[9].plateDisplay").value("55-GH-19"));
-            assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
+            assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(4);
         } finally {
             statistics.setStatisticsEnabled(false);
         }

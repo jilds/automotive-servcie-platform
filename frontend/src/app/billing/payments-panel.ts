@@ -24,7 +24,20 @@ import {
   POLL_MS,
   RELOAD_CODES,
 } from './billing-logic';
-import { BillingSettings, CreatePaymentRequest, IMMEDIATE_METHODS, Invoice, NOTE_MAX, Payment, PaymentMethod, SandboxOutcome } from './billing.models';
+import {
+  BillingSettings,
+  CreatePaymentRequest,
+  Financier,
+  FINANCIERS,
+  IMMEDIATE_METHODS,
+  INSTALMENT_COUNTS,
+  INSTALMENT_REFERENCE_MAX,
+  Invoice,
+  NOTE_MAX,
+  Payment,
+  PaymentMethod,
+  SandboxOutcome,
+} from './billing.models';
 
 const SANDBOX_OUTCOMES: readonly SandboxOutcome[] = ['PAID', 'FAILED', 'EXPIRED'];
 
@@ -76,12 +89,15 @@ const SANDBOX_OUTCOMES: readonly SandboxOutcome[] = ['PAID', 'FAILED', 'EXPIRED'
               @if (p.note) {
                 <p class="small text-body-secondary text-break mb-0 mt-1">{{ p.note }}</p>
               }
+              @if (p.instalment; as ins) {
+                <p class="small text-body-secondary text-break mb-0 mt-1" data-test="instalment">{{ 'billing.instalment.summary' | t: { count: ins.count, financier: (financierName(ins.financier) | t) } }}@if (ins.reference) { · {{ ins.reference }}}</p>
+              }
               @if (p.status === 'PENDING') {
                 <div class="border rounded-3 p-3 mt-2 bg-body-tertiary" data-test="pending">
                   @if (p.multibanco; as mb) {
                     <dl class="row g-2 mb-2">
                       <div class="col-4"><dt class="small text-body-secondary fw-semibold">{{ 'billing.mb.entity' | t }}</dt><dd class="mb-0 font-monospace fs-5" data-test="entity">{{ mb.entity }}</dd></div>
-                      <div class="col-8"><dt class="small text-body-secondary fw-semibold">{{ 'billing.mb.reference' | t }}</dt><dd class="mb-0 font-monospace fs-5" data-test="reference">{{ reference(mb.reference) }}</dd></div>
+                      <div class="col-8"><dt class="small text-body-secondary fw-semibold">{{ 'billing.mb.reference' | t }}</dt><dd class="mb-0 font-monospace fs-5" data-test="reference">{{ formatReference(mb.reference) }}</dd></div>
                       <div class="col-12"><dt class="small text-body-secondary fw-semibold">{{ 'billing.mb.amount' | t }}</dt><dd class="mb-0">{{ p.amountCents | money }}</dd></div>
                     </dl>
                   }
@@ -155,6 +171,29 @@ const SANDBOX_OUTCOMES: readonly SandboxOutcome[] = ['PAID', 'FAILED', 'EXPIRED'
                 } @else {
                   <div class="col-sm-7"><p class="form-text mt-4 mb-0">{{ 'billing.payments.multibancoHint' | t }}</p></div>
                 }
+                @if (m === 'INSTALMENTS') {
+                  <div class="col-12"><p class="form-text mb-0" data-test="instalment-hint">{{ 'billing.instalment.hint' | t }}</p></div>
+                  <div class="col-sm-4">
+                    <label class="form-label" for="pay-financier">{{ 'billing.instalment.financier' | t }}</label>
+                    <select id="pay-financier" class="form-select" [value]="financier()" (change)="financier.set(value($event) === 'OTHER' ? 'OTHER' : 'PARCELA_JA')">
+                      @for (f of financiers; track f) {
+                        <option [value]="f" [selected]="financier() === f">{{ financierName(f) | t }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="col-sm-3">
+                    <label class="form-label" for="pay-count">{{ 'billing.instalment.count' | t }}</label>
+                    <select id="pay-count" class="form-select" (change)="count.set(+value($event))">
+                      @for (c of counts; track c) {
+                        <option [value]="c" [selected]="count() === c">{{ c }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="col-sm-5">
+                    <label class="form-label" for="pay-ref">{{ 'billing.instalment.reference' | t }}</label>
+                    <input id="pay-ref" class="form-control" autocomplete="off" [attr.maxlength]="referenceMax" [value]="reference()" (input)="reference.set(value($event))" />
+                  </div>
+                }
               </div>
               <div class="d-flex flex-wrap gap-2 mt-3">
                 <button type="submit" class="btn btn-primary" data-test="record" [disabled]="busy()" [attr.aria-busy]="busy()">
@@ -190,6 +229,12 @@ export class PaymentsPanel {
   protected readonly amount = signal('');
   protected readonly phone = signal('');
   protected readonly note = signal('');
+  protected readonly financier = signal<Financier>('PARCELA_JA');
+  protected readonly count = signal(INSTALMENT_COUNTS[1]);
+  protected readonly reference = signal('');
+  protected readonly financiers = FINANCIERS;
+  protected readonly counts = INSTALMENT_COUNTS;
+  protected readonly referenceMax = INSTALMENT_REFERENCE_MAX;
   protected readonly busy = signal(false);
   protected readonly notice = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -249,7 +294,8 @@ export class PaymentsPanel {
   protected methodName = methodText;
   protected state = (p: Payment) => paymentStateText(p.status);
   protected badge = (p: Payment) => PAYMENT_BADGE[p.status];
-  protected reference = formatReference;
+  protected formatReference = formatReference;
+  protected financierName = (f: Financier): MessageKey => `billing.instalment.financier.${f}`;
   protected immediate = isImmediate;
   protected outcomeText = (o: SandboxOutcome): MessageKey => `billing.simulate.${o}`;
 
@@ -262,6 +308,9 @@ export class PaymentsPanel {
     this.amount.set(eurosText(this.left()));
     this.phone.set('');
     this.note.set('');
+    this.financier.set('PARCELA_JA');
+    this.count.set(INSTALMENT_COUNTS[1]);
+    this.reference.set('');
     this.tried.set(false);
     this.serverPhone.set(false);
     this.serverAmount.set(false);
@@ -280,6 +329,10 @@ export class PaymentsPanel {
     const body: CreatePaymentRequest = { method, amountCents: cents ?? undefined };
     if (method === 'MBWAY') body.phone = this.phone().trim();
     else if (isImmediate(method) && this.note().trim()) body.note = this.note().trim();
+    if (method === 'INSTALMENTS') {
+      const ref = this.reference().trim();
+      body.instalment = { financier: this.financier(), count: this.count(), ...(ref ? { reference: ref } : {}) };
+    }
     this.busy.set(true);
     this.api.createPayment(this.invoice().id, body).subscribe({
       next: (p) => {

@@ -20,6 +20,7 @@ public final class Payment {
     private final @Nullable String mbEntity;
     private final @Nullable String mbReference;
     private final @Nullable String mbwayPhoneMasked;
+    private final @Nullable Instalment instalment;
     private final @Nullable Instant expiresAt;
     private @Nullable Instant paidAt;
     private @Nullable String failureCode;
@@ -34,6 +35,16 @@ public final class Payment {
             @Nullable String mbReference, @Nullable String mbwayPhoneMasked, @Nullable Instant expiresAt,
             @Nullable Instant paidAt, @Nullable String failureCode, @Nullable String note, UUID createdBy,
             Instant createdAt, long version) {
+        this(id, invoiceId, method, status, amountCents, provider, providerPaymentId, mbEntity, mbReference,
+                mbwayPhoneMasked, null, expiresAt, paidAt, failureCode, note, createdBy, createdAt, version);
+    }
+
+    @SuppressWarnings("java:S107")
+    public Payment(UUID id, UUID invoiceId, PaymentMethod method, PaymentStatus status, long amountCents,
+            @Nullable String provider, @Nullable String providerPaymentId, @Nullable String mbEntity,
+            @Nullable String mbReference, @Nullable String mbwayPhoneMasked, @Nullable Instalment instalment,
+            @Nullable Instant expiresAt, @Nullable Instant paidAt, @Nullable String failureCode,
+            @Nullable String note, UUID createdBy, Instant createdAt, long version) {
         this.id = id;
         this.invoiceId = invoiceId;
         this.method = method;
@@ -44,6 +55,7 @@ public final class Payment {
         this.mbEntity = mbEntity;
         this.mbReference = mbReference;
         this.mbwayPhoneMasked = mbwayPhoneMasked;
+        this.instalment = instalment;
         this.expiresAt = expiresAt;
         this.paidAt = paidAt;
         this.failureCode = failureCode;
@@ -56,11 +68,18 @@ public final class Payment {
     /// Cash, card or transfer taken by staff: PAID at once.
     public static Payment recorded(UUID id, UUID invoiceId, PaymentMethod method, long amountCents,
             @Nullable String note, UUID by, Instant now) {
-        if (method.viaProvider()) {
-            throw new IllegalArgumentException("Not a staff method: " + method);
+        if (method.viaProvider() || method == PaymentMethod.INSTALMENTS) {
+            throw new IllegalArgumentException("Not a plain staff method: " + method);
         }
         return new Payment(id, invoiceId, method, PaymentStatus.PAID, amountCents, null, null, null, null, null, null,
                 now, null, note, by, now, 0);
+    }
+
+    /// A sale in instalments approved on the card terminal: PAID at once, like a card payment.
+    public static Payment instalments(UUID id, UUID invoiceId, long amountCents, Instalment instalment,
+            @Nullable String note, UUID by, Instant now) {
+        return new Payment(id, invoiceId, PaymentMethod.INSTALMENTS, PaymentStatus.PAID, amountCents, null, null, null,
+                null, null, instalment, null, now, null, note, by, now, 0);
     }
 
     /// A Multibanco reference the customer pays at an ATM or in home banking.
@@ -173,6 +192,10 @@ public final class Payment {
 
     public @Nullable String mbwayPhoneMasked() {
         return mbwayPhoneMasked;
+    }
+
+    public @Nullable Instalment instalment() {
+        return instalment;
     }
 
     public @Nullable Instant expiresAt() {

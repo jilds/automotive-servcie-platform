@@ -221,6 +221,42 @@ class PaymentApiTests extends BillingTestSupport {
     }
 
     @Test
+    void should_record_an_instalment_sale_approved_on_the_terminal_as_paid_at_once() throws Exception {
+        Shop g = garage("Pagar Parcela");
+        String id = issuedInvoice(g);
+
+        pay(g, id, "{\"method\":\"INSTALMENTS\",\"amountCents\":5000,"
+                + "\"instalment\":{\"financier\":\"PARCELA_JA\",\"count\":4,\"reference\":\" 000123 \"}}")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("PAID"))
+                .andExpect(jsonPath("$.method").value("INSTALMENTS")).andExpect(jsonPath("$.provider").doesNotExist())
+                .andExpect(jsonPath("$.instalment.financier").value("PARCELA_JA"))
+                .andExpect(jsonPath("$.instalment.count").value(4))
+                .andExpect(jsonPath("$.instalment.reference").value("000123"));
+        call(get("/api/v1/invoices/" + id), g.owner()).andExpect(jsonPath("$.paidCents").value(5000))
+                .andExpect(jsonPath("$.paymentStatus").value("PARTIALLY_PAID"));
+        call(get("/api/v1/billing/settings"), g.owner()).andExpect(jsonPath("$.methods").value(
+                org.hamcrest.Matchers.hasItem("INSTALMENTS")));
+    }
+
+    @Test
+    void should_refuse_instalment_data_that_is_missing_misplaced_or_out_of_range() throws Exception {
+        Shop g = garage("Pagar Parcela Erro");
+        String id = issuedInvoice(g);
+
+        pay(g, id, "{\"method\":\"INSTALMENTS\",\"amountCents\":100}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("instalment-required"));
+        pay(g, id, "{\"method\":\"CARD\",\"amountCents\":100,\"instalment\":{\"financier\":\"OTHER\",\"count\":3}}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("instalment-required"));
+        pay(g, id, "{\"method\":\"INSTALMENTS\",\"amountCents\":100,\"instalment\":{\"financier\":\"OTHER\",\"count\":1}}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("invalid-instalment-count"));
+        pay(g, id, "{\"method\":\"INSTALMENTS\",\"amountCents\":100,\"instalment\":{\"financier\":\"OTHER\",\"count\":7}}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("invalid-instalment-count"));
+        pay(g, id, "{\"method\":\"INSTALMENTS\",\"amountCents\":100,\"instalment\":{\"count\":3}}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("validation"));
+        assertThat(count(g, "select count(*) from payment")).isZero();
+    }
+
+    @Test
     void should_require_the_version_to_cancel_a_payment() throws Exception {
         Shop g = garage("Pagar Versao");
         String reference = multibanco(g, issuedInvoice(g), 0);

@@ -162,6 +162,16 @@ public class CustomerService implements CustomerManagement {
 
     @Override
     @Transactional(readOnly = true)
+    public Map<UUID, String> customerNames(Collection<UUID> customerIds) {
+        if (customerIds.isEmpty()) {
+            return Map.of();
+        }
+        return customers.findAllById(customerIds).stream()
+                .collect(Collectors.toUnmodifiableMap(Customer::id, c -> c.contact().name()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<CustomerFiscalData> fiscalDataForVehicle(UUID vehicleId) {
         return vehicles.findById(vehicleId).flatMap(vehicle -> customers.findById(vehicle.customerId())
                 .map(customer -> {

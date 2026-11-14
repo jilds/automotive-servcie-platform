@@ -271,7 +271,7 @@ class InvoiceIssueApiTests extends BillingTestSupport {
                 .andExpect(jsonPath("$.payments.sandbox").value(true))
                 .andExpect(jsonPath("$.finalConsumerLimitCents").value(100000))
                 .andExpect(jsonPath("$.currency").value("EUR"))
-                .andExpect(jsonPath("$.methods.length()").value(5))
+                .andExpect(jsonPath("$.methods.length()").value(6))
                 .andExpect(jsonPath("$.multibancoValidDays").value(3))
                 .andExpect(jsonPath("$.mbwayValidMinutes").value(5));
     }

@@ -40,7 +40,7 @@ class BillingSettingsController {
     @GetMapping
     BillingSettingsResponse get() {
         List<PaymentMethod> methods = new ArrayList<>(List.of(PaymentMethod.CASH, PaymentMethod.CARD,
-                PaymentMethod.TRANSFER));
+                PaymentMethod.TRANSFER, PaymentMethod.INSTALMENTS));
         if (payments.configured()) {
             methods.add(PaymentMethod.MULTIBANCO);
             methods.add(PaymentMethod.MBWAY);

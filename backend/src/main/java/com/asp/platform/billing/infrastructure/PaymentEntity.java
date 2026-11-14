@@ -14,6 +14,8 @@ import jakarta.persistence.Version;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
+import com.asp.platform.billing.domain.Financier;
+import com.asp.platform.billing.domain.Instalment;
 import com.asp.platform.billing.domain.Payment;
 import com.asp.platform.billing.domain.PaymentMethod;
 import com.asp.platform.billing.domain.PaymentStatus;
@@ -57,6 +59,16 @@ class PaymentEntity implements DomainEntity<Payment> {
     @Column(name = "mbway_phone_masked", updatable = false)
     private @Nullable String mbwayPhoneMasked;
 
+    @Enumerated(EnumType.STRING)
+    @Column(updatable = false)
+    private @Nullable Financier financier;
+
+    @Column(name = "instalment_count", updatable = false)
+    private @Nullable Integer instalmentCount;
+
+    @Column(name = "instalment_reference", updatable = false)
+    private @Nullable String instalmentReference;
+
     @Column(name = "expires_at", updatable = false)
     private @Nullable Instant expiresAt;
 
@@ -98,6 +110,12 @@ class PaymentEntity implements DomainEntity<Payment> {
         this.mbEntity = payment.mbEntity();
         this.mbReference = payment.mbReference();
         this.mbwayPhoneMasked = payment.mbwayPhoneMasked();
+        Instalment instalment = payment.instalment();
+        if (instalment != null) {
+            this.financier = instalment.financier();
+            this.instalmentCount = instalment.count();
+            this.instalmentReference = instalment.reference();
+        }
         this.expiresAt = payment.expiresAt();
         this.note = payment.note();
         this.createdBy = payment.createdBy();
@@ -115,8 +133,11 @@ class PaymentEntity implements DomainEntity<Payment> {
     @Override
     public Payment toDomain() {
         Long v = version;
+        Financier f = financier;
+        Integer count = instalmentCount;
+        Instalment instalment = f == null || count == null ? null : new Instalment(f, count, instalmentReference);
         return new Payment(id, invoiceId, method, status, amountCents, provider, providerPaymentId, mbEntity,
-                mbReference, mbwayPhoneMasked, expiresAt, paidAt, failureCode, note, createdBy, createdAt,
+                mbReference, mbwayPhoneMasked, instalment, expiresAt, paidAt, failureCode, note, createdBy, createdAt,
                 v == null ? 0 : v);
     }
 }

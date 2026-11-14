@@ -13,6 +13,9 @@ public interface CustomerRepository {
 
     Optional<Customer> findById(UUID id);
 
+    /// One query for all of them; ids not found are left out.
+    List<Customer> findAllById(java.util.Collection<UUID> ids);
+
     /// Matches name, NIF or phone; everything when the query is null.
     List<Customer> search(@Nullable String query);
 }

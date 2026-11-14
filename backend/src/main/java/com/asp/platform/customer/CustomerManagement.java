@@ -26,6 +26,10 @@ public interface CustomerManagement {
     /// not found in the workshop.
     Optional<CustomerContact> contactForVehicle(UUID vehicleId);
 
+    /// The names of the given customers in one query, keyed by customer id (ids not found are left out). Personal
+    /// data: only for screens of the owner and the front desk, never for mechanics.
+    java.util.Map<UUID, String> customerNames(java.util.Collection<UUID> customerIds);
+
     /// The name, tax number and address of the customer who owns the vehicle, for the snapshot of an invoice; empty
     /// when the vehicle is not found in the workshop.
     Optional<CustomerFiscalData> fiscalDataForVehicle(UUID vehicleId);

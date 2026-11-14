@@ -12,6 +12,7 @@ import { OwnerChange, VehicleOwnerDialog } from '../customer/vehicle-owner-dialo
 import { Alert } from '../shared/alert';
 import { Icon } from '../shared/icon';
 import { KmPipe } from '../shared/km.pipe';
+import { NotesPanel } from '../shared/notes-panel';
 import { Plate } from '../shared/plate';
 import { MoneyPipe } from '../shared/money.pipe';
 
@@ -19,7 +20,7 @@ import { MoneyPipe } from '../shared/money.pipe';
 @Component({
   selector: 'app-vehicle-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, MoneyPipe, KmPipe, TranslatePipe, Icon, Alert, Plate, VehicleEditDialog, VehicleOwnerDialog],
+  imports: [RouterLink, DatePipe, MoneyPipe, KmPipe, TranslatePipe, Icon, Alert, Plate, NotesPanel, VehicleEditDialog, VehicleOwnerDialog],
   template: `
     <header class="d-flex flex-wrap align-items-end gap-3 mb-4">
       <div class="me-auto">
@@ -51,6 +52,9 @@ import { MoneyPipe } from '../shared/money.pipe';
         {{ 'vehicles.ownerChanged' | t: { plate: n.vehicle.plateDisplay ?? n.vehicle.plate, from: n.from?.name ?? '—', to: n.to.name } }}
         <a [routerLink]="['/customers', n.to.id]">{{ 'vehicles.ownerOpen' | t }}</a>
       </app-alert>
+    }
+    @if (vehicle()) {
+      <app-notes-panel kind="vehicle" [subjectId]="id()" />
     }
     <h2 class="mt-5 mb-3">{{ 'history.title' | t }}</h2>
     <div class="list-group shadow-sm">
