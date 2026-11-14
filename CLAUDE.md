@@ -4,6 +4,8 @@ Guidance for anyone (human or AI agent) building features in this repository. Re
 
 Rules changed or added on 2026-10-22 (after the gap audit in `docs/reviews/gap-audit.md` and the user's Release 3 decisions) are marked **(updated 2026-10-22)**.
 
+**Every task ends validated, committed and merged into `main`** (§10 item 11 and §11 "Finish every task on `main`", decided 2026-11-14); the next task starts from that fresh `main`.
+
 ## 1. Product context
 
 - **What:** a multi-tenant B2B SaaS ERP for car workshops. Each workshop is a tenant and its data must never leak to another workshop.
@@ -176,13 +178,18 @@ Every feature must meet all of these before it is reported as done:
 8. **Tests:** backend tests for the rules and the API; a frontend test for logic that is not trivial. Run `./mvnw clean verify` and report the real result.
 9. **Browser check:** start the app against a fresh database and walk the new flow in the browser (Portuguese default, then one other language).
 10. **Docs:** update `README.md` (features, configuration, API table), the API contract of the release in `docs/api/`, and the step doc in the project folder if the feature changes what the step says.
-11. **Commit message:** Conventional Commits, proposed to the user, not committed unless asked.
+11. **Commit and merge (updated 2026-11-14):** run the validations of §11 "Finish every task on `main`", commit with a Conventional Commits message and merge into `main`. A feature is done only when `main` holds it and the build that proved it was green.
 
 ## 11. Working rules (from the agent kit)
 
 - **Conventional Commits** for every commit message (`feat(customer): …`, `fix(board): …`, `chore(db): …`), with a scope, and a `Refs:` footer once a ticket key exists.
-- **Commit only when the user asks.** Propose the message instead.
-- **Ask before any external side effect:** pushing, opening pull requests, posting comments, deleting data or sending messages.
+- **Finish every task on `main` (updated 2026-11-14).** This replaces "commit only when the user asks" for this repository: a task, a plan step, a fix or a review follow-up is finished only when its work is validated, committed and merged into `main`, so that the next task starts from a fresh `main` that already holds it. Do this at the end of every task without waiting for a request:
+  1. **Validate.** Any change under `backend/`, `frontend/` or the root `pom.xml`: `./mvnw clean verify` (frontend unit tests and build, backend unit and integration tests with Testcontainers, architecture rules). Any change under `site/`: `cd site && npm ci && npm run build` (type check, tests, build, TODO check). Docs-only changes (`*.md`, `docs/`, `CLAUDE.md`) need no build. Report the exact command and its real result. A red build is fixed first; nothing is committed on red, and a validation that cannot run (no Docker, no JDK) is reported as not run, never as passed.
+  2. **Commit.** Conventional Commits with a scope, one commit per logical change (`ATOM`), only the files of this task. Code, tests, migration, translations, docs and plan status go in together or in consecutive commits of the same task.
+  3. **Merge into `main`.** Work on a branch `<type>/<scope>-<slug>` cut from the current `main` (for example `feat/billing-instalments`); at the end `git switch main && git merge --ff-only <branch> && git branch -d <branch>`. When `main` moved meanwhile, rebase the branch onto `main`, run the validation again and then fast-forward. A small change made directly on `main` is committed there. Conflicts, a failed rebase or a red build after the rebase are fixed before the merge, never merged "to sort out later".
+  4. **Push stays on request.** Merging into the local `main` is part of every task; pushing `main` to `origin` and opening pull requests remain external side effects that need the user's go-ahead (next rule), so `origin/main` may lag the local `main`.
+- **Start from a fresh `main`.** Begin every task with `git switch main` and a clean `git status`. If `main` holds uncommitted work from an earlier task, say so and ask whether to validate and commit it first; never mix it into the new task's commits and never discard it.
+- **Ask before any external side effect:** pushing, opening pull requests, posting comments, deleting data or sending messages. Local commits and merges into `main` are not external side effects (see "Finish every task on `main`").
 - **Never claim tests pass without running them.** Report the exact command and the result.
 - **No secrets** in code, logs, docs or commit messages.
 - Do not add model names or attribution lines to commits or PRs unless the user's own instructions say so.
